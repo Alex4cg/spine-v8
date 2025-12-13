@@ -128,6 +128,37 @@ export class DebugPositionEditor {
     this.createControl('Scale:', 'scale', 0.1, 5, 0.01, true);
     this.createControl('Z Index:', 'zIndex', 0, 1000, 1, true);
     
+    // Разделитель
+    const separator = document.createElement('div');
+    separator.style.cssText = 'height: 1px; background: #555; margin: 15px 0;';
+    this.panel.appendChild(separator);
+    
+    // Чекбокс для отладки тангентов collect effect
+    const debugCheckboxContainer = document.createElement('div');
+    debugCheckboxContainer.style.cssText = 'display: flex; align-items: center; gap: 8px; margin-bottom: 10px;';
+    
+    const debugCheckboxLabel = document.createElement('label');
+    debugCheckboxLabel.textContent = 'Показать тангенты перелета';
+    debugCheckboxLabel.style.cssText = 'cursor: pointer; user-select: none; flex: 1;';
+    
+    const debugCheckbox = document.createElement('input');
+    debugCheckbox.type = 'checkbox';
+    debugCheckbox.id = 'debug-collect-effect-tangents';
+    debugCheckbox.style.cssText = 'width: 18px; height: 18px; cursor: pointer;';
+    debugCheckbox.addEventListener('change', (e) => {
+      if (this.slotMachine && this.slotMachine.collectEffect) {
+        this.slotMachine.collectEffect.setDebugVisible(e.target.checked);
+      }
+    });
+    
+    debugCheckboxLabel.setAttribute('for', 'debug-collect-effect-tangents');
+    debugCheckboxContainer.appendChild(debugCheckbox);
+    debugCheckboxContainer.appendChild(debugCheckboxLabel);
+    this.panel.appendChild(debugCheckboxContainer);
+    
+    // Сохраняем ссылку на чекбокс
+    this.debugCollectEffectCheckbox = debugCheckbox;
+    
     // Кнопки действий
     const buttonContainer = document.createElement('div');
     buttonContainer.style.cssText = 'display: flex; gap: 5px; margin-top: 10px;';

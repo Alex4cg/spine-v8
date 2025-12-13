@@ -245,6 +245,37 @@ export class ParticleSystem {
     });
   }
   
+  /**
+   * Вызывает всплеск частиц при прилете монеты (аналогично triggerHitEffects в train-test.html)
+   */
+  triggerHitBurst() {
+    // Всплеск эмиттеров монет - создаем много частиц сразу
+    for (const { emitter } of this.coinEmitters) {
+      if (emitter) {
+        // Сохраняем оригинальные значения
+        const originalRate = emitter.emissionRate;
+        const originalSpread = emitter.config.spread;
+        
+        // Временно увеличиваем разброс для более широкого всплеска
+        emitter.setSpread(60); // Увеличиваем spread с 30 до 60 градусов
+        
+        // Создаем большой всплеск монет (80-100 частиц на эмиттер)
+        emitter.burst(80 + Math.floor(Math.random() * 21)); // 80-100 монет
+        
+        // Временно увеличиваем частоту эмиссии для кратковременного всплеска
+        emitter.setEmissionRate(0.01); // Очень высокая частота
+        
+        // Через 0.3 секунды возвращаем обычные значения
+        setTimeout(() => {
+          emitter.setEmissionRate(originalRate);
+          emitter.setSpread(originalSpread);
+        }, 300);
+      }
+    }
+    
+    console.log('ParticleSystem: Hit burst triggered for coin emitters');
+  }
+  
   // Уничтожение системы партиклов
   destroy() {
     if (this.smokeEmitter) {

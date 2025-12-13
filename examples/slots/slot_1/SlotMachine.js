@@ -11,6 +11,7 @@ import { MiniWinText } from './MiniWinText.js';
 import { WinLineManager } from './WinLineManager.js';
 import { CoinManager } from './CoinManager.js';
 import { AclonicaText } from './AclonicaText.js';
+import { TrainManager } from './TrainManager.js';
 
 export class SlotMachine {
   constructor(config, app) {
@@ -82,6 +83,9 @@ export class SlotMachine {
     
     // Менеджер монеток
     this.coinManager = null;
+    
+    // Менеджер поезда
+    this.trainManager = null;
   }
 
   async init() {
@@ -96,18 +100,36 @@ export class SlotMachine {
       await this.scenarios.loadScenario(this.config.scenarios.scenarioPath);
     }
     
-    // Загружаем Spine анимации
+    // Инициализируем менеджер поезда
+    this.trainManager = new TrainManager(this.config, this.app, this.app.stage);
+    await this.trainManager.init();
+    
+    // Загружаем Spine анимации (logo, winline и т.д.)
     await this.loadSpineAnimations();
     
     // Инициализируем систему партиклов (после загрузки поезда)
-    if (this.spineAnimations.train) {
+    if (this.trainManager && this.trainManager.isLoaded) {
       this.particleSystem = new ParticleSystem(this.app, this.app.stage);
-      await this.particleSystem.init(this.spineAnimations.train);
+      await this.particleSystem.init(this.trainManager.getSpineAnimation());
     }
     
-    // Инициализируем collect effect
-    this.collectEffect = new CollectEffect(this.config, this.app, this.app.stage);
+    // Инициализируем collect effect (до CoinManager, чтобы передать ссылку)
+    // Передаем trainManager для получения позиции поезда
+    this.collectEffect = new CollectEffect(this.config, this.app, this.app.stage, this.trainManager);
     await this.collectEffect.init();
+    
+    // Устанавливаем callback для реакции поезда и частиц на прилет монет
+    this.collectEffect.setOnHitCallback(() => {
+      // Реакция поезда - проигрываем анимацию active
+      if (this.trainManager) {
+        this.trainManager.playActiveAnimation();
+      }
+      
+      // Реакция частиц - всплеск монет
+      if (this.particleSystem) {
+        this.particleSystem.triggerHitBurst();
+      }
+    });
     
     // Загружаем шрифт Aclonica для текста на монетах ПЕРЕД созданием CoinManager
     // Очищаем кеш и ждем полной загрузки шрифта
@@ -118,8 +140,8 @@ export class SlotMachine {
     
     // Инициализируем менеджер монеток
     // Монетки добавляются в spineContainer, индикаторы - в coinIndicatorsContainer
-    // Передаем уже загруженный aclonicaText
-    this.coinManager = new CoinManager(this.config, this.app, this.spineContainer, this.coinIndicatorsContainer, this.aclonicaText);
+    // Передаем уже загруженный aclonicaText и ссылку на collectEffect
+    this.coinManager = new CoinManager(this.config, this.app, this.spineContainer, this.coinIndicatorsContainer, this.aclonicaText, this.collectEffect);
     // Синхронизируем с reelsContainer для учета сдвига от дебаггера (для монеток)
     this.coinManager.syncWithReelsContainer(this.reelsContainer);
     // Инициализируем статичные индикаторы
@@ -146,6 +168,11 @@ export class SlotMachine {
     // После initReels() устанавливаем ссылки на winFrameAnimation и reels в WinLineManager
     if (this.winLineManager) {
       this.winLineManager.setWinFrameAnimation(this.winFrameAnimation, this.reels);
+    }
+    
+    // Передаем ссылку на reels в CoinManager для скрытия/показа спрайтовых монеток
+    if (this.coinManager) {
+      this.coinManager.setReels(this.reels);
     }
     
     // Инициализируем отладчик позиции (если включен в конфиге)
@@ -247,49 +274,7 @@ export class SlotMachine {
   }
   
   async loadSpineAnimations() {
-    // Загружаем поезд если включен в конфиге
-    if (this.config.spine && this.config.spine.train && this.config.spine.train.enabled) {
-      const trainConfig = this.config.spine.train;
-      // Создаем поезд в отдельном контейнере на stage
-      const trainAnimation = new SpineAnimation(
-        this.config,
-        this.app,
-        this.app.stage, // Добавляем контейнер поезда напрямую на stage
-        'train',
-        trainConfig.animationName || '00_idle',
-        trainConfig.loop !== undefined ? trainConfig.loop : true
-      );
-      
-      const loaded = await trainAnimation.load();
-      if (loaded) {
-        // Получаем контейнер поезда и устанавливаем zIndex
-        const trainContainer = trainAnimation.getContainer();
-        trainContainer.zIndex = 90; // Значение из debug_positions.json
-        
-        // Размещаем поезд (значения из debug_positions.json)
-        const trainX = 960;
-        const trainY = 236;
-        
-        trainAnimation.setPosition(trainX, trainY);
-        
-        if (trainConfig.scale) {
-          trainAnimation.setScale(trainConfig.scale.x, trainConfig.scale.y);
-        }
-        
-        this.spineAnimations.train = trainAnimation;
-        
-        // Запускаем постоянные анимации в цикле на разных треках
-        // Трек 0: базовая idle анимация (уже запущена при load)
-        // Трек 1: piles of gold (зациклено)
-        trainAnimation.setAnimationOnTrack(1, '01_piles_of_gold', true);
-        
-        // Трек 2: speed effect (зациклено)
-        trainAnimation.setAnimationOnTrack(2, '02_bg_speed_effect', true);
-        
-        console.log('Train Spine animation loaded with continuous tracks (idle, piles, speed)');
-      }
-    }
-    
+    // Поезд теперь управляется через TrainManager (инициализируется раньше)
     // Загружаем logo если включен в конфиге
     if (this.config.spine && this.config.spine.logo && this.config.spine.logo.enabled) {
       const logoConfig = this.config.spine.logo;
@@ -392,28 +377,11 @@ export class SlotMachine {
     }
   }
   
-  // Метод для запуска разовой анимации поезда при спине
+  // Метод для запуска разовой анимации поезда при спине (использует TrainManager)
   playTrainSpinAnimation() {
-    const trainAnimation = this.spineAnimations.train;
-    if (!trainAnimation || !trainAnimation.spine) return;
-    
-    // Список разовых анимаций
-    const spinAnimations = ['03_blick_add', '04_steam_1', '05_steam_2'];
-    
-    // Выбираем случайную анимацию
-    const randomAnim = spinAnimations[Math.floor(Math.random() * spinAnimations.length)];
-    
-    // Трек 3 для разовых анимаций
-    const TRACK_ONESHOT = 3;
-    
-    // Очищаем трек перед запуском
-    trainAnimation.clearTrack(TRACK_ONESHOT);
-    trainAnimation.setEmptyAnimation(TRACK_ONESHOT, 0);
-    
-    // Запускаем разовую анимацию
-    trainAnimation.setAnimationOnTrack(TRACK_ONESHOT, randomAnim, false);
-    
-    console.log(`Train: Playing spin animation "${randomAnim}"`);
+    if (this.trainManager) {
+      this.trainManager.playSpinAnimation();
+    }
   }
   
   async loadSymbolTextures() {

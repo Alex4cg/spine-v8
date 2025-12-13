@@ -410,6 +410,46 @@ export class SlotReel {
     }
     return visible;
   }
+
+  /**
+   * Получает индекс символа на указанной видимой позиции
+   * @param {number} positionIndex - Индекс позиции (0=нижний, 1=средний, 2=верхний)
+   * @returns {number|null} Индекс символа в массиве symbols или null
+   */
+  getVisibleSymbolIndex(positionIndex) {
+    const visibleStartIndex = this.totalSymbols - this.visibleSymbols - 1;
+    const visibleIndices = [
+      visibleStartIndex,     // positionIndex 0 = нижний видимый
+      visibleStartIndex + 1, // positionIndex 1 = средний видимый
+      visibleStartIndex + 2  // positionIndex 2 = верхний видимый
+    ];
+
+    if (positionIndex >= 0 && positionIndex < visibleIndices.length) {
+      const symbolIndex = visibleIndices[positionIndex];
+      if (symbolIndex >= 0 && symbolIndex < this.symbols.length) {
+        return symbolIndex;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Скрывает или показывает символ монетки на указанной позиции
+   * @param {number} positionIndex - Индекс позиции (0=нижний, 1=средний, 2=верхний)
+   * @param {boolean} visible - true чтобы показать, false чтобы скрыть
+   */
+  setCoinSymbolVisible(positionIndex, visible) {
+    const symbolIndex = this.getVisibleSymbolIndex(positionIndex);
+    if (symbolIndex !== null) {
+      const symbol = this.symbols[symbolIndex];
+      // Скрываем только если это монетка (textureIndex === 8)
+      if (symbol && symbol.textureIndex === 8) {
+        symbol.visible = visible;
+        symbol.renderable = visible;
+        console.log(`SlotReel ${this.reelIndex}: Coin symbol at position ${positionIndex} (symbolIndex ${symbolIndex}) ${visible ? 'shown' : 'hidden'}`);
+      }
+    }
+  }
   
   destroy() {
     if (this.animationId !== null) {

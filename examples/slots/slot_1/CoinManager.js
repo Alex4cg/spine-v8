@@ -2,7 +2,7 @@ import { SpineAnimation } from './SpineAnimation.js';
 import { AclonicaText } from './AclonicaText.js';
 
 export class CoinManager {
-  constructor(config, app, container, indicatorsContainer, aclonicaText = null) {
+  constructor(config, app, container, indicatorsContainer, aclonicaText = null, collectEffect = null) {
     this.config = config;
     this.app = app;
     this.container = container; // Контейнер для монеток (spineContainer)
@@ -14,6 +14,16 @@ export class CoinManager {
     // Используем переданный экземпляр AclonicaText или создаем новый (для обратной совместимости)
     this.aclonicaText = aclonicaText || new AclonicaText();
     this.coinTextSprites = {}; // Пул текстовых спрайтов: { "reelIndex_positionIndex": PIXI.Sprite }
+    this.reels = null; // Массив SlotReel для скрытия/показа спрайтовых монеток
+    this.collectEffect = collectEffect; // Ссылка на CollectEffect для проигрывания анимации при событии start_flight
+  }
+
+  /**
+   * Устанавливает ссылку на массив reels (вызывается после инициализации reels в SlotMachine)
+   * @param {Array} reels - Массив SlotReel
+   */
+  setReels(reels) {
+    this.reels = reels;
   }
 
   /**
@@ -196,6 +206,11 @@ export class CoinManager {
   async showCoin(reelIndex, positionIndex, skin = 'regular', value = '5.00') {
     const key = `${reelIndex}_${positionIndex}`;
 
+    // Скрываем спрайтовую монетку на риле
+    if (this.reels && this.reels[reelIndex]) {
+      this.reels[reelIndex].setCoinSymbolVisible(positionIndex, false);
+    }
+
     // Если монетка уже активна - обновляем позицию (на случай сдвига), скин и показываем
     if (this.activeCoins.has(key) && this.coinSpines[key]) {
       const coinSpine = this.coinSpines[key];
@@ -203,7 +218,8 @@ export class CoinManager {
       coinSpine.setPosition(position.x, position.y);
       if (coinSpine.spine && coinSpine.spine.skeleton) {
         coinSpine.spine.skeleton.setSkinByName(skin);
-        coinSpine.spine.state.setAnimation(0, 'idle', true);
+        // Проигрываем shot, затем idle
+        this.playCoinAnimationSequence(coinSpine);
       }
       const container = coinSpine.getContainer();
       container.visible = true;
@@ -224,8 +240,8 @@ export class CoinManager {
         this.app,
         this.container,
         'coin',
-        'idle',
-        true // зациклено
+        'shot', // Начинаем с shot анимации
+        false // не зациклено
       );
 
       const loaded = await coinSpine.load();
@@ -266,14 +282,61 @@ export class CoinManager {
       this.attachTextToCoin(coinSpine, value, key);
     }
 
-    // Запускаем анимацию idle в цикле
+    // Запускаем последовательность анимаций: shot -> idle
     const coinSpine = this.coinSpines[key];
     if (coinSpine && coinSpine.spine) {
-      coinSpine.spine.state.setAnimation(0, 'idle', true);
+      this.playCoinAnimationSequence(coinSpine);
     }
 
     this.activeCoins.add(key);
     console.log(`CoinManager: Showing coin at ${key} with skin ${skin}, value ${value}`);
+  }
+
+  /**
+   * Проигрывает последовательность анимаций монетки: shot -> idle
+   * @param {SpineAnimation} coinSpine - Spine анимация монетки
+   */
+  playCoinAnimationSequence(coinSpine) {
+    if (!coinSpine || !coinSpine.spine || !coinSpine.spine.state) {
+      return;
+    }
+
+    // Запускаем анимацию shot (однократно)
+    const trackEntry = coinSpine.spine.state.setAnimation(0, 'shot', false);
+
+    if (trackEntry) {
+      // Подписываемся на события из анимации shot
+      trackEntry.listener = {
+        event: (entry, event) => {
+          // При событии start_flight запускаем анимацию hit_coin в CollectEffect
+          if (event.data.name === 'start_flight' && this.collectEffect) {
+            // Получаем позицию монетки для передачи в collect effect
+            const container = coinSpine.getContainer();
+            const startPosition = {
+              x: container.x,
+              y: container.y
+            };
+            
+            // Проигрываем анимацию hit_coin в collect effect (async, но не ждем завершения)
+            this.collectEffect.playHitCoin(startPosition).catch(err => {
+              console.error('CoinManager: Error playing hit_coin:', err);
+            });
+            console.log(`CoinManager: start_flight event triggered, playing hit_coin at (${startPosition.x}, ${startPosition.y})`);
+          }
+        },
+        complete: () => {
+          // После завершения shot переключаемся на idle в цикле
+          if (coinSpine.spine && coinSpine.spine.state) {
+            coinSpine.spine.state.setAnimation(0, 'idle', true);
+            console.log('CoinManager: Shot animation completed, switched to idle');
+          }
+        }
+      };
+    } else {
+      // Если анимация shot не найдена, сразу запускаем idle
+      console.warn('CoinManager: Shot animation not found, playing idle directly');
+      coinSpine.spine.state.setAnimation(0, 'idle', true);
+    }
   }
 
   /**
@@ -331,6 +394,11 @@ export class CoinManager {
   hideCoin(reelIndex, positionIndex) {
     const key = `${reelIndex}_${positionIndex}`;
     
+    // Показываем спрайтовую монетку на риле обратно
+    if (this.reels && this.reels[reelIndex]) {
+      this.reels[reelIndex].setCoinSymbolVisible(positionIndex, true);
+    }
+    
     if (this.coinSpines[key]) {
       const container = this.coinSpines[key].getContainer();
       container.visible = false;
@@ -357,10 +425,14 @@ export class CoinManager {
    * Скрывает все монетки
    */
   hideAllCoins() {
-    this.activeCoins.forEach(key => {
+    // Создаем копию Set, чтобы избежать проблем с изменением во время итерации
+    const keysToHide = Array.from(this.activeCoins);
+    keysToHide.forEach(key => {
       const [reelIndex, positionIndex] = key.split('_').map(Number);
-      this.hideCoin(reelIndex, positionIndex);
+      this.hideCoin(reelIndex, positionIndex); // hideCoin уже показывает спрайт обратно
     });
+    // Очищаем activeCoins после скрытия всех монеток
+    this.activeCoins.clear();
   }
 
   /**
