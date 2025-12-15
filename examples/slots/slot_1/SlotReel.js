@@ -452,6 +452,24 @@ export class SlotReel {
   }
 
   /**
+   * Скрывает или показывает спрайтовый коллектор на указанной позиции
+   * @param {number} positionIndex - Индекс позиции (0=нижний, 1=средний, 2=верхний)
+   * @param {boolean} visible - true для показа, false для скрытия
+   */
+  setCollectorSymbolVisible(positionIndex, visible) {
+    const symbolIndex = this.getVisibleSymbolIndex(positionIndex);
+    if (symbolIndex !== null) {
+      const symbol = this.symbols[symbolIndex];
+      // Скрываем только если это коллектор (textureIndex === 10)
+      if (symbol && symbol.textureIndex === 10) {
+        symbol.visible = visible;
+        symbol.renderable = visible;
+        console.log(`SlotReel ${this.reelIndex}: Collector symbol at position ${positionIndex} (symbolIndex ${symbolIndex}) ${visible ? 'shown' : 'hidden'}`);
+      }
+    }
+  }
+
+  /**
    * Применяет фильтр затемнения к символу
    * @param {number} symbolIndex - Индекс символа в массиве symbols
    * @param {number} darkness - Уровень затемнения (0-1), оптимально: 0.79

@@ -85,14 +85,16 @@ export class GameScenarios {
         if (currentSpin && typeof currentSpin === 'object' && currentSpin.matrix) {
           return {
             matrix: currentSpin.matrix,
-            coinValues: currentSpin.coinValues || null
+            coinValues: currentSpin.coinValues || null,
+            collectorValue: currentSpin.collectorValue !== undefined ? currentSpin.collectorValue : null
           };
         }
         
         // Если старый формат (массив) - возвращаем как есть
         return {
           matrix: currentSpin,
-          coinValues: null
+          coinValues: null,
+          collectorValue: null
         };
       }
   

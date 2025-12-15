@@ -4,8 +4,9 @@
     "winLines": [1]
   },
   {
-    "matrix": [[0, 3, 6], [8, 10, 0], [1, 4, 7]],
-    "coinValues": [[null, null, null], [5.25, null, null], [null, null, null]],
+    "matrix": [[8, 3, 6], [8, 10, 4], [1, 4, 7]],
+    "coinValues": [[3, null, null], [5, null, null], [null, null, null]],
+    "collectorValue": 8,
     "winLines": [],
     "events": ["coin_collector"]
   },

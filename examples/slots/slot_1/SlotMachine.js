@@ -10,6 +10,7 @@ import { CollectEffect } from './CollectEffect.js';
 import { MiniWinText } from './MiniWinText.js';
 import { WinLineManager } from './WinLineManager.js';
 import { CoinManager } from './CoinManager.js';
+import { CollectorManager } from './CollectorManager.js';
 import { AclonicaText } from './AclonicaText.js';
 import { TrainManager } from './TrainManager.js';
 
@@ -85,6 +86,9 @@ export class SlotMachine {
     // Менеджер монеток
     this.coinManager = null;
     
+    // Менеджер коллекторов
+    this.collectorManager = null;
+    
     // Менеджер поезда
     this.trainManager = null;
   }
@@ -119,19 +123,6 @@ export class SlotMachine {
     this.collectEffect = new CollectEffect(this.config, this.app, this.app.stage, this.trainManager);
     await this.collectEffect.init();
     
-    // Устанавливаем callback для реакции поезда и частиц на прилет монет
-    this.collectEffect.setOnHitCallback(() => {
-      // Реакция поезда - проигрываем анимацию active
-      if (this.trainManager) {
-        this.trainManager.playActiveAnimation();
-      }
-      
-      // Реакция частиц - всплеск монет
-      if (this.particleSystem) {
-        this.particleSystem.triggerHitBurst();
-      }
-    });
-    
     // Загружаем шрифт Aclonica для текста на монетах ПЕРЕД созданием CoinManager
     // Очищаем кеш и ждем полной загрузки шрифта
     this.aclonicaText = new AclonicaText();
@@ -150,6 +141,37 @@ export class SlotMachine {
     await this.coinManager.initIndicators();
     // Инициализируем индикаторы рилов
     await this.coinManager.initReelIndicators();
+    
+    // Инициализируем менеджер коллекторов
+    // Передаем aclonicaText для отображения текста значений
+    this.collectorManager = new CollectorManager(this.config, this.app, this.spineContainer, this.reelsContainer, this.aclonicaText);
+    // Загружаем конфиг коллектора
+    await this.collectorManager.loadConfig();
+    // Синхронизируем с reelsContainer для учета сдвига от дебаггера
+    this.collectorManager.syncWithReelsContainer(this.reelsContainer);
+    
+    // Устанавливаем callback для поезда (первый перелет)
+    if (this.collectEffect) {
+      this.collectEffect.setOnHitCallback(() => {
+        // Реакция поезда - проигрываем анимацию active
+        if (this.trainManager) {
+          this.trainManager.playActiveAnimation();
+        }
+        
+        // Реакция частиц - всплеск монет
+        if (this.particleSystem) {
+          this.particleSystem.triggerHitBurst();
+        }
+      });
+      
+      // Устанавливаем отдельный callback для коллектора (второй перелет)
+      this.collectEffect.setOnCollectorHitCallback(() => {
+        // Реакция коллектора - проигрываем анимацию train_to_mult
+        if (this.collectorManager && this.collectorManager.hasActiveCollectors()) {
+          this.collectorManager.playHitAnimation();
+        }
+      });
+    }
     
     // Инициализируем менеджер винлайнов
     if (this.config.spine && this.config.spine.winline && this.config.spine.winline.enabled) {
@@ -182,6 +204,11 @@ export class SlotMachine {
     // Передаем ссылку на reels в CoinManager для скрытия/показа спрайтовых монеток
     if (this.coinManager) {
       this.coinManager.setReels(this.reels);
+    }
+    
+    // Передаем ссылку на reels в CollectorManager для скрытия/показа спрайтовых коллекторов
+    if (this.collectorManager) {
+      this.collectorManager.setReels(this.reels);
     }
     
     // Инициализируем отладчик позиции (если включен в конфиге)
@@ -502,6 +529,11 @@ export class SlotMachine {
       this.coinManager.hideAllReelIndicators();
     }
     
+    // Скрываем все коллекторы перед новым спином
+    if (this.collectorManager) {
+      this.collectorManager.hideAllCollectors();
+    }
+    
     // Получаем матрицу результатов из сценария (если есть)
     // Важно: получаем ПЕРЕД nextSpin(), чтобы использовать правильный спин
     let scenarioData = null;
@@ -538,9 +570,10 @@ export class SlotMachine {
     // Важно: делаем это ПЕРЕД nextSpin()
     const winLines = this.scenarios.getCurrentWinLines();
     const events = this.scenarios.getCurrentEvents();
-    const scenarioData = this.scenarios.getCurrentMatrix(); // Теперь это объект { matrix, coinValues }
+    const scenarioData = this.scenarios.getCurrentMatrix(); // Теперь это объект { matrix, coinValues, collectorValue }
     const currentMatrix = scenarioData?.matrix || scenarioData; // Поддержка старого формата - просто массив
     const coinValues = scenarioData?.coinValues || null;
+    const collectorValue = scenarioData?.collectorValue || null;
     
     // Устанавливаем флаги в CoinManager
     if (this.coinManager) {
@@ -620,6 +653,32 @@ export class SlotMachine {
           this.coinManager.hideIndicator(reelIndex);
           // Скрываем индикатор рила если нет монетки
           this.coinManager.hideReelIndicator(reelIndex);
+        }
+      }
+    }
+    
+    // Проверяем матрицу на наличие коллекторов (индекс 10) и показываем их
+    if (this.collectorManager && currentMatrix && Array.isArray(currentMatrix)) {
+      // currentMatrix[position][reelIndex]
+      // position: 0 = верхний видимый, 1 = средний, 2 = нижний видимый
+      // В сетке: positionIndex 0 = нижний, 1 = средний, 2 = верхний
+      for (let reelIndex = 0; reelIndex < this.config.reels.count; reelIndex++) {
+        // Берем значение коллектора из сценария (как для монеток)
+1        // Если collectorValue не указан, используем 0 (как fallback)
+        const value = collectorValue !== null && collectorValue !== undefined ? collectorValue : 0;
+        console.log(`SlotMachine: Collector value from scenario: ${collectorValue}, using: ${value}`);
+        
+        // Проверяем нижний видимый (currentMatrix[2]) -> positionIndex 0
+        if (currentMatrix[2] && currentMatrix[2][reelIndex] === 10) {
+          this.collectorManager.showCollector(reelIndex, 0, value);
+        }
+        // Проверяем средний (currentMatrix[1]) -> positionIndex 1
+        if (currentMatrix[1] && currentMatrix[1][reelIndex] === 10) {
+          this.collectorManager.showCollector(reelIndex, 1, value);
+        }
+        // Проверяем верхний видимый (currentMatrix[0]) -> positionIndex 2
+        if (currentMatrix[0] && currentMatrix[0][reelIndex] === 10) {
+          this.collectorManager.showCollector(reelIndex, 2, value);
         }
       }
     }
