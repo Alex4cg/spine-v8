@@ -2,11 +2,12 @@ import { SpineAnimation } from './SpineAnimation.js';
 import { AclonicaText } from './AclonicaText.js';
 
 export class CoinManager {
-  constructor(config, app, container, indicatorsContainer, aclonicaText = null, collectEffect = null) {
+  constructor(config, app, container, indicatorsContainer, aclonicaText = null, collectEffect = null, reelsContainer = null) {
     this.config = config;
     this.app = app;
     this.container = container; // Контейнер для монеток (spineContainer)
     this.indicatorsContainer = indicatorsContainer; // Контейнер для индикаторов (coinIndicatorsContainer, дочерний reelsContainer)
+    this.reelsContainerForIndicators = reelsContainer; // Контейнер для индикаторов рилов (reelsContainer, чтобы были под символами)
     this.coinSpines = {}; // Пул Spine: { "reelIndex_positionIndex": SpineAnimation }
     this.activeCoins = new Set(); // Активные позиции монеток
     this.reelsContainer = null; // Ссылка на контейнер рилов для синхронизации позиции (для монеток)
@@ -16,6 +17,8 @@ export class CoinManager {
     this.coinTextSprites = {}; // Пул текстовых спрайтов: { "reelIndex_positionIndex": PIXI.Sprite }
     this.reels = null; // Массив SlotReel для скрытия/показа спрайтовых монеток
     this.collectEffect = collectEffect; // Ссылка на CollectEffect для проигрывания анимации при событии start_flight
+    this.hasWinLines = false; // Флаг наличия выигрышных линий (для определения поведения после полета монетки)
+    this.reelIndicators = {}; // Пул индикаторов рилов: { "reelIndex": SpineAnimation }
   }
 
   /**
@@ -37,7 +40,8 @@ export class CoinManager {
 
   /**
    * Обновляет позиции всех созданных монеток (при изменении сдвига reelsContainer)
-   * Индикаторы не нужно обновлять - они в контейнере, который позиционируется через дебаггер
+   * Индикаторы монеток не нужно обновлять - они в контейнере, который позиционируется через дебаггер
+   * Индикаторы рилов обновляются, так как они используют абсолютные координаты
    */
   updateAllCoinPositions() {
     // Обновляем монетки (они используют абсолютные координаты с учетом offset)
@@ -50,8 +54,11 @@ export class CoinManager {
       }
     });
     
-    // Индикаторы не нужно обновлять - они в контейнере, который позиционируется через дебаггер
-    // X позиции индикаторов всегда одинаковые относительно контейнера (центр рила)
+    // Обновляем позиции индикаторов рилов
+    this.updateReelIndicatorsPosition();
+    
+    // Индикаторы монеток не нужно обновлять - они в контейнере, который позиционируется через дебаггер
+    // X позиции индикаторов монеток всегда одинаковые относительно контейнера (центр рила)
   }
 
   /**
@@ -170,6 +177,30 @@ export class CoinManager {
   }
 
   /**
+   * Вычисляет позицию для индикатора рила (центр средней линии)
+   * @param {number} reelIndex - Индекс рила (0, 1, 2)
+   * @returns {object} {x, y} - Координаты центра средней линии
+   */
+  getReelIndicatorPosition(reelIndex) {
+    const startX = this.config.startPosition.x;
+    const startY = this.config.startPosition.y;
+    const symbolWidth = this.config.symbolSize.width;
+    const symbolHeight = this.config.symbolSize.height;
+    
+    // Учитываем сдвиг от дебаггера
+    const offsetX = this.reelsContainer ? this.reelsContainer.x : 0;
+    const offsetY = this.reelsContainer ? this.reelsContainer.y : 0;
+    
+    // X: центр рила
+    const x = startX + (reelIndex * symbolWidth) + (symbolWidth / 2) + offsetX;
+    
+    // Y: центр средней линии (positionIndex 1) + смещение на 22 пикселя вверх
+    const y = startY + (1 * symbolHeight) + (symbolHeight / 2) + offsetY - 22;
+    
+    return { x, y };
+  }
+
+  /**
    * Вычисляет статичную позицию для монетки на сетке (с учетом сдвига от дебаггера)
    * @param {number} reelIndex - Индекс рила (0, 1, 2)
    * @param {number} positionIndex - Индекс позиции (0=нижний, 1=средний, 2=верхний видимый)
@@ -201,9 +232,9 @@ export class CoinManager {
    * @param {number} reelIndex - Индекс рила (0, 1, 2)
    * @param {number} positionIndex - Индекс позиции (0=нижний, 1=средний, 2=верхний)
    * @param {string} skin - Имя скина ('regular', 'mini', 'midi', 'major', 'grand')
-   * @param {string} value - Значение монетки для отображения (например, "5.00")
+   * @param {string} value - Значение монетки для отображения (например, "5х")
    */
-  async showCoin(reelIndex, positionIndex, skin = 'regular', value = '5.00') {
+  async showCoin(reelIndex, positionIndex, skin = 'regular', value = '5х') {
     const key = `${reelIndex}_${positionIndex}`;
 
     // Скрываем спрайтовую монетку на риле
@@ -285,6 +316,9 @@ export class CoinManager {
     // Запускаем последовательность анимаций: shot -> idle
     const coinSpine = this.coinSpines[key];
     if (coinSpine && coinSpine.spine) {
+      // Сохраняем reelIndex и positionIndex в coinSpine для использования в callback
+      coinSpine.reelIndex = reelIndex;
+      coinSpine.positionIndex = positionIndex;
       this.playCoinAnimationSequence(coinSpine);
     }
 
@@ -317,8 +351,31 @@ export class CoinManager {
               y: container.y
             };
             
-            // Проигрываем анимацию hit_coin в collect effect (async, но не ждем завершения)
-            this.collectEffect.playHitCoin(startPosition).catch(err => {
+            // Получаем reelIndex и positionIndex из coinSpine (сохранены в showCoin)
+            const reelIndex = coinSpine.reelIndex;
+            const positionIndex = coinSpine.positionIndex;
+            
+            // Создаем callback для завершения анимации hit_coin
+            const coinKey = `${reelIndex}_${positionIndex}`;
+            // Сохраняем ссылку на coinSpine для использования в callback
+            const coinSpineRef = coinSpine;
+            const onFlightComplete = () => {
+              console.log(`CoinManager: Flight completed for coin at ${coinKey}, hasWinLines: ${this.hasWinLines}`);
+              
+              if (this.hasWinLines) {
+                // Если есть выигрышные линии - скрываем Spine монетку и показываем спрайт на риле
+                this.hideCoin(reelIndex, positionIndex);
+              } else {
+                // Если нет выигрышных линий - переключаем монетку на idle в цикле
+                if (coinSpineRef && coinSpineRef.spine && coinSpineRef.spine.state) {
+                  coinSpineRef.spine.state.setAnimation(0, 'idle', true);
+                  console.log(`CoinManager: No win lines, switching coin at ${coinKey} to idle loop`);
+                }
+              }
+            };
+            
+            // Проигрываем анимацию hit_coin в collect effect с callback
+            this.collectEffect.playHitCoin(startPosition, onFlightComplete).catch(err => {
               console.error('CoinManager: Error playing hit_coin:', err);
             });
             console.log(`CoinManager: start_flight event triggered, playing hit_coin at (${startPosition.x}, ${startPosition.y})`);
@@ -342,10 +399,10 @@ export class CoinManager {
   /**
    * Прикрепляет текст к монете через Spine slot
    * @param {SpineAnimation} coinSpine - Spine анимация монеты
-   * @param {string} value - Значение для отображения (например, "5.00")
+   * @param {string} value - Значение для отображения (например, "5х")
    * @param {string} key - Ключ монетки для сохранения ссылки на спрайт текста
    */
-  attachTextToCoin(coinSpine, value = '5.00', key) {
+  attachTextToCoin(coinSpine, value = '5х', key) {
     if (!coinSpine || !coinSpine.spine) {
       console.warn('CoinManager: Cannot attach text - coin spine not loaded');
       return;
@@ -400,17 +457,25 @@ export class CoinManager {
     }
     
     if (this.coinSpines[key]) {
-      const container = this.coinSpines[key].getContainer();
-      container.visible = false;
-      
-      // Удаляем текст из слота (если есть)
       const coinSpine = this.coinSpines[key];
-      if (coinSpine && coinSpine.spine) {
+      
+      // Очищаем все треки анимации перед скрытием (чтобы избежать ошибок в validateAttachments)
+      if (coinSpine && coinSpine.spine && coinSpine.spine.state) {
         try {
+          // Очищаем все треки
+          coinSpine.spine.state.clearTracks();
+          
+          // Удаляем текст из слота (если есть)
           coinSpine.spine.removeSlotObject('text_holder');
         } catch (e) {
-          // Игнорируем ошибки, если объекта уже нет
+          console.warn(`CoinManager: Error cleaning up coin Spine at ${key}:`, e);
         }
+      }
+      
+      // Скрываем контейнер
+      const container = coinSpine.getContainer();
+      if (container) {
+        container.visible = false;
       }
       
       // Удаляем ссылку на текстовый спрайт
@@ -436,6 +501,148 @@ export class CoinManager {
   }
 
   /**
+   * Устанавливает флаг наличия выигрышных линий
+   * @param {boolean} hasWinLines - true если есть выигрышные линии
+   */
+  setHasWinLines(hasWinLines) {
+    this.hasWinLines = hasWinLines;
+  }
+
+  /**
+   * Проверяет, есть ли активные монетки на экране
+   * @returns {boolean} true если есть активные монетки
+   */
+  hasActiveCoins() {
+    return this.activeCoins.size > 0;
+  }
+
+  /**
+   * Инициализирует индикаторы рилов (coin_indicator_reel)
+   * По одному индикатору на рил, центр в центре средней линии
+   */
+  async initReelIndicators() {
+    // Проверяем наличие контейнера для индикаторов рилов
+    if (!this.reelsContainerForIndicators) {
+      console.warn('CoinManager: reelsContainer not provided, cannot initialize reel indicators');
+      return;
+    }
+
+    // Создаем индикатор для каждого рила
+    for (let reelIndex = 0; reelIndex < this.config.reels.count; reelIndex++) {
+      const position = this.getReelIndicatorPosition(reelIndex);
+      
+      const reelIndicatorSpine = new SpineAnimation(
+        this.config,
+        this.app,
+        this.reelsContainerForIndicators, // Добавляем в reelsContainer, чтобы были под символами
+        'coin_indicator_reel',
+        null, // без начальной анимации
+        false
+      );
+
+      const loaded = await reelIndicatorSpine.load();
+      if (!loaded) {
+        console.warn(`CoinManager: Failed to load coin_indicator_reel Spine for reel ${reelIndex}`);
+        continue;
+      }
+
+      // Устанавливаем позицию (центр средней линии)
+      reelIndicatorSpine.setPosition(position.x, position.y);
+
+      // Устанавливаем zIndex под символами
+      const container = reelIndicatorSpine.getContainer();
+      container.zIndex = 95; // Под символами (100), но над винлайнами (99)
+      container.visible = false; // Изначально скрыты
+
+      this.reelIndicators[reelIndex] = reelIndicatorSpine;
+    }
+
+    console.log(`CoinManager: Initialized ${Object.keys(this.reelIndicators).length} reel indicators`);
+  }
+
+  /**
+   * Показывает индикатор рила (проигрывает in, затем idle в цикле)
+   * @param {number} reelIndex - Индекс рила (0, 1, 2)
+   */
+  showReelIndicator(reelIndex) {
+    if (!this.reelIndicators[reelIndex]) {
+      console.warn(`CoinManager: Reel indicator for reel ${reelIndex} not initialized`);
+      return;
+    }
+
+    const indicator = this.reelIndicators[reelIndex];
+    const container = indicator.getContainer();
+    container.visible = true;
+
+    // Запускаем анимацию появления (in), затем переключаемся на idle
+    if (indicator.spine && indicator.spine.state) {
+      const trackEntry = indicator.spine.state.setAnimation(0, 'in', false);
+      
+      if (trackEntry) {
+        trackEntry.listener = {
+          complete: () => {
+            // После завершения 'in' переключаемся на 'idle' в цикле
+            if (indicator.spine && indicator.spine.state) {
+              indicator.spine.state.setAnimation(0, 'idle', true);
+            }
+          }
+        };
+      }
+    }
+
+    console.log(`CoinManager: Showing reel indicator for reel ${reelIndex}`);
+  }
+
+  /**
+   * Скрывает индикатор рила (резко, без анимации)
+   * @param {number} reelIndex - Индекс рила (0, 1, 2)
+   */
+  hideReelIndicator(reelIndex) {
+    if (this.reelIndicators[reelIndex]) {
+      const container = this.reelIndicators[reelIndex].getContainer();
+      container.visible = false;
+      // Останавливаем анимацию
+      if (this.reelIndicators[reelIndex].spine && this.reelIndicators[reelIndex].spine.state) {
+        this.reelIndicators[reelIndex].spine.state.clearTracks();
+      }
+      console.log(`CoinManager: Hiding reel indicator for reel ${reelIndex}`);
+    }
+  }
+
+  /**
+   * Скрывает все индикаторы рилов
+   */
+  hideAllReelIndicators() {
+    Object.keys(this.reelIndicators).forEach(reelIndex => {
+      this.hideReelIndicator(Number(reelIndex));
+    });
+  }
+
+  /**
+   * Обновляет позиции индикаторов рилов (вызывается при изменении позиции reelsContainer)
+   */
+  updateReelIndicatorsPosition() {
+    Object.keys(this.reelIndicators).forEach(reelIndex => {
+      const indicator = this.reelIndicators[reelIndex];
+      const position = this.getReelIndicatorPosition(Number(reelIndex));
+      indicator.setPosition(position.x, position.y);
+    });
+  }
+
+  /**
+   * Устанавливает прозрачность всех видимых индикаторов рилов
+   * @param {number} alpha - Значение прозрачности (0-1)
+   */
+  setReelIndicatorsAlpha(alpha) {
+    Object.values(this.reelIndicators).forEach(indicator => {
+      const container = indicator.getContainer();
+      if (container && container.visible) {
+        container.alpha = alpha;
+      }
+    });
+  }
+
+  /**
    * Уничтожает все Spine монетки
    */
   destroy() {
@@ -448,6 +655,16 @@ export class CoinManager {
     this.coinSpines = {};
     this.activeCoins.clear();
     this.coinTextSprites = {};
+    
+    // Уничтожаем индикаторы рилов
+    Object.values(this.reelIndicators).forEach(indicator => {
+      const container = indicator.getContainer();
+      if (container.parent) {
+        container.parent.removeChild(container);
+      }
+    });
+    this.reelIndicators = {};
+    
   }
 }
 

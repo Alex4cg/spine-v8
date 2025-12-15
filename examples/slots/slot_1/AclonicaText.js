@@ -16,28 +16,54 @@ export class AclonicaText {
     // Очищаем кеш, чтобы не использовать старые текстуры с неправильным шрифтом
     this.clearCache();
     
-    // Ждем загрузки шрифта
+    // Явно загружаем шрифт через Font Loading API
+    try {
+      await document.fonts.load('400 45px "Aclonica"');
+    } catch (e) {
+      console.warn('AclonicaText: Ошибка при явной загрузке шрифта:', e);
+    }
+    
+    // Ждем готовности всех шрифтов
     await document.fonts.ready;
     
-    // "Активируем" шрифт для Canvas - создаем временный элемент с шрифтом
-    // Это помогает Canvas "увидеть" загруженный шрифт
-    const activator = document.createElement('div');
-    activator.style.fontFamily = 'Aclonica';
-    activator.style.fontSize = '45px';
-    activator.style.position = 'absolute';
-    activator.style.visibility = 'hidden';
-    activator.style.left = '-9999px';
-    activator.textContent = '100';
-    document.body.appendChild(activator);
+    // Проверяем загрузку в цикле с таймаутом (более надежно)
+    const maxAttempts = 50; // 5 секунд максимум (50 * 100ms)
+    let attempts = 0;
     
-    // Ждем один кадр, чтобы браузер применил шрифт
-    await new Promise(resolve => requestAnimationFrame(resolve));
+    while (attempts < maxAttempts) {
+      const isLoaded = document.fonts.check('400 45px "Aclonica"');
+      if (isLoaded) {
+        console.log('AclonicaText: Шрифт загружен и проверен, попытка:', attempts + 1);
+        
+        // "Активируем" шрифт для Canvas - создаем временный элемент с шрифтом
+        // Это помогает Canvas "увидеть" загруженный шрифт
+        const activator = document.createElement('div');
+        activator.style.fontFamily = 'Aclonica';
+        activator.style.fontSize = '45px';
+        activator.style.position = 'absolute';
+        activator.style.visibility = 'hidden';
+        activator.style.left = '-9999px';
+        activator.textContent = '100';
+        document.body.appendChild(activator);
+        
+        // Ждем несколько кадров для надежности
+        await new Promise(resolve => requestAnimationFrame(resolve));
+        await new Promise(resolve => requestAnimationFrame(resolve));
+        
+        document.body.removeChild(activator);
+        
+        // Финальная проверка
+        const finalCheck = document.fonts.check('400 45px "Aclonica"');
+        console.log('AclonicaText: Финальная проверка шрифта:', finalCheck);
+        return;
+      }
+      
+      // Ждем 100ms перед следующей попыткой
+      await new Promise(resolve => setTimeout(resolve, 100));
+      attempts++;
+    }
     
-    document.body.removeChild(activator);
-    
-    // Проверяем, что шрифт доступен
-    const isLoaded = document.fonts.check('400 45px "Aclonica"');
-    console.log('AclonicaText: Шрифт загружен и активирован, проверка:', isLoaded);
+    console.warn('AclonicaText: Шрифт не загрузился за отведенное время, будет использован fallback');
   }
   
   /**
@@ -72,8 +98,8 @@ export class AclonicaText {
     // Настройка шрифта Aclonica
     // В Canvas font синтаксис: [font-style] [font-weight] font-size font-family
     // Явно указываем font-weight 400 для Regular версии
-    // НЕ используем fallback sans-serif, чтобы не подхватывался Montserrat
-    ctx.font = `400 ${fontSize}px "Aclonica"`;
+    // Добавляем fallback для надежности (если Aclonica не загрузился)
+    ctx.font = `400 ${fontSize}px "Aclonica", sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     
@@ -93,7 +119,7 @@ export class AclonicaText {
     const centerY = canvas.height / 2;
     
     // Переустанавливаем шрифт после изменения размера canvas
-    ctx.font = `400 ${fontSize}px "Aclonica"`;
+    ctx.font = `400 ${fontSize}px "Aclonica", sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     
@@ -172,7 +198,7 @@ export class AclonicaText {
         ctx.drawImage(img, 0, 0);
         
         // Рисуем текст поверх
-        ctx.font = `400 ${fontSize}px "Aclonica"`;
+        ctx.font = `400 ${fontSize}px "Aclonica", sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillStyle = color;

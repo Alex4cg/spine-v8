@@ -62,7 +62,7 @@ export const SLOT_CONFIG = {
     'l3_lemon.png',
     'l4_cherry.png',
     'regular_coin_empty.png',
-    'wild.png'
+    'wild.png',
   ],
   
   // Массив загруженных текстур (заполняется автоматически)

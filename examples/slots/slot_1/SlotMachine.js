@@ -25,6 +25,7 @@ export class SlotMachine {
     
     this.reelsContainer = new PIXI.Container();
     this.reelsContainer.zIndex = 100;
+    this.reelsContainer.sortableChildren = true; // Включаем сортировку для работы zIndex у дочерних элементов (символы и индикаторы рилов)
     this.app.stage.addChild(this.reelsContainer);
     
     // Контейнер для эффектов поверх символов
@@ -141,11 +142,14 @@ export class SlotMachine {
     // Инициализируем менеджер монеток
     // Монетки добавляются в spineContainer, индикаторы - в coinIndicatorsContainer
     // Передаем уже загруженный aclonicaText и ссылку на collectEffect
-    this.coinManager = new CoinManager(this.config, this.app, this.spineContainer, this.coinIndicatorsContainer, this.aclonicaText, this.collectEffect);
+    // Также передаем reelsContainer для индикаторов рилов (чтобы были под символами)
+    this.coinManager = new CoinManager(this.config, this.app, this.spineContainer, this.coinIndicatorsContainer, this.aclonicaText, this.collectEffect, this.reelsContainer);
     // Синхронизируем с reelsContainer для учета сдвига от дебаггера (для монеток)
     this.coinManager.syncWithReelsContainer(this.reelsContainer);
-    // Инициализируем статичные индикаторы
+    // Инициализируем статичные индикаторы монеток
     await this.coinManager.initIndicators();
+    // Инициализируем индикаторы рилов
+    await this.coinManager.initReelIndicators();
     
     // Инициализируем менеджер винлайнов
     if (this.config.spine && this.config.spine.winline && this.config.spine.winline.enabled) {
@@ -156,6 +160,11 @@ export class SlotMachine {
       // Позиционирование винлайнов будет выполнено после загрузки дебаггера
       // чтобы они получили тот же сдвиг, что и игровое поле
       this.winLineManager.syncWithReelsContainer(this.reelsContainer, this);
+      
+      // Передаем ссылку на CoinManager для управления прозрачностью индикаторов рилов
+      if (this.coinManager) {
+        this.winLineManager.setCoinManager(this.coinManager);
+      }
       
       // Передаем ссылку на winFrameAnimation и reels для синхронизации
       // Это делается после initReels(), поэтому вызовем позже
@@ -490,6 +499,7 @@ export class SlotMachine {
     if (this.coinManager) {
       this.coinManager.hideAllCoins();
       this.coinManager.hideAllIndicators();
+      this.coinManager.hideAllReelIndicators();
     }
     
     // Получаем матрицу результатов из сценария (если есть)
@@ -531,6 +541,11 @@ export class SlotMachine {
     const currentMatrix = scenarioData?.matrix || scenarioData; // Поддержка старого формата - просто массив
     const coinValues = scenarioData?.coinValues || null;
     
+    // Устанавливаем флаги в CoinManager
+    if (this.coinManager) {
+      this.coinManager.setHasWinLines(winLines && winLines.length > 0);
+    }
+    
     // Проверяем матрицу на наличие монеток (индекс 8) и показываем их
     if (this.coinManager && currentMatrix && Array.isArray(currentMatrix)) {
       // currentMatrix[position][reelIndex]
@@ -542,27 +557,34 @@ export class SlotMachine {
         // Проверяем нижний видимый (currentMatrix[2]) -> positionIndex 0
         if (currentMatrix[2] && currentMatrix[2][reelIndex] === 8) {
           const coinValue = coinValues && coinValues[2] ? coinValues[2][reelIndex] : null;
-          this.coinManager.showCoin(reelIndex, 0, 'regular', coinValue !== null ? coinValue.toFixed(2) : '5.00');
+          const formattedValue = coinValue !== null ? `${Math.round(coinValue)}х` : '5х';
+          this.coinManager.showCoin(reelIndex, 0, 'regular', formattedValue);
           hasCoin = true;
         }
         // Проверяем средний (currentMatrix[1]) -> positionIndex 1
         if (currentMatrix[1] && currentMatrix[1][reelIndex] === 8) {
           const coinValue = coinValues && coinValues[1] ? coinValues[1][reelIndex] : null;
-          this.coinManager.showCoin(reelIndex, 1, 'regular', coinValue !== null ? coinValue.toFixed(2) : '5.00');
+          const formattedValue = coinValue !== null ? `${Math.round(coinValue)}х` : '5х';
+          this.coinManager.showCoin(reelIndex, 1, 'regular', formattedValue);
           hasCoin = true;
         }
         // Проверяем верхний видимый (currentMatrix[0]) -> positionIndex 2
         if (currentMatrix[0] && currentMatrix[0][reelIndex] === 8) {
           const coinValue = coinValues && coinValues[0] ? coinValues[0][reelIndex] : null;
-          this.coinManager.showCoin(reelIndex, 2, 'regular', coinValue !== null ? coinValue.toFixed(2) : '5.00');
+          const formattedValue = coinValue !== null ? `${Math.round(coinValue)}х` : '5х';
+          this.coinManager.showCoin(reelIndex, 2, 'regular', formattedValue);
           hasCoin = true;
         }
         
-        // Показываем или скрываем индикатор под рилом
+        // Показываем или скрываем индикатор монетки под рилом
         if (hasCoin) {
           this.coinManager.showIndicator(reelIndex);
+          // Показываем индикатор рила (coin_indicator_reel) только если есть монетка
+          this.coinManager.showReelIndicator(reelIndex);
         } else {
           this.coinManager.hideIndicator(reelIndex);
+          // Скрываем индикатор рила если нет монетки
+          this.coinManager.hideReelIndicator(reelIndex);
         }
       }
     }
@@ -575,15 +597,54 @@ export class SlotMachine {
     // Показываем винлайны (если есть)
     // Winframes будут показаны автоматически внутри WinLineManager
     if (winLines && winLines.length > 0 && this.winLineManager) {
-      // Небольшая задержка перед показом винлайнов
-      setTimeout(async () => {
-        await this.winLineManager.showWinLines(winLines);
-      }, 100);
+      // Проверяем, есть ли монетки на экране
+      const hasCoins = this.coinManager && this.coinManager.hasActiveCoins();
+      
+      if (hasCoins) {
+        // Если есть монетки, ждем завершения их полета и добавляем задержку 0.5 секунды
+        console.log('SlotMachine: Coins detected, waiting for flight completion before showing win lines');
+        this.waitForCoinFlightsAndShowWinLines(winLines);
+      } else {
+        // Если монеток нет, показываем винлайны с небольшой задержкой
+        setTimeout(async () => {
+          await this.winLineManager.showWinLines(winLines);
+        }, 100);
+      }
     }
     
     if (this.onSpinComplete) {
       this.onSpinComplete();
     }
+  }
+
+  /**
+   * Ждет завершения полетов монеток и показывает винлайны с задержкой 0.5 секунды
+   * @param {Array<number>} winLines - Массив номеров выигрышных линий
+   */
+  waitForCoinFlightsAndShowWinLines(winLines) {
+    const checkInterval = 50; // Проверяем каждые 50мс
+    const maxWaitTime = 5000; // Максимальное время ожидания 5 секунд
+    const delayAfterFlights = 500; // Задержка 0.5 секунды после завершения полетов
+    let elapsedTime = 0;
+
+    const checkFlights = () => {
+      const hasActiveFlights = this.collectEffect && this.collectEffect.hasActiveFlights();
+      
+      if (!hasActiveFlights || elapsedTime >= maxWaitTime) {
+        // Все полеты завершены или превышено время ожидания
+        console.log(`SlotMachine: Coin flights completed (or timeout), showing win lines after ${delayAfterFlights}ms delay`);
+        setTimeout(async () => {
+          await this.winLineManager.showWinLines(winLines);
+        }, delayAfterFlights);
+      } else {
+        // Продолжаем проверку
+        elapsedTime += checkInterval;
+        setTimeout(checkFlights, checkInterval);
+      }
+    };
+
+    // Начинаем проверку
+    setTimeout(checkFlights, checkInterval);
   }
   
   reset() {

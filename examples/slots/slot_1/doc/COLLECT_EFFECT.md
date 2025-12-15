@@ -134,3 +134,4 @@ this.collectEffect.setOnHitCallback(() => {
 this.collectEffect.playHitCoin(startPosition);
 ```
 
+

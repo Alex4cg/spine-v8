@@ -1,7 +1,7 @@
 [
   {
-    "matrix": [[2, 5, 0], [1, 3, 7], [4, 6, 1]],
-    "winLines": []
+    "matrix": [[1, 1, 1], [1, 3, 7], [4, 6, 1]],
+    "winLines": [1]
   },
   {
     "matrix": [[0, 3, 6], [8, 5, 0], [1, 4, 7]],
@@ -16,7 +16,7 @@
   {
     "matrix": [[1, 1, 1], [1, 1, 8], [2, 5, 0]],
     "coinValues": [[null, null, null], [null, null, 12.75], [null, null, null]],
-    "winLines": [1, 2]
+    "winLines": [1]
   },
   {
     "matrix": [[8, 1, 1], [1, 1, 1], [1, 1, 1]],
@@ -88,7 +88,7 @@
   {
     "matrix": [[8, 2, 8], [3, 5, 7], [0, 2, 4]],
     "coinValues": [[2.5, null, 14.0], [null, null, null], [null, null, null]],
-    "winLines": [1]
+    "winLines": []
   },
   {
     "matrix": [[6, 0, 1], [2, 4, 6], [0, 0, 3]],

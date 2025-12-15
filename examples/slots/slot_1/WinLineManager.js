@@ -17,6 +17,7 @@ export class WinLineManager {
     this.currentCycleEntry = null; // Текущий TrackEntry для цикла
     this.winFrameAnimation = null; // Ссылка на WinFrameAnimation для синхронизации
     this.reels = null; // Ссылка на рилы для winframes
+    this.coinManager = null; // Ссылка на CoinManager для управления индикаторами рилов
     this.miniWinText = null; // Экземпляр MiniWinText
     this.currentWinTextSprite = null; // Текущий контейнер с текстом и фоном
     this.winTextContainer = null; // Контейнер для текстов выигрышей
@@ -30,6 +31,13 @@ export class WinLineManager {
   setWinFrameAnimation(winFrameAnimation, reels) {
     this.winFrameAnimation = winFrameAnimation;
     this.reels = reels;
+  }
+
+  /**
+   * Устанавливает ссылку на CoinManager для управления индикаторами рилов
+   */
+  setCoinManager(coinManager) {
+    this.coinManager = coinManager;
   }
   
   async init() {
@@ -106,6 +114,135 @@ export class WinLineManager {
       5: 1  // Диагональ сверху-вниз (третий ряд)
     };
     return lineMap[lineNumber] !== undefined ? lineMap[lineNumber] : 1;
+  }
+
+  /**
+   * Получает массив символов, входящих в линию
+   * @param {number} lineNumber - Номер линии (1-5)
+   * @returns {Array<{reelIndex: number, positionIndex: number}>} Массив символов линии
+   * 
+   * Маппинг исправлен согласно реальной структуре матрицы:
+   * В коде: matrix[0] = верхний ряд (positionIndex 2), matrix[1] = средний (positionIndex 1), matrix[2] = нижний (positionIndex 0)
+   * positionIndex: 0 = нижний ряд, 1 = средний ряд, 2 = верхний ряд
+   */
+  getLineSymbols(lineNumber) {
+    const symbols = [];
+    
+    // ИСПРАВЛЕННЫЙ маппинг согласно реальной структуре матрицы
+    // Линия 1 = верхняя горизонталь (matrix[0] = positionIndex 2)
+    // Линия 2 = средняя горизонталь (matrix[1] = positionIndex 1)
+    // Линия 3 = нижняя горизонталь (matrix[2] = positionIndex 0)
+    const LINE_POSITIONS = {
+      1: [[0, 2], [1, 2], [2, 2]], // Верхняя горизонталь (matrix[0])
+      2: [[0, 1], [1, 1], [2, 1]], // Средняя горизонталь (matrix[1])
+      3: [[0, 0], [1, 0], [2, 0]], // Нижняя горизонталь (matrix[2])
+      4: [[0, 2], [1, 1], [2, 0]], // Диагональ сверху-вниз (matrix[0] -> matrix[1] -> matrix[2])
+      5: [[0, 0], [1, 1], [2, 2]]  // Диагональ снизу-вверх (matrix[2] -> matrix[1] -> matrix[0])
+    };
+    
+    const positions = LINE_POSITIONS[lineNumber];
+    if (!positions) {
+      return symbols;
+    }
+    
+    // Преобразуем формат [[reelIndex, positionIndex], ...] в [{reelIndex, positionIndex}, ...]
+    positions.forEach(([reelIndex, positionIndex]) => {
+      symbols.push({
+        reelIndex: reelIndex,
+        positionIndex: positionIndex
+      });
+    });
+    
+    return symbols;
+  }
+
+  /**
+   * Получает массив символов для нескольких линий
+   * @param {Array<number>} lineNumbers - Массив номеров линий (1-5)
+   * @returns {Array<{reelIndex: number, positionIndex: number}>} Массив всех символов линий
+   */
+  getLinesSymbols(lineNumbers) {
+    const allSymbols = [];
+    const seen = new Set(); // Для исключения дубликатов
+    
+    lineNumbers.forEach(lineNumber => {
+      const lineSymbols = this.getLineSymbols(lineNumber);
+      lineSymbols.forEach(symbol => {
+        const key = `${symbol.reelIndex}_${symbol.positionIndex}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          allSymbols.push(symbol);
+        }
+      });
+    });
+    
+    return allSymbols;
+  }
+
+  /**
+   * Применяет затемнение ко всем символам, кроме указанных линий
+   * @param {Array<number>} activeLineNumbers - Массив номеров активных линий
+   */
+  applyDarkeningToNonLineSymbols(activeLineNumbers) {
+    if (!this.reels || !Array.isArray(this.reels) || activeLineNumbers.length === 0) {
+      return;
+    }
+
+    // Сначала убираем затемнение со всех символов
+    this.removeDarkeningFromAllSymbols();
+
+    // Получаем символы, которые НЕ должны быть затемнены (входят в активные линии)
+    const activeSymbols = this.getLinesSymbols(activeLineNumbers);
+    const activeKeys = new Set(activeSymbols.map(s => `${s.reelIndex}_${s.positionIndex}`));
+    
+    console.log(`WinLineManager: Active lines: [${activeLineNumbers.join(', ')}]`);
+    console.log(`WinLineManager: Active symbols (should NOT be darkened):`, activeSymbols);
+    console.log(`WinLineManager: Active keys:`, Array.from(activeKeys));
+    
+    // Затемняем все символы, КРОМЕ активных
+    const reelCount = this.config.reels.count;
+    const positionCount = this.config.reels.symbolsPerReel; // Обычно 3
+    
+    for (let reelIndex = 0; reelIndex < reelCount; reelIndex++) {
+      const reel = this.reels[reelIndex];
+      if (!reel) continue;
+      
+      // Определяем, какие позиции нужно затемнить на этом риле
+      // Затемняем символы, которые НЕ входят в активные линии
+      const positionsToDarken = [];
+      const positionsToKeepBright = [];
+      for (let positionIndex = 0; positionIndex < positionCount; positionIndex++) {
+        const key = `${reelIndex}_${positionIndex}`;
+        if (!activeKeys.has(key)) {
+          // Затемняем символы, которые НЕ входят в активные линии
+          positionsToDarken.push(positionIndex);
+        } else {
+          positionsToKeepBright.push(positionIndex);
+        }
+      }
+      
+      console.log(`WinLineManager: Reel ${reelIndex} - Darken positions: [${positionsToDarken.join(', ')}], Keep bright: [${positionsToKeepBright.join(', ')}]`);
+      
+      // Применяем затемнение к позициям, которые НЕ входят в активные линии
+      if (positionsToDarken.length > 0) {
+        reel.applyDarkeningToVisible(positionsToDarken);
+      }
+    }
+  }
+
+  /**
+   * Убирает затемнение со всех символов
+   */
+  removeDarkeningFromAllSymbols() {
+    if (!this.reels || !Array.isArray(this.reels)) {
+      return;
+    }
+
+    this.reels.forEach(reel => {
+      if (reel && typeof reel.removeDarkeningFromAll === 'function') {
+        reel.removeDarkeningFromAll();
+      }
+    });
   }
   
   /**
@@ -427,6 +564,14 @@ export class WinLineManager {
       await this.createLineSpine(lineNumber);
     }
     
+    // Применяем затемнение ко всем символам, кроме активных линий
+    this.applyDarkeningToNonLineSymbols(this.activeLines);
+    
+    // Устанавливаем прозрачность индикаторов рилов на 70% (alpha = 0.3)
+    if (this.coinManager) {
+      this.coinManager.setReelIndicatorsAlpha(0.3);
+    }
+    
     // Этап 1: Показываем все линии вместе синхронно на разных треках (loop = false)
     this.showAllLinesTogether();
   }
@@ -602,6 +747,9 @@ export class WinLineManager {
     const spine = lineSpine.spine;
     const animationName = `animation${lineNumber}`;
     
+    // Применяем затемнение ко всем символам, кроме текущей линии
+    this.applyDarkeningToNonLineSymbols([lineNumber]);
+    
     // Запускаем анимацию на треке 0 (без зацикливания)
     spine.state.clearTrack(0);
     const trackEntry = spine.state.setAnimation(0, animationName, false);
@@ -661,6 +809,14 @@ export class WinLineManager {
     // Останавливаем все таймеры и слушатели
     this.stopCycling();
     this.removeAllTrackListeners();
+    
+    // Убираем затемнение со всех символов
+    this.removeDarkeningFromAllSymbols();
+    
+    // Возвращаем полную непрозрачность индикаторов рилов
+    if (this.coinManager) {
+      this.coinManager.setReelIndicatorsAlpha(1.0);
+    }
     
     // Останавливаем winframes
     if (this.winFrameAnimation) {

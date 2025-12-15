@@ -1,0 +1,51 @@
+{
+  "reelsContainer": {
+    "x": 0,
+    "y": 0,
+    "scale": 1,
+    "zIndex": 100
+  },
+  "train": {
+    "x": 960,
+    "y": 880,
+    "scale": 1,
+    "zIndex": 150
+  },
+  "logo": {
+    "x": 960,
+    "y": 540,
+    "scale": 1,
+    "zIndex": 250
+  },
+  "effectsContainer": {
+    "x": 0,
+    "y": 0,
+    "scale": 1,
+    "zIndex": 200
+  },
+  "bg_bg_desktop_reg": {
+    "x": 960,
+    "y": 540,
+    "scale": 1,
+    "zIndex": 10
+  },
+  "bg_field": {
+    "x": 960,
+    "y": 540,
+    "scale": 1,
+    "zIndex": 20
+  },
+  "bg_jp": {
+    "x": 960,
+    "y": 540,
+    "scale": 1,
+    "zIndex": 30
+  },
+  "bg_top": {
+    "x": 960,
+    "y": 540,
+    "scale": 1,
+    "zIndex": 40
+  }
+}
+

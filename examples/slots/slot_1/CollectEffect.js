@@ -160,8 +160,10 @@ export class CollectEffect {
    * Проигрывает анимацию hit_coin с установкой контрольных точек для кривой
    * Создает новый экземпляр Spine для каждого перелета, чтобы поддерживать множественные одновременные перелеты
    * @param {object} startPosition - Начальная позиция монетки {x, y} (мировые координаты)
+   * @param {Function} coinCallback - Callback при завершении анимации
+   * @param {object} customEndPosition - Кастомная конечная позиция {x, y} (если не указана, используется позиция поезда)
    */
-  async playHitCoin(startPosition = null) {
+  async playHitCoin(startPosition = null, coinCallback = null, customEndPosition = null) {
     if (!startPosition) {
       console.warn('CollectEffect: Start position not provided');
       return;
@@ -181,7 +183,12 @@ export class CollectEffect {
     // Получаем конечную позицию (позицию поезда)
     let endPosition = null;
     if (this.trainManager) {
-      endPosition = this.trainManager.getPosition();
+      // Используем позицию кости coin_target для точного попадания
+      endPosition = this.trainManager.getCoinTargetPosition();
+      // Fallback на позицию поезда, если кость не найдена
+      if (!endPosition) {
+        endPosition = this.trainManager.getPosition();
+      }
     }
 
     // Устанавливаем позиции контрольных точек для кривой перелета
@@ -194,13 +201,23 @@ export class CollectEffect {
     }
     
     // Проигрываем основную анимацию hit_coin на треке 0
-    this.playOnInstance(spineAnimation, 'hit_coin', 0, false);
+    const trackEntry = this.playOnInstance(spineAnimation, 'hit_coin', 0, false);
     
     // Одновременно запускаем start_effect на треке 1
     this.playOnInstance(spineAnimation, 'start_effect', 1, false);
     
     // Одновременно запускаем end_effect на треке 2
     this.playOnInstance(spineAnimation, 'end_effect', 2, false);
+    
+    // Сохраняем экземпляр перед добавлением слушателя
+    const flightData = {
+      spineAnimation,
+      container,
+      startPosition,
+      endPosition
+    };
+    
+    this.activeFlights.push(flightData);
     
     // Добавляем слушатель событий для этого экземпляра перелета
     if (spineAnimation.spine && spineAnimation.spine.state) {
@@ -214,34 +231,27 @@ export class CollectEffect {
               this.onHitCallback();
             }
           }
+        },
+        complete: (entry) => {
+          // Обработка завершения анимации hit_coin (трек 0)
+          if (entry.trackIndex === 0 && entry.animation && entry.animation.name === 'hit_coin') {
+            console.log('CollectEffect: Анимация hit_coin завершена');
+            
+            // Вызываем callback для скрытия монетки и показа спрайта
+            // Делаем это через setTimeout, чтобы дать время Spine завершить обработку
+            setTimeout(() => {
+              if (coinCallback) {
+                coinCallback();
+              }
+              // Удаляем экземпляр после завершения анимации
+              const index = this.activeFlights.indexOf(flightData);
+              if (index !== -1) {
+                this.removeFlightInstance(flightData);
+              }
+            }, 0);
+          }
         }
       });
-    }
-    
-    // Сохраняем экземпляр и настраиваем удаление после завершения анимации
-    const flightData = {
-      spineAnimation,
-      container,
-      startPosition,
-      endPosition
-    };
-    
-    this.activeFlights.push(flightData);
-    
-    // Находим длительность анимации hit_coin и удаляем экземпляр после её завершения
-    if (spineAnimation.spine && spineAnimation.spine.skeleton) {
-      const hitCoinAnim = spineAnimation.spine.skeleton.data.findAnimation('hit_coin');
-      if (hitCoinAnim) {
-        const duration = hitCoinAnim.duration;
-        setTimeout(() => {
-          this.removeFlightInstance(flightData);
-        }, duration * 1000 + 100); // +100мс запас
-      } else {
-        // Если не нашли длительность, удаляем через разумное время
-        setTimeout(() => {
-          this.removeFlightInstance(flightData);
-        }, 2000);
-      }
     }
   }
   
@@ -651,6 +661,14 @@ export class CollectEffect {
       }
     }
     this.debugGraphics = [];
+  }
+
+  /**
+   * Проверяет, есть ли активные полеты монеток
+   * @returns {boolean} true если есть активные полеты
+   */
+  hasActiveFlights() {
+    return this.activeFlights.length > 0;
   }
 
   /**

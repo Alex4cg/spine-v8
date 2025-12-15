@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Тест затемнения и окрашивания спрайтов</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+      background: #1a1a1a;
+      color: #fff;
+    }
+    
+    #controls {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 20px;
+      border-radius: 10px;
+      min-width: 250px;
+      z-index: 1000;
+    }
+    
+    .control-group {
+      margin-bottom: 20px;
+    }
+    
+    .control-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 14px;
+    }
+    
+    .slider-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    input[type="range"] {
+      flex: 1;
+      height: 6px;
+      background: #333;
+      border-radius: 3px;
+      outline: none;
+    }
+    
+    input[type="range"]::-webkit-slider-thumb {
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      background: #4CAF50;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    
+    input[type="range"]::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      background: #4CAF50;
+      border-radius: 50%;
+      cursor: pointer;
+      border: none;
+    }
+    
+    .value-display {
+      min-width: 50px;
+      text-align: right;
+      font-family: monospace;
+      font-size: 12px;
+      color: #4CAF50;
+    }
+    
+    button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    
+    button:hover {
+      background: #45a049;
+    }
+    
+    #canvas-container {
+      margin-top: 20px;
+    }
+    
+    .sprite-label {
+      position: absolute;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-size: 12px;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="controls">
+    <h3 style="margin-top: 0;">Настройка фильтров</h3>
+    
+    <div class="control-group">
+      <label>Затемнение (Darkness):</label>
+      <div class="slider-container">
+        <input type="range" id="darknessSlider" min="0" max="1" step="0.01" value="0.79">
+        <span class="value-display" id="darknessValue">0.79</span>
+      </div>
+    </div>
+    
+    <div class="control-group">
+      <label>Синий оттенок (Blue Tint):</label>
+      <div class="slider-container">
+        <input type="range" id="blueTintSlider" min="0" max="1" step="0.01" value="0.39">
+        <span class="value-display" id="blueTintValue">0.39</span>
+      </div>
+    </div>
+    
+    <button id="resetBtn">Сбросить</button>
+    <button id="applyBtn">Применить ко всем</button>
+  </div>
+
+  <div id="canvas-container"></div>
+
+  <!-- Подключаем PIXI.js из CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/pixi.js@latest/dist/pixi.min.js"></script>
+  
+  <script>
+    // Используем глобальный PIXI (уже доступен через CDN)
+    // Инициализация приложения
+    (async () => {
+    const app = new PIXI.Application();
+    await app.init({
+      width: 1200,
+      height: 800,
+      backgroundColor: 0x2a2a2a,
+      antialias: true
+    });
+    
+    document.getElementById('canvas-container').appendChild(app.canvas);
+    
+    // Загружаем текстуры символов из sym_st
+    const texturePaths = [
+      './sym_st/l1_watermelon.png',
+      './sym_st/l2_grape.png',
+      './sym_st/l3_lemon.png',
+      './sym_st/l4_cherry.png',
+      './sym_st/h1_diamond.png',
+      './sym_st/h2_gold.png',
+      './sym_st/h3_silver.png',
+      './sym_st/h4_copper.png',
+      './sym_st/regular_coin_empty.png', // монетка
+    ];
+    
+    // Пробуем загрузить текстуры, если не получается - используем белые квадраты
+    const textures = [];
+    for (let i = 0; i < texturePaths.length; i++) {
+      try {
+        const texture = await PIXI.Assets.load(texturePaths[i]);
+        textures.push(texture);
+      } catch (e) {
+        console.warn(`Не удалось загрузить ${texturePaths[i]}, используем placeholder`);
+        // Создаем простую текстуру-заглушку
+        const graphics = new PIXI.Graphics();
+        graphics.rect(0, 0, 100, 100);
+        graphics.fill(0xffffff);
+        graphics.stroke({ width: 2, color: 0x000000 });
+        const texture = app.renderer.generateTexture(graphics);
+        textures.push(texture);
+      }
+    }
+    
+    // Создаем спрайты для тестирования
+    const sprites = [];
+    const spriteContainer = new PIXI.Container();
+    app.stage.addChild(spriteContainer);
+    
+    const cols = 3;
+    const rows = 3;
+    const spacing = 150;
+    const startX = 200;
+    const startY = 100;
+    
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        const index = row * cols + col;
+        if (index >= textures.length) break;
+        
+        const sprite = new PIXI.Sprite(textures[index]);
+        sprite.anchor.set(0.5);
+        sprite.x = startX + col * spacing;
+        sprite.y = startY + row * spacing;
+        sprite.scale.set(0.8);
+        
+        spriteContainer.addChild(sprite);
+        sprites.push(sprite);
+        
+        // Добавляем подпись
+        const label = new PIXI.Text(`Sprite ${index}`, {
+          fontSize: 14,
+          fill: 0xffffff,
+          align: 'center'
+        });
+        label.anchor.set(0.5);
+        label.x = sprite.x;
+        label.y = sprite.y + 70;
+        spriteContainer.addChild(label);
+      }
+    }
+    
+    // Функции для применения фильтров
+    // Оптимальные параметры: darkness = 0.79, blueTint = 0.39
+    function applyFilters(sprite, darkness, blueTint) {
+      const colorMatrix = new PIXI.ColorMatrixFilter();
+      
+      // Применяем затемнение
+      if (darkness > 0) {
+        const darkBrightness = 1 - darkness;
+        colorMatrix.brightness(darkBrightness, false);
+      }
+      
+      // Применяем синий оттенок
+      if (blueTint > 0) {
+        // Уменьшаем красный и зеленый, усиливаем синий
+        const matrix = colorMatrix.matrix;
+        const newMatrix = [...matrix];
+        
+        // Уменьшаем R и G каналы
+        newMatrix[0] *= (1 - blueTint * 0.3); // R
+        newMatrix[6] *= (1 - blueTint * 0.3); // G
+        // Усиливаем B канал
+        newMatrix[12] *= (1 + blueTint * 0.2); // B
+        
+        colorMatrix.matrix = newMatrix;
+      }
+      
+      sprite.filters = [colorMatrix];
+    }
+    
+    function removeFilters(sprite) {
+      sprite.filters = null;
+    }
+    
+    // Элементы управления
+    const darknessSlider = document.getElementById('darknessSlider');
+    const blueTintSlider = document.getElementById('blueTintSlider');
+    const darknessValue = document.getElementById('darknessValue');
+    const blueTintValue = document.getElementById('blueTintValue');
+    const resetBtn = document.getElementById('resetBtn');
+    const applyBtn = document.getElementById('applyBtn');
+    
+    // Оптимальные параметры: darkness = 0.79, blueTint = 0.39
+    let currentDarkness = 0.79;
+    let currentBlueTint = 0.39;
+    
+    // Устанавливаем начальные значения слайдеров
+    darknessSlider.value = currentDarkness;
+    blueTintSlider.value = currentBlueTint;
+    
+    // Обновление значений
+    function updateValues() {
+      darknessValue.textContent = currentDarkness.toFixed(2);
+      blueTintValue.textContent = currentBlueTint.toFixed(2);
+    }
+    
+    // Обработчики слайдеров
+    darknessSlider.addEventListener('input', (e) => {
+      currentDarkness = parseFloat(e.target.value);
+      updateValues();
+      applyFilters(sprites[0], currentDarkness, currentBlueTint);
+    });
+    
+    blueTintSlider.addEventListener('input', (e) => {
+      currentBlueTint = parseFloat(e.target.value);
+      updateValues();
+      applyFilters(sprites[0], currentDarkness, currentBlueTint);
+    });
+    
+    // Кнопка сброса
+    resetBtn.addEventListener('click', () => {
+      currentDarkness = 0;
+      currentBlueTint = 0;
+      darknessSlider.value = 0;
+      blueTintSlider.value = 0;
+      updateValues();
+      sprites.forEach(sprite => removeFilters(sprite));
+    });
+    
+    // Кнопка применения ко всем
+    applyBtn.addEventListener('click', () => {
+      sprites.forEach(sprite => {
+        applyFilters(sprite, currentDarkness, currentBlueTint);
+      });
+    });
+    
+    updateValues();
+    
+    console.log('Тестовый интерфейс готов! Используйте слайдеры для настройки фильтров.');
+    console.log('Первый спрайт обновляется в реальном времени, остальные - по кнопке "Применить ко всем"');
+    })();
+  </script>
+</body>
+</html>
+

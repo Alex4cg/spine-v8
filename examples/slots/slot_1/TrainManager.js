@@ -14,6 +14,8 @@ export class TrainManager {
     this.scaleIncrement = 0; // Текущее приращение масштаба (в процентах, 0-5%)
     this.maxScaleIncrement = 5; // Максимальное приращение масштаба (5%)
     this.scaleIncrementPerHit = 0.3; // Приращение масштаба за один прилет (0.3%)
+    this.idlePlayCount = 0; // Счетчик проигранных обычных idle анимаций
+    this.idleTargetCount = 2; // Целевое количество обычных idle перед idle2 (2-3)
   }
 
   /**
@@ -72,9 +74,98 @@ export class TrainManager {
     // Трек 2: speed effect (зациклено)
     this.trainAnimation.setAnimationOnTrack(2, '02_bg_speed_effect', true);
 
+    // Трек 5: trail track (зациклено)
+    this.trainAnimation.setAnimationOnTrack(5, '08_trail_track', true);
+
+    // Настраиваем переключение между 00_idle и 00_idle2
+    this.setupIdleAnimationSwitching();
+
     this.isLoaded = true;
-    console.log('TrainManager: Train Spine animation loaded with continuous tracks (idle, piles, speed)');
+    console.log('TrainManager: Train Spine animation loaded with continuous tracks (idle, piles, speed, trail)');
     return true;
+  }
+
+  /**
+   * Настраивает переключение между 00_idle и 00_idle_2
+   * Играет 2-3 обычных idle, затем один idle_2
+   * Использует событие end_idle из Spine анимации
+   */
+  setupIdleAnimationSwitching() {
+    if (!this.trainAnimation || !this.trainAnimation.spine) {
+      return;
+    }
+
+    const TRACK_IDLE = 0;
+    const spineState = this.trainAnimation.spine.state;
+
+    // Устанавливаем случайное целевое количество (2 или 3)
+    this.idleTargetCount = 2 + Math.floor(Math.random() * 2); // 2 или 3
+    this.idlePlayCount = 0;
+    
+    // Добавляем слушатель события end_idle из Spine анимации
+    spineState.addListener({
+      event: (entry, event) => {
+        // Проверяем, что это событие end_idle с трека 0
+        if (entry.trackIndex === TRACK_IDLE && event?.data?.name === 'end_idle') {
+          this.handleIdleAnimationComplete();
+        }
+      }
+    });
+    
+    console.log(`TrainManager: Idle animation switching setup (target: ${this.idleTargetCount} idle before idle_2, using end_idle event)`);
+  }
+
+  /**
+   * Обрабатывает завершение idle анимации
+   */
+  handleIdleAnimationComplete() {
+    if (!this.trainAnimation || !this.trainAnimation.spine) {
+      console.warn('TrainManager: handleIdleAnimationComplete - train not loaded');
+      return;
+    }
+
+    const TRACK_IDLE = 0;
+    const currentEntry = this.trainAnimation.spine.state.tracks[TRACK_IDLE];
+    
+    if (!currentEntry) {
+      console.warn('TrainManager: handleIdleAnimationComplete - no entry on track 0');
+      return;
+    }
+
+    const currentAnimation = currentEntry.animation ? currentEntry.animation.name : null;
+    console.log(`TrainManager: Idle animation cycle complete - current: "${currentAnimation}", count: ${this.idlePlayCount}/${this.idleTargetCount}`);
+
+    // Если сейчас играет 00_idle_2, переключаемся обратно на 00_idle
+    if (currentAnimation === '00_idle_2') {
+      this.idlePlayCount = 0;
+      this.idleTargetCount = 2 + Math.floor(Math.random() * 2); // Новое случайное значение 2-3
+      const entry = this.trainAnimation.setAnimationOnTrack(TRACK_IDLE, '00_idle', true);
+      if (entry) {
+        console.log(`TrainManager: Switched from 00_idle_2 to 00_idle (new target: ${this.idleTargetCount})`);
+      } else {
+        console.warn('TrainManager: Failed to switch to 00_idle');
+      }
+      return;
+    }
+
+    // Если играет 00_idle, увеличиваем счетчик
+    if (currentAnimation === '00_idle') {
+      this.idlePlayCount++;
+
+      // Если достигли целевого количества, переключаемся на 00_idle_2
+      if (this.idlePlayCount >= this.idleTargetCount) {
+        const entry = this.trainAnimation.setAnimationOnTrack(TRACK_IDLE, '00_idle_2', true);
+        if (entry) {
+          console.log(`TrainManager: Switched from 00_idle to 00_idle_2 (played ${this.idlePlayCount} times)`);
+        } else {
+          console.warn('TrainManager: Failed to switch to 00_idle_2 - animation may not exist');
+        }
+      } else {
+        console.log(`TrainManager: 00_idle continues (${this.idlePlayCount}/${this.idleTargetCount})`);
+      }
+    } else {
+      console.warn(`TrainManager: Unexpected animation on track 0: "${currentAnimation}"`);
+    }
   }
 
   /**
@@ -179,6 +270,47 @@ export class TrainManager {
     return {
       x: container.x,
       y: container.y
+    };
+  }
+
+  /**
+   * Возвращает позицию кости coin_target поезда в мировых координатах
+   * @returns {object|null} {x, y} или null если поезд не загружен или кость не найдена
+   */
+  getCoinTargetPosition() {
+    if (!this.trainAnimation || !this.trainAnimation.spine) {
+      return null;
+    }
+
+    const spine = this.trainAnimation.spine;
+    const skeleton = spine.skeleton;
+    
+    // Находим кость coin_target
+    const coinTargetBone = skeleton.findBone('coin_target');
+    if (!coinTargetBone) {
+      console.warn('TrainManager: Кость coin_target не найдена');
+      return null;
+    }
+
+    // Получаем мировые координаты кости в системе скелета
+    const bonePoint = { x: coinTargetBone.worldX, y: coinTargetBone.worldY };
+    
+    // Преобразуем координаты кости в мировые координаты PixiJS
+    // Используем тот же подход, что и в ParticleSystem
+    if (typeof spine.skeletonToPixiWorldCoordinates === 'function') {
+      spine.skeletonToPixiWorldCoordinates(bonePoint);
+    } else if (typeof skeleton.skeletonToPixiWorldCoordinates === 'function') {
+      skeleton.skeletonToPixiWorldCoordinates(bonePoint);
+    } else {
+      // Fallback: используем позицию контейнера + мировые координаты кости
+      const container = this.trainAnimation.getContainer();
+      bonePoint.x += container.x;
+      bonePoint.y += container.y;
+    }
+
+    return {
+      x: bonePoint.x,
+      y: bonePoint.y
     };
   }
 

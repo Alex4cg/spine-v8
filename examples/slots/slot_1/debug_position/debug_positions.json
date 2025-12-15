@@ -1,0 +1,68 @@
+{
+  "reelsContainer": {
+    "x": 0,
+    "y": 22,
+    "scale": 1,
+    "zIndex": 110
+  },
+  "train": {
+    "x": 960,
+    "y": 236,
+    "scale": 1,
+    "zIndex": 90
+  },
+  "logo": {
+    "x": 960,
+    "y": 275,
+    "scale": 1,
+    "zIndex": 250
+  },
+  "effectsContainer": {
+    "x": 0,
+    "y": 22,
+    "scale": 1,
+    "zIndex": 200
+  },
+  "spinButton": {
+    "x": 1759,
+    "y": 571,
+    "scale": 1,
+    "zIndex": 300
+  },
+  "winline": {
+    "x": 960,
+    "y": 562,
+    "scale": 1,
+    "zIndex": 99
+  },
+  "coinIndicatorsContainer": {
+    "x": 507,
+    "y": 832,
+    "scale": 1,
+    "zIndex": 104
+  },
+  "bg_bg_desktop_reg": {
+    "x": 960,
+    "y": 540,
+    "scale": 1,
+    "zIndex": 10
+  },
+  "bg_field": {
+    "x": 960,
+    "y": 540,
+    "scale": 1,
+    "zIndex": 98
+  },
+  "bg_jp": {
+    "x": 960,
+    "y": 540,
+    "scale": 1,
+    "zIndex": 30
+  },
+  "bg_top": {
+    "x": 960,
+    "y": 540,
+    "scale": 1,
+    "zIndex": 40
+  }
+}

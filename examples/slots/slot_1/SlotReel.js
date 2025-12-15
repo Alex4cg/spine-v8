@@ -85,7 +85,7 @@ export class SlotReel {
     
     // Если это монетка (индекс 8) и есть aclonicaText, добавляем текст поверх
     if (validIndex === 8 && this.aclonicaText) {
-      const textSprite = this.aclonicaText.createText('5.00', {
+      const textSprite = this.aclonicaText.createText('5х', {
         fontSize: 45,
         color: '#FFFFFF',
         borderColor: '#6B0060',
@@ -366,9 +366,9 @@ export class SlotReel {
     
     // Если это монетка (индекс 8) и есть aclonicaText, добавляем текст поверх
     if (textureIndex === 8 && this.aclonicaText) {
-      // Используем значение из сценария или сохраненное значение, если передано, иначе дефолтное "5.00"
+      // Используем значение из сценария или сохраненное значение, если передано, иначе дефолтное "5х"
       const valueToUse = coinValue !== null ? coinValue : (placeholder.coinValue !== null ? placeholder.coinValue : null);
-      const coinTextValue = valueToUse !== null ? valueToUse.toFixed(2) : '5.00';
+      const coinTextValue = valueToUse !== null ? `${Math.round(valueToUse)}х` : '5х';
       const textSprite = this.aclonicaText.createText(coinTextValue, {
         fontSize: 45,
         color: '#FFFFFF',
@@ -450,11 +450,210 @@ export class SlotReel {
       }
     }
   }
+
+  /**
+   * Применяет фильтр затемнения к символу
+   * @param {number} symbolIndex - Индекс символа в массиве symbols
+   * @param {number} darkness - Уровень затемнения (0-1), оптимально: 0.79
+   * @param {number} blueTint - Интенсивность синего оттенка (0-1), оптимально: 0.39
+   */
+  applyDarkeningFilter(symbolIndex, darkness = 0.79, blueTint = 0.39) {
+    const placeholder = this.symbols[symbolIndex];
+    if (!placeholder) {
+      console.warn(`SlotReel ${this.reelIndex}: applyDarkeningFilter - placeholder not found for symbolIndex ${symbolIndex}`);
+      return;
+    }
+
+    // Сначала убираем старый фильтр, если есть
+    if (placeholder.darkenedSprite && placeholder.darkenedSprite.filters) {
+      placeholder.darkenedSprite.filters = null;
+    }
+    
+    // Убираем старый фильтр с текста, если есть
+    if (placeholder.darkenedTextSprite && placeholder.darkenedTextSprite.filters) {
+      placeholder.darkenedTextSprite.filters = null;
+    }
+
+    // Находим основной спрайт символа (не текстовый спрайт монетки)
+    // Основной спрайт - это первый спрайт, который не является coinTextSprite
+    let sprite = null;
+    for (const child of placeholder.children) {
+      if (child instanceof PIXI.Sprite && child !== placeholder.coinTextSprite) {
+        sprite = child;
+        break;
+      }
+    }
+    
+    if (!sprite) {
+      console.warn(`SlotReel ${this.reelIndex}: applyDarkeningFilter - sprite not found for symbolIndex ${symbolIndex}, children count: ${placeholder.children.length}`);
+      return;
+    }
+
+    console.log(`SlotReel ${this.reelIndex}: applyDarkeningFilter - Found sprite for symbolIndex ${symbolIndex}, applying filter (darkness=${darkness}, blueTint=${blueTint})`);
+
+    // Создаем фильтр затемнения с синим оттенком
+    const colorMatrix = new PIXI.ColorMatrixFilter();
+    
+    // Применяем затемнение
+    if (darkness > 0) {
+      const darkBrightness = 1 - darkness;
+      colorMatrix.brightness(darkBrightness, false);
+    }
+    
+    // Применяем синий оттенок
+    if (blueTint > 0) {
+      const matrix = colorMatrix.matrix;
+      const newMatrix = [...matrix];
+      
+      // Уменьшаем R и G каналы
+      newMatrix[0] *= (1 - blueTint * 0.3); // R
+      newMatrix[6] *= (1 - blueTint * 0.3); // G
+      // Усиливаем B канал
+      newMatrix[12] *= (1 + blueTint * 0.2); // B
+      
+      colorMatrix.matrix = newMatrix;
+    }
+    
+    sprite.filters = [colorMatrix];
+    
+    // Также применяем фильтр к текстовому спрайту монетки, если он есть
+    if (placeholder.coinTextSprite) {
+      // Создаем копию фильтра для текста (фильтры не могут быть переиспользованы между объектами)
+      const textColorMatrix = new PIXI.ColorMatrixFilter();
+      
+      // Применяем затемнение
+      if (darkness > 0) {
+        const darkBrightness = 1 - darkness;
+        textColorMatrix.brightness(darkBrightness, false);
+      }
+      
+      // Применяем синий оттенок
+      if (blueTint > 0) {
+        const matrix = textColorMatrix.matrix;
+        const newMatrix = [...matrix];
+        
+        // Уменьшаем R и G каналы
+        newMatrix[0] *= (1 - blueTint * 0.3); // R
+        newMatrix[6] *= (1 - blueTint * 0.3); // G
+        // Усиливаем B канал
+        newMatrix[12] *= (1 + blueTint * 0.2); // B
+        
+        textColorMatrix.matrix = newMatrix;
+      }
+      
+      placeholder.coinTextSprite.filters = [textColorMatrix];
+      placeholder.darkenedTextSprite = placeholder.coinTextSprite; // Сохраняем ссылку
+      placeholder.darkeningTextFilter = textColorMatrix; // Сохраняем ссылку на фильтр текста
+      console.log(`SlotReel ${this.reelIndex}: Filter also applied to coin text sprite`);
+    }
+    
+    // Сохраняем ссылку на фильтр для последующего удаления
+    placeholder.darkeningFilter = colorMatrix;
+    placeholder.darkenedSprite = sprite; // Сохраняем ссылку на спрайт
+    
+    console.log(`SlotReel ${this.reelIndex}: Filter applied successfully to sprite, filters count: ${sprite.filters ? sprite.filters.length : 0}`);
+  }
+
+  /**
+   * Удаляет фильтр затемнения с символа
+   * @param {number} symbolIndex - Индекс символа в массиве symbols
+   */
+  removeDarkeningFilter(symbolIndex) {
+    const placeholder = this.symbols[symbolIndex];
+    if (!placeholder) {
+      return;
+    }
+
+    // Используем сохраненную ссылку на спрайт или ищем его заново
+    const sprite = placeholder.darkenedSprite || placeholder.children.find(child => 
+      child instanceof PIXI.Sprite && child !== placeholder.coinTextSprite
+    );
+    
+    if (sprite) {
+      sprite.filters = null;
+    }
+    
+    // Также убираем фильтр с текстового спрайта монетки, если он был применен
+    if (placeholder.darkenedTextSprite) {
+      placeholder.darkenedTextSprite.filters = null;
+    }
+    
+    placeholder.darkeningFilter = null;
+    placeholder.darkenedSprite = null;
+    placeholder.darkeningTextFilter = null;
+    placeholder.darkenedTextSprite = null;
+  }
+
+  /**
+   * Применяет затемнение к символам на указанных позициях (positionIndex)
+   * @param {Array<number>} positionIndices - Массив positionIndex для затемнения (0=нижний, 1=средний, 2=верхний)
+   * @param {number} darkness - Уровень затемнения (0-1), оптимально: 0.79
+   * @param {number} blueTint - Интенсивность синего оттенка (0-1), оптимально: 0.39
+   */
+  applyDarkeningToVisible(positionIndices, darkness = 0.79, blueTint = 0.39) {
+    if (!Array.isArray(positionIndices)) {
+      console.warn(`SlotReel ${this.reelIndex}: applyDarkeningToVisible - invalid positionIndices:`, positionIndices);
+      return;
+    }
+
+    console.log(`SlotReel ${this.reelIndex}: applyDarkeningToVisible called with positions: [${positionIndices.join(', ')}]`);
+
+    positionIndices.forEach(positionIndex => {
+      const symbolIndex = this.getVisibleSymbolIndex(positionIndex);
+      console.log(`SlotReel ${this.reelIndex}: positionIndex ${positionIndex} -> symbolIndex ${symbolIndex}`);
+      if (symbolIndex !== null) {
+        this.applyDarkeningFilter(symbolIndex, darkness, blueTint);
+        console.log(`SlotReel ${this.reelIndex}: Applied darkening filter to symbolIndex ${symbolIndex}`);
+      } else {
+        console.warn(`SlotReel ${this.reelIndex}: Failed to get symbol index for positionIndex ${positionIndex}`);
+      }
+    });
+  }
+
+  /**
+   * Убирает затемнение с символов на указанных позициях (positionIndex)
+   * @param {Array<number>} positionIndices - Массив positionIndex для удаления затемнения
+   */
+  removeDarkeningFromVisible(positionIndices) {
+    if (!Array.isArray(positionIndices)) {
+      return;
+    }
+
+    positionIndices.forEach(positionIndex => {
+      const symbolIndex = this.getVisibleSymbolIndex(positionIndex);
+      if (symbolIndex !== null) {
+        this.removeDarkeningFilter(symbolIndex);
+      }
+    });
+  }
+
+  /**
+   * Применяет затемнение ко всем символам рила
+   * @param {number} darkness - Уровень затемнения (0-1), оптимально: 0.79
+   * @param {number} blueTint - Интенсивность синего оттенка (0-1), оптимально: 0.39
+   */
+  applyDarkeningToAll(darkness = 0.79, blueTint = 0.39) {
+    for (let i = 0; i < this.symbols.length; i++) {
+      this.applyDarkeningFilter(i, darkness, blueTint);
+    }
+  }
+
+  /**
+   * Убирает затемнение со всех символов рила
+   */
+  removeDarkeningFromAll() {
+    for (let i = 0; i < this.symbols.length; i++) {
+      this.removeDarkeningFilter(i);
+    }
+  }
   
   destroy() {
     if (this.animationId !== null) {
       cancelAnimationFrame(this.animationId);
       this.animationId = null;
     }
+    
+    // Убираем фильтры при уничтожении
+    this.removeDarkeningFromAll();
   }
 }

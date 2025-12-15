@@ -111,7 +111,7 @@ export class GameScenarios {
     // Если старый формат (только матрица) - возвращаем пустой массив
     return [];
   }
-  
+
   nextSpin() {
     if (this.scenario && this.currentSpinIndex < this.scenario.length) {
       this.currentSpinIndex++;
