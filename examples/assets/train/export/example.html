@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>CustomCoinEmitter - Пример использования</title>
+  <script src="https://pixijs.download/release/pixi.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #1a1a1a;
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+    #controls {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      z-index: 1000;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 15px;
+      border-radius: 8px;
+    }
+    button {
+      display: block;
+      margin: 5px 0;
+      padding: 8px 15px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #45a049;
+    }
+  </style>
+</head>
+<body>
+  <div id="controls">
+    <h3>Управление эмиттером</h3>
+    <button id="toggleEmit">Остановить эмиссию</button>
+    <button id="burst">Взрыв (80 монет)</button>
+    <button id="changeGravity">Изменить гравитацию</button>
+    <button id="changeSpread">Изменить разброс</button>
+    <div style="margin-top: 10px; font-size: 12px;">
+      <div>Гравитация: <span id="gravityValue">900</span></div>
+      <div>Разброс: <span id="spreadValue">30</span>°</div>
+      <div>Эмиссия: <span id="emitStatus">ВКЛ</span></div>
+    </div>
+  </div>
+
+  <script src="./CustomCoinEmitter.js"></script>
+  <script>
+    (async () => {
+      // Инициализация PIXI
+      const app = new PIXI.Application();
+      await app.init({
+        width: window.innerWidth,
+        height: window.innerHeight,
+        backgroundColor: 0x1a1a1a,
+        resolution: window.devicePixelRatio || 1,
+        autoDensity: true,
+      });
+      document.body.appendChild(app.canvas);
+
+      // Загрузка текстур монет
+      const coinTextures = [];
+      for (let i = 0; i <= 16; i++) {
+        const num = i.toString().padStart(2, '0');
+        coinTextures.push({
+          alias: `coin_${num}`,
+          src: `./coin_gold/${num}.png`
+        });
+      }
+
+      await PIXI.Assets.load(coinTextures);
+
+      // Получение массивов текстур
+      const coinTexturesArray = [];
+      for (let i = 0; i <= 16; i++) {
+        const num = i.toString().padStart(2, '0');
+        coinTexturesArray.push(PIXI.Assets.get(`coin_${num}`));
+      }
+
+      // Создание контейнера для монет
+      const coinLayer = new PIXI.Container();
+      app.stage.addChild(coinLayer);
+
+      // Создание эмиттера в центре экрана
+      const coinEmitter = new CustomCoinEmitter(coinLayer, coinTexturesArray, {
+        startSpeed: 420,
+        gravity: 900,
+        spread: 30,
+        lifetimeMin: 1.0,
+        lifetimeMax: 1.0,
+        scaleStart: 0.5,
+        scaleEnd: 0.3,
+        rotationSpeedMin: -5,
+        rotationSpeedMax: 5,
+        animationSpeed: 30,
+        maxParticles: 300,
+        emissionRate: 0.1,
+        x: app.screen.width / 2,
+        y: app.screen.height / 2,
+        angle: 0 // Вверх
+      });
+
+      // Включение эмиссии
+      coinEmitter.emit = true;
+
+      // Обновление в игровом цикле
+      app.ticker.add(() => {
+        const deltaTime = app.ticker.deltaMS / 1000;
+        coinEmitter.update(deltaTime);
+      });
+
+      // Управление
+      let gravityValue = 900;
+      let spreadValue = 30;
+
+      document.getElementById('toggleEmit').onclick = () => {
+        coinEmitter.emit = !coinEmitter.emit;
+        const btn = document.getElementById('toggleEmit');
+        const status = document.getElementById('emitStatus');
+        if (coinEmitter.emit) {
+          btn.textContent = 'Остановить эмиссию';
+          status.textContent = 'ВКЛ';
+        } else {
+          btn.textContent = 'Запустить эмиссию';
+          status.textContent = 'ВЫКЛ';
+        }
+      };
+
+      document.getElementById('burst').onclick = () => {
+        coinEmitter.burst(80);
+      };
+
+      document.getElementById('changeGravity').onclick = () => {
+        // Переключаем между 900, 600, 1200
+        if (gravityValue === 900) {
+          gravityValue = 600;
+        } else if (gravityValue === 600) {
+          gravityValue = 1200;
+        } else {
+          gravityValue = 900;
+        }
+        coinEmitter.config.gravity = gravityValue;
+        document.getElementById('gravityValue').textContent = gravityValue;
+      };
+
+      document.getElementById('changeSpread').onclick = () => {
+        // Переключаем между 30, 60, 90
+        if (spreadValue === 30) {
+          spreadValue = 60;
+        } else if (spreadValue === 60) {
+          spreadValue = 90;
+        } else {
+          spreadValue = 30;
+        }
+        coinEmitter.setSpread(spreadValue);
+        document.getElementById('spreadValue').textContent = spreadValue;
+      };
+
+      // Обработка изменения размера окна
+      window.addEventListener('resize', () => {
+        app.renderer.resize(window.innerWidth, window.innerHeight);
+        coinEmitter.setPosition(app.screen.width / 2, app.screen.height / 2);
+      });
+
+      console.log('✅ Эмиттер монет создан и работает!');
+    })().catch((err) => {
+      console.error('Ошибка:', err);
+      document.body.innerHTML = '<div style="color:white;padding:20px;">Ошибка: ' + err.message + '</div>';
+    });
+  </script>
+</body>
+</html>
+
+
+
+
+
+
+

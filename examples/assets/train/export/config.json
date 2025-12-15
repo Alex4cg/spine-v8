@@ -1,0 +1,59 @@
+{
+  "description": "Кастомный эмиттер фонтана монет для PIXI.js",
+  "class": "CustomCoinEmitter",
+  "config": {
+    "startSpeed": 420,
+    "gravity": 900,
+    "spread": 30,
+    "lifetime": {
+      "min": 1.0,
+      "max": 1.0
+    },
+    "scale": {
+      "start": 0.5,
+      "end": 0.3
+    },
+    "rotationSpeed": {
+      "min": -5,
+      "max": 5
+    },
+    "animationSpeed": 30,
+    "maxParticles": 300,
+    "emissionRate": 0.1,
+    "coinTextures": {
+      "count": 17,
+      "path": "./coin_gold/",
+      "format": "00.png - 16.png",
+      "fps": 30
+    }
+  },
+  "features": {
+    "directedBurst": true,
+    "gravity": true,
+    "coinAnimation": true,
+    "continuousEmission": true,
+    "boneAttachment": true
+  },
+  "physics": {
+    "startSpeed": "Начальная скорость вверх (пикселей/сек)",
+    "gravity": "Гравитация вниз (пикселей/сек²)",
+    "spread": "Разброс угла в градусах (относительно направления эмиттера)"
+  },
+  "animation": {
+    "textureSequence": "00.png - 16.png (17 кадров)",
+    "fps": 30,
+    "loop": true
+  },
+  "emission": {
+    "mode": "continuous",
+    "rate": "0.1 секунды между монетами (10 монет/сек)",
+    "maxParticles": 300
+  }
+}
+
+
+
+
+
+
+

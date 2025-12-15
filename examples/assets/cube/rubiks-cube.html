@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rubik's Cube Simulator</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      overflow: hidden;
+      background: #1a1a1a;
+      font-family: Arial, sans-serif;
+      color: #fff;
+    }
+
+    #canvas-container {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+    }
+
+    #controls {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      z-index: 100;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 15px;
+      border-radius: 8px;
+      max-width: 300px;
+      pointer-events: auto;
+    }
+
+    #controls h2 {
+      margin-bottom: 10px;
+      font-size: 18px;
+    }
+
+    #controls p {
+      font-size: 12px;
+      margin: 5px 0;
+      color: #ccc;
+    }
+
+    button {
+      margin: 5px 5px 5px 0;
+      padding: 8px 15px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.3s;
+      pointer-events: auto;
+      z-index: 100;
+      position: relative;
+    }
+
+    button:hover {
+      background: #45a049;
+    }
+
+    button:active {
+      background: #3d8b40;
+    }
+
+    #info {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container"></div>
+  
+  <div id="controls">
+    <h2>Rubik's Cube</h2>
+    <p>Перетащите мышью - вращение камеры</p>
+    <p>Клик по грани - поворот грани</p>
+    <p>WASD / Стрелки - поворот граней</p>
+    <div>
+      <button id="btn-scramble">Перемешать</button>
+      <button id="btn-reset">Сброс</button>
+    </div>
+  </div>
+
+  <div id="info">
+    <div id="status">Готов к использованию</div>
+  </div>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/"
+      }
+    }
+  </script>
+  <script type="module" src="rubiks-cube.js"></script>
+</body>
+</html>
+

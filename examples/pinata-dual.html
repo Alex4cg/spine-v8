@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Spine Pinata Dual Animations</title>
+    <script src="./assets/libs/pixi.min.js"></script>
+    <script src="./assets/libs/spine-pixi.js"></script>
+    <script src="./assets/libs/particle-emitter.min.js"></script>
+  </head>
+  <body style="margin:0;background:#1a1a1a;">
+    <div
+      id="controls"
+      style="position:absolute;top:20px;left:20px;z-index:1000;display:flex;flex-direction:column;gap:15px;"
+    >
+      <button
+        id="playAnimations"
+        style="padding:10px 20px;background:#ffaa00;color:#1a1a1a;border:none;border-radius:5px;cursor:pointer;font-size:14px;font-weight:600;"
+      >
+        Play Anim (All)
+      </button>
+      
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="color:white;font-size:12px;font-weight:600;">System A (Red):</div>
+        <div style="display:flex;gap:5px;">
+          <button id="skinA_Blue" style="padding:8px 15px;background:#0066ff;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;">Blue</button>
+          <button id="skinA_Green" style="padding:8px 15px;background:#00cc00;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;">Green</button>
+          <button id="skinA_Red" style="padding:8px 15px;background:#ff3333;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;">Red</button>
+        </div>
+      </div>
+      
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="color:white;font-size:12px;font-weight:600;">System B (Green):</div>
+        <div style="display:flex;gap:5px;">
+          <button id="skinB_Blue" style="padding:8px 15px;background:#0066ff;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;">Blue</button>
+          <button id="skinB_Green" style="padding:8px 15px;background:#00cc00;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;">Green</button>
+          <button id="skinB_Red" style="padding:8px 15px;background:#ff3333;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;">Red</button>
+        </div>
+      </div>
+      
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="color:white;font-size:12px;font-weight:600;">System C (Blue):</div>
+        <div style="display:flex;gap:5px;">
+          <button id="skinC_Blue" style="padding:8px 15px;background:#0066ff;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;">Blue</button>
+          <button id="skinC_Green" style="padding:8px 15px;background:#00cc00;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;">Green</button>
+          <button id="skinC_Red" style="padding:8px 15px;background:#ff3333;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;">Red</button>
+        </div>
+      </div>
+    </div>
+    <script type="module">
+      import { init } from './js/init.js';
+      
+      init()
+        .catch((err) => {
+          console.error(err);
+          document.body.innerHTML =
+            '<div style="color:#fff;font-family:monospace;padding:24px;">Ошибка: ' +
+            err.message +
+            "</div>";
+        });
+    </script>
+  </body>
+</html>
+

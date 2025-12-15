@@ -1,0 +1,7 @@
+bgr.png
+size:1024,2048
+filter:Linear,Linear
+pma:true
+Game screen
+bounds:2,2,718,1280
+offsets:0,0,720,1280

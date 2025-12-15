@@ -1,0 +1,172 @@
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Spine + Emitter (Pixi v8)</title>
+
+    <!-- PixiJS 8 -->
+    <script src="https://cdn.jsdelivr.net/npm/pixi.js@8/dist/pixi.min.js"></script>
+
+    <!-- Spine runtime -->
+    <script src="../dist/spine-pixi.js"></script>
+
+    <!-- Particle emitter for PixiJS 8 -->
+    <script src="https://cdn.jsdelivr.net/npm/@pixi/particle-emitter@8/dist/particle-emitter.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/tweakpane@3.1.9/dist/tweakpane.min.js"></script>
+    <link rel="stylesheet" href="./index.css" />
+  </head>
+
+  <body>
+    <script>
+      (async function () {
+        // Создаём приложение Pixi 8
+        const app = new PIXI.Application();
+        await app.init({
+          width: window.innerWidth,
+          height: window.innerHeight,
+          resolution: window.devicePixelRatio || 1,
+          autoDensity: true,
+          resizeTo: window,
+          backgroundColor: 0x2c3e50,
+          hello: true,
+        });
+        document.body.appendChild(app.canvas);
+
+        // Настройка drag для контролов
+        app.stage.eventMode = "static";
+        app.stage.hitArea = app.screen;
+        let dragObject = null;
+        let lastX = -1,
+          lastY = -1;
+        const endDrag = () => (dragObject = null);
+        app.stage
+          .on("pointerup", endDrag)
+          .on("pointerupoutside", endDrag)
+          .on("pointermove", ({ x, y }) => {
+            if (dragObject) {
+              dragObject.x += x - lastX;
+              dragObject.y += y - lastY;
+              lastX = x;
+              lastY = y;
+            }
+          });
+
+        // ---------- ЗАГРУЗКА SPINE ----------
+        PIXI.Assets.add({
+          alias: "stretchymanData",
+          src: "./assets/collect_effect.json",
+        });
+        PIXI.Assets.add({
+          alias: "stretchymanAtlas",
+          src: "./assets/collect_effect.atlas",
+        });
+        await PIXI.Assets.load(["stretchymanData", "stretchymanAtlas"]);
+
+        const stretchyman = spine.Spine.from({
+          skeleton: "stretchymanData",
+          atlas: "stretchymanAtlas",
+          scale: 0.5,
+        });
+
+        stretchyman.state.data.defaultMix = 0.2;
+        stretchyman.x = window.innerWidth / 2;
+        stretchyman.y =
+          window.innerHeight / 2 + stretchyman.getBounds().height / 2;
+        stretchyman.state.setAnimation(0, "to_box", true);
+        app.stage.addChild(stretchyman);
+
+        // ---------- КОНТРОЛЬНЫЕ ТОЧКИ ----------
+        const controlBoneNames = [
+          "control_point_1",
+          "control_point_2",
+          "control_point_3",
+          "control_point_4",
+        ];
+        const controlBones = [];
+
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+
+        for (let i = 0; i < controlBoneNames.length; i++) {
+          const bone = stretchyman.skeleton.findBone(controlBoneNames[i]);
+          const point = { x: bone.worldX, y: bone.worldY };
+          stretchyman.skeletonToPixiWorldCoordinates(point);
+
+          const control = new PIXI.Graphics()
+            .beginFill(0xff00ff)
+            .drawCircle(0, 0, 6)
+            .endFill();
+          control.x = point.x;
+          control.y = point.y;
+          controlBones.push({ bone, control });
+          app.stage.addChild(control);
+
+          control.interactive = true;
+          control.on("pointerdown", ({ x, y }) => {
+            dragObject = control;
+            lastX = x;
+            lastY = y;
+          });
+        }
+
+        const tmp = { x: 0, y: 0 };
+        stretchyman.beforeUpdateWorldTransforms = () => {
+          for (const { bone, control } of controlBones) {
+            tmp.x = control.x;
+            tmp.y = control.y;
+            stretchyman.pixiWorldCoordinatesToBone(tmp, bone);
+            bone.x = tmp.x;
+            bone.y = tmp.y;
+          }
+        };
+
+        // ---------- ЭМИТТЕР ЧАСТИЦ ----------
+        PIXI.Assets.add({
+          alias: "emitterConfig",
+          src: "./assets/emitter_test.json",
+        });
+        PIXI.Assets.add({ alias: "particleTex", src: "./assets/particle.png" });
+
+        const assets = await PIXI.Assets.load([
+          "emitterConfig",
+          "particleTex",
+        ]);
+        let emitterConfig = assets.emitterConfig;
+        const particleTex = assets.particleTex;
+
+        // Проверяем и апгрейдим конфиг (старый формат из Particle Editor)
+        if (PIXI.particleEmitter && PIXI.particleEmitter.upgradeConfig) {
+          emitterConfig = PIXI.particleEmitter.upgradeConfig(emitterConfig);
+          console.log("✅ Emitter config upgraded for Pixi8");
+        } else {
+          console.warn("⚠️ upgradeConfig не найден, используется как есть");
+        }
+
+        // Контейнер и сам эмиттер
+        const emitterContainer = new PIXI.Container();
+        app.stage.addChild(emitterContainer);
+
+        const emitter = new PIXI.particleEmitter.Emitter(
+          emitterContainer,
+          [particleTex],
+          emitterConfig
+        );
+
+        // Позиция эмиттера — справа от спайна
+        const offsetX = 150;
+        const offsetY = 0;
+        emitter.updateOwnerPos(stretchyman.x + offsetX, stretchyman.y + offsetY);
+        emitter.emit = true;
+
+        // Апдейт в каждом кадре
+        let elapsed = performance.now();
+        app.ticker.add(() => {
+          const now = performance.now();
+          emitter.update((now - elapsed) * 0.001);
+          elapsed = now;
+        });
+
+        console.log("🔥 Spine + Emitter запущены успешно!");
+      })();
+    </script>
+  </body>
+</html>

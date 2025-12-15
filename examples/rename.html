@@ -1,0 +1,96 @@
+// Позиционирование объектов
+					setPosition(wframe_02, 0, 0, boxScale);
+					setPosition(frame_02, 0, 0, boxScale);
+					setPosition(claw_04, 94, 27.3, boxScale);
+					setPosition(claw_05, 2, 27.3, boxScale);
+					setPosition(claw_06, -91, 27.3, boxScale);
+					setPosition(sym_04, 90, -47.7, boxScale);
+					setPosition(sym_05, 0, -47.7, boxScale);
+					setPosition(sym_06, -90, -47.7, boxScale);
+					setPosition(puff_02, 0, -47.7, boxScale);
+					setPosition(puff_03, -90, -47.7, boxScale);
+					// Установка анимаций для claw_04
+					setAnimationSequence(claw_04, [
+						{ name: 'lock_static', loop: false, delay: 0 },
+						{ name: 'unlock', loop: false, delay: 2 },
+						{ name: 'claw_idle', loop: true, delay: 0 },
+					]);
+					setAnimationSequence(claw_05, [
+						{ name: 'lock_static', loop: false, delay: 0 },
+						{ name: 'unlock', loop: false, delay: 2.2 },
+						{ name: 'claw_idle', loop: true, delay: 0 },
+					]);
+					setAnimationSequence(claw_06, [
+						{ name: 'lock_static', loop: false, delay: 0 },
+						{ name: 'unlock', loop: false, delay: 3.8 },
+						{ name: 'claw_idle', loop: true, delay: 0 },
+					]);
+					setAnimationSequence(sym_04, [
+						{ name: 'low_purple_idle', loop: false, delay: 0 },
+						{ name: 'spin', loop: true, delay: 1 },
+						{ name: 'low_purple_idle', loop: false, delay: 0.5 },
+					]);
+					setAnimationSequence(sym_05, [
+						{ name: 'high_pink_idle', loop: false, delay: 0 },
+						{ name: 'spin', loop: true, delay: 1.2 },
+						{ name: 'high_blue_booster_idle', loop: false, delay: 0.5 },
+						{ name: 'spin', loop: true, delay: 1 },
+						{ name: 'high_pink_idle', loop: false, delay: 0.5 },
+					]);
+					setAnimationSequence(sym_06, [
+						{ name: 'low_pink_idle', loop: false, delay: 0 },
+						{ name: 'spin', loop: true, delay: 1.4 },
+						{ name: 'low_blue_booster_idle', loop: false, delay: 0.5 },
+						{ name: 'spin', loop: true, delay: 1 },
+						{ name: 'high_orange_booster_idle', loop: false, delay: 0.5 },
+						{ name: 'spin', loop: true, delay: 1 },
+						{ name: 'low_pink_idle', loop: false, delay: 0.5 },
+					]);
+					setAnimationSequence(
+						puff_02,
+						[{ name: 'disappearance', loop: false, delay: 0 }],
+						2.6
+					);
+					setAnimationSequence(
+						puff_03,
+						[
+							{ name: 'disappearance', loop: false, delay: 0 },
+							{ name: 'disappearance', loop: false, delay: 1.4 },
+						],
+						2.8
+					);
+					// Установка анимаций для frame_02
+					setAnimationSequence(frame_02, [
+						{ name: 'frame_start', loop: false, delay: 0 },
+						{ name: 'bar_1', loop: false, delay: 2.6 },
+						{ name: 'bar_2', loop: false, delay: 0 },
+						{ name: 'bar_2_idle', loop: true, delay: 0 },
+						{ name: 'bar_3', loop: false, delay: 2 },
+						{ name: 'bar_3_idle', loop: true, delay: 0 },
+					]);
+					// Установка анимаций для wframe_02
+					setAnimationSequence(wframe_02, [
+						{ name: 'idle', loop: true, delay: 0 },
+					]);
+					// Установка времени смешивания анимаций для "claw_04"
+					claw_04.state.data.defaultMix = 0.2;
+					claw_05.state.data.defaultMix = 0.2;
+					claw_06.state.data.defaultMix = 0.2;
+					sym_04.state.data.defaultMix = 0.2;
+					sym_05.state.data.defaultMix = 0.2;
+					sym_06.state.data.defaultMix = 0.2;
+					frame_02.state.data.defaultMix = 0.2;
+					// Добавление объектов на сцену в контейнере для трансформаций
+          const container1 = new PIXI.Container();
+					container1.addChild(frame_02);
+					container1.addChild(claw_04);
+					container1.addChild(claw_05);
+					container1.addChild(claw_06);
+					container1.addChild(sym_04);
+					container1.addChild(sym_05);
+					container1.addChild(sym_06);
+					container1.addChild(puff_02);
+					container1.addChild(puff_03);
+					container1.addChild(wframe_02);
+          app.stage.addChild(container1); //контейнер
+          return container1;

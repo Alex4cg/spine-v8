@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Spine-Pixi</title>
+    <!-- Подключение PIXI.js -->
+    <script src="https://cdn.jsdelivr.net/npm/pixi.js@latest/dist/pixi.min.js"></script>
+    <!-- Подключение локальной версии Spine-Pixi -->
+    <script src="../dist/spine-pixi.js"></script>
+    <!-- Подключение Tweakpane -->
+    <script src="https://cdn.jsdelivr.net/npm/tweakpane@3.1.9/dist/tweakpane.min.js"></script>
+    <!-- Подключение пользовательских стилей -->
+    <link rel="stylesheet" href="./index.css" />
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        background: transparent;
+        /* Устанавливаем прозрачный фон */
+      }
+    </style>
+  </head>
+
+  <body>
+    <script>
+      (async function () {
+        // Создание приложения PIXI.js
+        const app = new PIXI.Application();
+        await app.init({
+          width: window.innerWidth,
+          height: window.innerHeight,
+          resolution: window.devicePixelRatio || 1,
+          autoDensity: true,
+          resizeTo: window,
+          backgroundColor: 0x2c3e50, // Цвет фона
+          hello: true, // Приветственное сообщение в консоли
+        });
+        document.body.appendChild(app.view);
+
+        // Предзагрузка данных скелетов и атласа
+        PIXI.Assets.add({ alias: "frameData", src: "./assets/frame.json" });
+        PIXI.Assets.add({ alias: "clawData", src: "./assets/claw.json" });
+        PIXI.Assets.add({ alias: "symData", src: "./assets/symbols.json" });
+        PIXI.Assets.add({ alias: "wfData", src: "./assets/winframe.json" });
+        PIXI.Assets.add({ alias: "bgr", src: "./assets/prew_bg.json" });
+        PIXI.Assets.add({ alias: "welcomeAtlas",src: "./assets/welcome_scr.atlas",
+        });
+        PIXI.Assets.add({ alias: "bgrAtlas", src: "./assets/bgr.atlas" });
+
+        // Загрузка ресурсов
+        await PIXI.Assets.load(["wfData", "welcomeAtlas"]);
+        await PIXI.Assets.load(["frameData", "welcomeAtlas"]);
+        await PIXI.Assets.load(["clawData", "welcomeAtlas"]);
+        await PIXI.Assets.load(["symData", "welcomeAtlas"]);
+        await PIXI.Assets.load(["bgr", "bgrAtlas"]);
+
+        function setAnimationSequence(target, animations, startDelay = 0) {
+          setTimeout(() => {
+            animations.forEach(({ name, loop, delay }, index) => {
+              if (index === 0) {
+                target.state.setAnimation(0, name, loop); // Первая анимация
+              } else {
+                target.state.addAnimation(0, name, loop, delay);
+              }
+            });
+          }, startDelay * 1000); // Задержка начала всей последовательности
+        }
+
+        function setPosition(target, xOffset, yOffset, scale = 1) {
+          const cwPos = window.innerWidth / 2;
+          const chPos = window.innerHeight / 2;
+          target.x = cwPos - xOffset * scale;
+          target.y = chPos - yOffset * scale;
+        }
+
+        // Переменные
+        const tOffset_01 = 1; // офсеты по времени для боксов
+        const tOffset_02 = 6;
+        const tOffset_03 = 12;
+        const boxScale = 1;
+        const cwPos = window.innerWidth / 2;
+        const chPos = window.innerHeight / 2;
+
+        const bgr_01 = spine.Spine.from({
+          skeleton: "bgr",
+          atlas: "bgrAtlas",
+          scale: boxScale,
+        });
+
+        const frame_01 = spine.Spine.from({
+          skeleton: "frameData",
+          atlas: "welcomeAtlas",
+          scale: boxScale,
+        });
+        const frame_02 = spine.Spine.from({
+          skeleton: "frameData",
+          atlas: "welcomeAtlas",
+          scale: boxScale,
+        });
+        const frame_03 = spine.Spine.from({
+          skeleton: "frameData",
+          atlas: "welcomeAtlas",
+          scale: boxScale,
+        });
+
+        const wframes = Array.from({ length: 6 }, () =>
+          spine.Spine.from({
+            skeleton: "wfData",
+            atlas: "welcomeAtlas",
+            scale: boxScale,
+          })
+        );
+        const [wframe_01, wframe_02, wframe_03, wframe_01a, wframe_02a, wframe_03a] = wframes;
+
+        const claws = Array.from({ length: 9 }, () =>
+          spine.Spine.from({
+            skeleton: "clawData",
+            atlas: "welcomeAtlas",
+            scale: boxScale,
+          })
+        );
+        const [
+          claw_01,
+          claw_02,
+          claw_03,
+          claw_04,
+          claw_05,
+          claw_06,
+          claw_07,
+          claw_08,
+          claw_09,
+        ] = claws;
+
+        const sym = Array.from({ length: 9 }, () =>
+          spine.Spine.from({
+            skeleton: "symData",
+            atlas: "welcomeAtlas",
+            scale: boxScale,
+          })
+        );
+        const [
+          sym_01,
+          sym_02,
+          sym_03,
+          sym_04,
+          sym_05,
+          sym_06,
+          puff_01,
+          puff_02,
+          puff_03,
+        ] = sym;
+
+        const initBox1 = async () => {
+          // Позиционирование объектов
+          setPosition(wframe_01, 0, 0, boxScale);
+          setPosition(wframe_01a, 0, 0, boxScale);
+          setPosition(frame_01, 0, 0, boxScale);
+          setPosition(claw_01, 94, 27.3, boxScale);
+          setPosition(claw_02, 2, 27.3, boxScale);
+          setPosition(claw_03, -91, 27.3, boxScale);
+          setPosition(sym_01, 90, -47.7, boxScale);
+          setPosition(sym_02, 0, -47.7, boxScale);
+          setPosition(sym_03, -90, -47.7, boxScale);
+          setPosition(puff_01, 90, -47.7, boxScale);
+          setPosition(puff_02, 0, -47.7, boxScale);
+          setPosition(puff_03, -90, -47.7, boxScale);
+
+          // Установка анимаций для claw_01
+          setAnimationSequence(claw_01, [
+            { name: "lock_static", loop: false, delay: 0 },
+            { name: "unlock", loop: false, delay: 3 + tOffset_01 },
+            { name: "claw_idle", loop: true, delay: 0 },
+          ]);
+
+          setAnimationSequence(claw_02, [
+            { name: "lock_static", loop: false, delay: 0 },
+            { name: "unlock", loop: false, delay: 3.3 + tOffset_01 },
+            { name: "claw_idle", loop: true, delay: 0 },
+          ]);
+
+          setAnimationSequence(claw_03, [
+            { name: "lock_static", loop: false, delay: 0 },
+            { name: "unlock", loop: false, delay: 3.6 + tOffset_01 },
+            { name: "claw_idle", loop: true, delay: 0 },
+          ]);
+
+          setAnimationSequence(sym_01, [
+            { name: "low_purple_idle", loop: false, delay: 0 },
+            { name: "drope_00", loop: false, delay: 1 + tOffset_01 },
+            { name: "low_blue_booster_idle", loop: false, delay: 0 },
+            { name: "low_blue_idle", loop: false, delay: 0.8 },
+          ]);
+
+          setAnimationSequence(sym_02, [
+            { name: "high_pink_idle", loop: false, delay: 0 },
+            { name: "drope_01", loop: false, delay: 1.2 + tOffset_01 },
+            { name: "high_blue_booster_idle", loop: false, delay: 0 },
+            { name: "high_pink_idle", loop: false, delay: 0.8 },
+          ]);
+
+          setAnimationSequence(sym_03, [
+            { name: "low_pink_idle", loop: false, delay: 0 },
+            { name: "drope_02", loop: false, delay: 1.4 + tOffset_01 },
+            { name: "high_orange_booster_idle", loop: false, delay: 0 },           
+            { name: "high_orange_idle", loop: false, delay: 0.8 },
+          ]);
+
+          setAnimationSequence(
+            puff_01,
+            [{ name: "disappearance", loop: false, delay: 0 }],
+            3 + tOffset_01
+          );
+          setAnimationSequence(
+            puff_02,
+            [{ name: "disappearance", loop: false, delay: 0 }],
+            3.3 + tOffset_01
+          );
+
+          setAnimationSequence(
+            puff_03,
+            [
+              { name: "disappearance", loop: false, delay: 0 },
+            ],
+            3.6 + tOffset_01
+          );
+
+          // Установка анимаций для frame_01
+          setAnimationSequence(frame_01, [
+            { name: "frame_start", loop: false, delay: 0 },
+            { name: "bar_1", loop: false, delay: 2.6 + tOffset_01 },
+            { name: "bar_2", loop: false, delay: 0 },
+            { name: "bar_3", loop: false, delay: 0 },
+            { name: "bar_3_idle", loop: true, delay: 0 },
+          ]);
+
+          // Установка анимаций для wframe_01
+          setAnimationSequence(
+            wframe_01, [
+            { name: "idle", loop: false, delay: 0 },
+            { name: "loop", loop: true, delay: 0.5 + tOffset_01 },
+            { name: "idle", loop: false, delay: 5 },
+          ]);
+
+          // Установка анимаций для wframe_01
+          setAnimationSequence(
+            wframe_01a, [
+            { name: "idle", loop: false, delay: 0 },
+            { name: "start", loop: false, delay: 0.5 + tOffset_01 },
+          ])
+
+          // Добавление объектов на сцену в контейнере для трансформаций
+          const container1 = new PIXI.Container();
+          container1.addChild(frame_01);
+          container1.addChild(claw_01);
+          container1.addChild(claw_02);
+          container1.addChild(claw_03);
+          container1.addChild(sym_01);
+          container1.addChild(sym_02);
+          container1.addChild(sym_03);
+          container1.addChild(puff_01);
+          container1.addChild(puff_02);
+          container1.addChild(puff_03);
+          container1.addChild(wframe_01);
+          container1.addChild(wframe_01a);
+          app.stage.addChild(container1); // контейнер
+
+          return container1;
+        };
+
+        const initBox2 = async () => {
+          // Позиционирование объектов
+          setPosition(wframe_02, 0, 0, boxScale)
+          setPosition(wframe_02a, 0, 0, boxScale);
+          setPosition(frame_02, 0, 0, boxScale);
+          setPosition(claw_04, 94, 27.3, boxScale);
+          setPosition(claw_05, 2, 27.3, boxScale);
+          setPosition(claw_06, -91, 27.3, boxScale);
+          setPosition(sym_04, 90, -47.7, boxScale);
+          setPosition(sym_05, 0, -47.7, boxScale);
+          setPosition(sym_06, -90, -47.7, boxScale);
+
+          // Установка анимаций для claw_04
+          setAnimationSequence(claw_04, [
+            { name: "claw_idle", loop: true, delay: 0 },
+            { name: "claw_down", loop: false, delay: 1 + tOffset_02 },
+            { name: "claw_bomb_25", loop: false, delay: 0 },
+            { name: "claw_idle", loop: true, delay: 0 },
+          ]);
+
+          setAnimationSequence(claw_05, [
+            { name: "claw_idle", loop: true, delay: 0 },
+            { name: "claw_down", loop: false, delay: 2 + tOffset_02 },
+            { name: "claw_bomb_10", loop: false, delay: 0 },
+            { name: "claw_idle", loop: true, delay: 0 },
+          ]);
+
+          setAnimationSequence(claw_06, [
+            { name: "claw_idle", loop: true, delay: 0 },
+            { name: "claw_down", loop: false, delay: 3 + tOffset_02 },
+            { name: "claw_bomb_50", loop: false, delay: 0 },
+            { name: "claw_idle", loop: true, delay: 0 },
+          ]);
+
+          setAnimationSequence(sym_04, [
+            { name: "high_blue_idle", loop: false, delay: 0 },
+          ]);
+
+          setAnimationSequence(sym_05, [
+            { name: "high_pink_idle", loop: false, delay: 0 },
+          ]);
+
+          setAnimationSequence(sym_06, [
+            { name: "high_green_idle", loop: false, delay: 0 },
+          ]);
+
+          // Установка анимаций для frame_02
+          setAnimationSequence(frame_02, [
+            { name: "frame_start", loop: false, delay: 0 },
+          ]);
+
+          // Установка анимаций для wframe_02
+          setAnimationSequence(wframe_02, [
+            { name: "idle", loop: false, delay: 0 },
+            { name: "loop", loop: true, delay: 0.5 + tOffset_02 },
+            { name: "idle", loop: false, delay: 5 },
+          ]);
+          // Установка анимаций для wframe_01
+          setAnimationSequence(
+            wframe_02a, [
+            { name: "idle", loop: false, delay: 0 },
+            { name: "start", loop: false, delay: 0.5 + tOffset_02 },
+          ]);
+
+          // Установка времени смешивания анимаций
+          [claw_04, claw_05, claw_06, sym_04, sym_05, sym_06, frame_02].forEach(
+            (item) => {
+              item.state.data.defaultMix = 0.2;
+            }
+          );
+
+          // Добавление объектов на сцену в контейнере для трансформаций
+          const container2 = new PIXI.Container();
+          container2.addChild(frame_02);
+          container2.addChild(claw_04);
+          container2.addChild(claw_05);
+          container2.addChild(claw_06);
+          container2.addChild(sym_04);
+          container2.addChild(sym_05);
+          container2.addChild(sym_06);
+          container2.addChild(wframe_02);
+          container2.addChild(wframe_02a);
+          app.stage.addChild(container2); // контейнер
+
+          return container2;
+        };
+
+        const initBox3 = async () => {
+          // Позиционирование объектов
+          setPosition(wframe_03, 0, 0, boxScale);
+          setPosition(wframe_03a, 0, 0, boxScale);
+          setPosition(frame_03, 0, 0, boxScale);
+          setPosition(claw_07, 0, 0, boxScale);
+          setPosition(claw_08, 0, 0, boxScale);
+          setPosition(claw_09, 0, 0, boxScale);
+
+          // Установка анимаций для claw_07
+          setAnimationSequence(claw_07, [
+            { name: "big_bomb_idle", loop: true, delay: 0 },
+            { name: "big_bomb_boom", loop: false, delay: 0 + tOffset_03 },
+            { name: "big_bomb_idle2", loop: true, delay: 0 },
+          ]);
+
+          // Установка анимаций для frame_03
+          setAnimationSequence(frame_03, [
+            { name: "frame_start2", loop: false, delay: 0 },
+          ]);
+
+          // Установка анимаций для wframe_03
+          setAnimationSequence(wframe_03, [
+            { name: "idle", loop: false, delay: 0 },
+            { name: "loop", loop: true, delay: 0.5 + tOffset_03 },
+            { name: "idle", loop: false, delay: 4 },
+          ]);
+          // Установка анимаций для wframe_03a
+          setAnimationSequence(
+            wframe_03a, [
+            { name: "idle", loop: false, delay: 0 },
+            { name: "start", loop: false, delay:  tOffset_03 },
+          ])
+
+          // Установка времени смешивания анимаций
+          claw_07.state.data.defaultMix = 0.2;
+          // claw_08.state.data.defaultMix = 0.2;
+          // claw_09.state.data.defaultMix = 0.2;
+          frame_03.state.data.defaultMix = 0.2;
+
+          // Добавление объектов на сцену в контейнере для трансформаций
+          const container3 = new PIXI.Container();
+          container3.addChild(frame_03);
+          container3.addChild(claw_08);
+          container3.addChild(claw_09);
+          container3.addChild(claw_07);
+          container3.addChild(wframe_03);
+          container3.addChild(wframe_03a);
+          app.stage.addChild(container3); // контейнер
+
+          return container3;
+        };
+
+        const initBox4 = async () => {
+          // Позиционирование объектов
+          setPosition(bgr_01, 0, 0, boxScale);
+          setAnimationSequence(bgr_01, [
+            { name: "time_flow", loop: false, delay: 0 },
+          ]);
+
+          const container4 = new PIXI.Container();
+          container4.addChild(bgr_01);
+          app.stage.addChild(container4); // контейнер
+
+          return container4;
+        };
+
+        // Инициализация контейнеров
+        const cbox4 = await initBox4();
+        cbox4.x = 0;
+        cbox4.y = 0;
+
+        const cbox1 = await initBox1();
+        cbox1.x = -160;
+        cbox1.y = -140;
+
+        const cbox2 = await initBox2();
+        cbox2.x = 160;
+        cbox2.y = -140;
+
+        const cbox3 = await initBox3();
+        cbox3.x = 0;
+        cbox3.y = 180;
+      })();
+    </script>
+  </body>
+</html>

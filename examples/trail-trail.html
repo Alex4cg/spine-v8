@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <title>PIXI.js – Плавный перелёт множителя</title>
+    <script src="./assets/libs/pixi.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  </head>
+  <body style="margin: 0; background: #0a0a1f">
+    <script>
+      (async () => {
+        const app = new PIXI.Application();
+        await app.init({ width: 900, height: 600, backgroundColor: 0x0a0a1f });
+        document.body.appendChild(app.canvas);
+
+        const start = new PIXI.Point(150, 400);
+        const end = new PIXI.Point(750, 150);
+        const controls = [new PIXI.Point(400, 100), new PIXI.Point(600, 500)];
+        const points = Array.from({ length: 40 }, () => new PIXI.Point(start.x, start.y));
+
+        const Rope = PIXI.MeshRope || PIXI.meshExtras?.MeshRope || PIXI.SimpleRope;
+        if (!Rope) throw new Error("MeshRope/SimpleRope недоступен в этой сборке Pixi.");
+
+        const texture = await PIXI.Assets.load("./assets/trail_gradient_1v.png");
+        const rope =
+          Rope === PIXI.MeshRope
+            ? new Rope({ texture, points })
+            : new Rope(texture, points);
+        rope.blendMode = PIXI.BlendModes?.ADD ?? 1;
+        rope.filters = [new PIXI.BlurFilter(8)];
+        app.stage.addChild(rope);
+
+        const pos = new PIXI.Point(start.x, start.y);
+        const bezier = (t, p0, p1, p2, p3) => {
+          const mt = 1 - t, mt2 = mt * mt, t2 = t * t;
+          const a = mt * mt2, b = 3 * mt2 * t, c = 3 * mt * t2, d = t * t2;
+          return new PIXI.Point(
+            a * p0.x + b * p1.x + c * p2.x + d * p3.x,
+            a * p0.y + b * p1.y + c * p2.y + d * p3.y
+          );
+        };
+
+        app.ticker.add(() => {
+          points.pop();
+          points.unshift(new PIXI.Point(pos.x, pos.y));
+        });
+
+        const run = () => {
+          const state = { t: 0 };
+          gsap.killTweensOf([state, rope]);
+          gsap.set(rope, { alpha: 1 });
+          points.forEach((p) => p.copyFrom(start));
+          pos.copyFrom(start);
+          gsap.fromTo(
+            state,
+            { t: 0 },
+            {
+              t: 1,
+              duration: 1.8,
+              ease: "power2.inOut",
+              onUpdate: () => pos.copyFrom(bezier(state.t, start, controls[0], controls[1], end)),
+              onComplete: () => gsap.to(rope, { alpha: 0, duration: 0.3 }),
+            }
+          );
+        };
+
+        run();
+        setInterval(run, 2200);
+      })().catch((err) => {
+        console.error('Ошибка при инициализации:', err);
+        document.body.innerHTML = '<div style="color:white;padding:20px;">Ошибка: ' + err.message + '</div>';
+      });
+    </script>
+  </body>
+</html>
+

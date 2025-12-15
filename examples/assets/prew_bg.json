@@ -1,0 +1,40 @@
+{
+"skeleton": {
+	"hash": "++Goz5WO78U",
+	"spine": "4.1.24",
+	"x": -360,
+	"y": -640,
+	"width": 720,
+	"height": 1280,
+	"fps": 60,
+	"images": "../sourses/scr/",
+	"audio": "D:/Clawbuster/2000x/welcome_scr/Spine"
+},
+"bones": [
+	{ "name": "root" }
+],
+"slots": [
+	{ "name": "Game screen", "bone": "root", "attachment": "Game screen" }
+],
+"skins": [
+	{
+		"name": "default",
+		"attachments": {
+			"Game screen": {
+				"Game screen": { "width": 720, "height": 1280 }
+			}
+		}
+	}
+],
+"animations": {
+	"time_flow": {
+		"bones": {
+			"root": {
+				"scale": [
+					{ "x": 0.934, "y": 0.934 }
+				]
+			}
+		}
+	}
+}
+}

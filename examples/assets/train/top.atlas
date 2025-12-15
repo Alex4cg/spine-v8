@@ -1,0 +1,6 @@
+top.png
+size:1024,1024
+filter:Linear,Linear
+Images/bg/FIELD
+bounds:2,2,1000,639
+offsets:6,4,1006,647

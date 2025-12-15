@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Collect Effect Test - Additive Blend Mode</title>
+    <script src="./assets/libs/pixi.min.js"></script>
+    <script src="./assets/libs/spine-pixi.js"></script>
+  </head>
+  <body style="margin:0;background:#000000;overflow:hidden;">
+    <div
+      id="controls"
+      style="position:absolute;top:20px;left:20px;z-index:1000;display:flex;flex-direction:column;gap:15px;"
+    >
+      <div style="color:white;font-size:14px;font-weight:600;margin-bottom:5px;">
+        Collect Effect Test:
+      </div>
+      <button
+        id="playHit"
+        style="padding:10px 20px;background:#00ff00;color:#000000;border:none;border-radius:5px;cursor:pointer;font-size:14px;font-weight:600;"
+      >
+        Play Hit
+      </button>
+      <button
+        id="toggleLoop"
+        style="padding:10px 20px;background:#ff00ff;color:white;border:none;border-radius:5px;cursor:pointer;font-size:14px;font-weight:600;"
+      >
+        Loop (OFF)
+      </button>
+    </div>
+    <script>
+      (async () => {
+        const app = new PIXI.Application();
+        await app.init({
+          width: window.innerWidth,
+          height: window.innerHeight,
+          backgroundColor: 0x000000, // Черный фон для лучшей видимости аддитивного эффекта
+          resolution: window.devicePixelRatio || 1,
+          autoDensity: true,
+        });
+        document.body.appendChild(app.canvas);
+        app.stage.sortableChildren = true;
+        app.stage.eventMode = "static";
+        app.stage.hitArea = app.screen;
+
+        // Загрузка ресурсов из пиньят
+        await PIXI.Assets.load([
+          { alias: "collectEffectSkeleton", src: "./assets/pinatas/skeleton.json" },
+          { alias: "collectEffectAtlas", src: "./assets/pinatas/skeleton.atlas" },
+        ]);
+
+        // Создание Spine объекта
+        const collectEffect = spine.Spine.from({
+          skeleton: "collectEffectSkeleton",
+          atlas: "collectEffectAtlas",
+          scale: 1,
+        });
+
+        // Устанавливаем физику (как в SpineEffectSystem - ensurePhysics)
+        if (!collectEffect.skeleton.physics) {
+          collectEffect.skeleton.physics = {
+            update: () => {},
+            updateGlobal: () => {},
+          };
+        }
+
+        // Устанавливаем defaultMix (как в SpineEffectSystem)
+        collectEffect.state.data.defaultMix = 0.1;
+
+        // Позиционируем в центре экрана
+        collectEffect.x = app.screen.width / 2;
+        collectEffect.y = app.screen.height / 2;
+        collectEffect.zIndex = 1;
+        
+        // Добавляем на stage (как в SpineEffectSystem)
+        app.stage.addChild(collectEffect);
+
+        // Ждем один кадр (как в SpineEffectSystem - await this.waitNextFrame())
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+
+        // Устанавливаем скин "blue" (как в SpineEffectSystem)
+        const blueSkin = collectEffect.skeleton.data.findSkin("blue");
+        if (blueSkin) {
+          collectEffect.skeleton.setSkin(blueSkin);
+          collectEffect.skeleton.setSlotsToSetupPose();
+          // Используем physics.update как в SpineEffectSystem
+          if (collectEffect.skeleton.physics && collectEffect.skeleton.physics.update) {
+            collectEffect.skeleton.updateWorldTransform(collectEffect.skeleton.physics.update);
+          }
+          console.log("✅ Скин 'blue' установлен (как в пиньятах)");
+        } else {
+          console.warn("⚠️ Скин 'blue' не найден");
+        }
+
+        // Настройка управления костями (сразу после установки скина, как в SpineEffectSystem)
+        const controlBoneNames = [
+          "control_point_1",
+          "control_point_2",
+          "control_point_1_t",
+          "control_point_2_t",
+        ];
+        const controlBones = [];
+        const dragState = { node: null, lastX: 0, lastY: 0 };
+
+        // Создаем визуальные точки управления
+        for (const name of controlBoneNames) {
+          const bone = collectEffect.skeleton.findBone(name);
+          if (!bone) {
+            console.warn(`⚠️ Кость ${name} не найдена`);
+            continue;
+          }
+
+          const world = { x: bone.worldX, y: bone.worldY };
+          collectEffect.skeletonToPixiWorldCoordinates(world);
+
+          const handle = new PIXI.Graphics()
+            .lineStyle({ width: 1, color: 0xff00ff, alpha: 0.9 })
+            .beginFill(0xff00ff, 0.4)
+            .drawCircle(0, 0, 9)
+            .endFill();
+          handle.x = world.x;
+          handle.y = world.y;
+          handle.cursor = "pointer";
+          handle.eventMode = "static";
+          handle.zIndex = 10;
+
+          handle.on("pointerdown", ({ x, y }) => {
+            dragState.node = handle;
+            dragState.lastX = x;
+            dragState.lastY = y;
+          });
+
+          app.stage.addChild(handle);
+          controlBones.push({ bone, handle });
+        }
+
+        // Настройка синхронизации позиций костей
+        const convertPoint = { x: 0, y: 0 };
+        collectEffect.beforeUpdateWorldTransforms = () => {
+          for (const { bone, handle } of controlBones) {
+            convertPoint.x = handle.x;
+            convertPoint.y = handle.y;
+            collectEffect.pixiWorldCoordinatesToBone(convertPoint, bone);
+            bone.x = convertPoint.x;
+            bone.y = convertPoint.y;
+          }
+        };
+
+        // Настройка drag & drop
+        const endDrag = () => {
+          dragState.node = null;
+        };
+
+        app.stage.on("pointerup", endDrag);
+        app.stage.on("pointerupoutside", endDrag);
+        app.stage.on("pointermove", ({ x, y }) => {
+          if (dragState.node) {
+            dragState.node.x += x - dragState.lastX;
+            dragState.node.y += y - dragState.lastY;
+            dragState.lastX = x;
+            dragState.lastY = y;
+          }
+        });
+
+        // Треки для анимаций
+        const TRACK_HIT = 1;
+        const TRACK_END_EFFECT = 2;
+        
+        let isLooping = false;
+
+
+        // Функция для запуска анимаций
+        const playHit = (loop = false) => {
+          // Сбрасываем Spine в setup pose перед запуском анимации, чтобы attachment аддитивного слоя включился
+          collectEffect.skeleton.setSlotsToSetupPose();
+          collectEffect.skeleton.setBonesToSetupPose();
+          if (collectEffect.skeleton.physics && collectEffect.skeleton.physics.update) {
+            collectEffect.skeleton.updateWorldTransform(collectEffect.skeleton.physics.update);
+          }
+          
+          const entry1 = collectEffect.state.setAnimation(TRACK_HIT, "hit", loop);
+          const entry2 = collectEffect.state.setAnimation(TRACK_END_EFFECT, "end_effect", loop);
+          
+          if (entry1) {
+            entry1.mixDuration = 0;
+          }
+          if (entry2) {
+            entry2.mixDuration = 0;
+          }
+          
+          if (entry1 && entry2) {
+            console.log(`✅ Анимации запущены (loop: ${loop})`);
+          } else {
+            console.warn("⚠️ Не удалось запустить анимации");
+          }
+        };
+
+        // Настройка кнопок
+        document.getElementById("playHit").onclick = () => {
+          playHit(false);
+        };
+
+        document.getElementById("toggleLoop").onclick = () => {
+          isLooping = !isLooping;
+          const btn = document.getElementById("toggleLoop");
+          btn.textContent = `Loop (${isLooping ? "ON" : "OFF"})`;
+          btn.style.background = isLooping ? "#ff00ff" : "#aa00aa";
+          
+          if (isLooping) {
+            playHit(true);
+          } else {
+            collectEffect.state.clearTrack(TRACK_HIT);
+            collectEffect.state.clearTrack(TRACK_END_EFFECT);
+            // Устанавливаем null только при выключении loop (как в рабочей версии)
+            collectEffect.state.setAnimation(0, "null", true);
+            // Восстанавливаем состояние слотов после установки null, чтобы blend mode не сбросился
+            collectEffect.skeleton.setSlotsToSetupPose();
+            if (collectEffect.skeleton.physics && collectEffect.skeleton.physics.update) {
+              collectEffect.skeleton.updateWorldTransform(collectEffect.skeleton.physics.update);
+            }
+          }
+        };
+
+        // Обновление в ticker
+        app.ticker.add(() => {
+          // Обновляем collect effect
+          if (collectEffect && collectEffect.skeleton && collectEffect.skeleton.physics) {
+            collectEffect.skeleton.updateWorldTransform(collectEffect.skeleton.physics.update);
+          }
+        });
+
+        // Запускаем анимацию один раз после инициализации, чтобы она проигралась до конца
+        // и остановилась на последнем кадре (как в рабочей версии)
+        playHit(false);
+
+        console.log("✅ Collect Effect Test инициализирован");
+        console.log("   Используется Spine из: ./assets/pinatas/skeleton.json");
+        console.log("   Скин: blue");
+        console.log("   Анимации: hit, end_effect");
+      })()
+        .catch((err) => {
+          console.error(err);
+          document.body.innerHTML =
+            '<div style="color:#fff;font-family:monospace;padding:24px;">Ошибка: ' +
+            err.message +
+            "</div>";
+        });
+    </script>
+  </body>
+</html>
+

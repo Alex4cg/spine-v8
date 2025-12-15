@@ -1,0 +1,227 @@
+
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Spine + Particles Demo</title>
+
+    <!-- PixiJS 8 -->
+    <script src="./assets/libs/pixi.min.js"></script>
+
+    <!-- Particle emitter plugin -->
+    <script src="./assets/libs/particle-emitter.min.js"></script>
+
+    <!-- Spine runtime for Pixi v8 -->
+    <script src="./assets/libs/spine-pixi.js"></script>
+
+    <style>
+      body {
+        margin: 0;
+        background: #2c3e50;
+        overflow: hidden;
+      }
+
+      canvas {
+        display: block;
+        width: 100vw;
+        height: 100vh;
+      }
+
+      #log {
+        position: fixed;
+        left: 12px;
+        bottom: 12px;
+        color: #f7f7f7;
+        font-family: monospace;
+        font-size: 12px;
+        opacity: 0.7;
+        pointer-events: none;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="log"></div>
+    <script>
+      (async () => {
+        const log = (...args) => {
+          console.log(...args);
+          document.getElementById("log").textContent = args.join(" ");
+        };
+
+        // Проверяем наличие Pixi
+        if (!window.PIXI || !PIXI.Application) {
+          log("❌ PixiJS не найден");
+          return;
+        }
+
+        const app = new PIXI.Application();
+        await app.init({
+          resizeTo: window,
+          background: "#2c3e50",
+        });
+        document.body.appendChild(app.canvas);
+
+        // Определяем namespace эмиттера (зависит от версии)
+        const particleNamespace =
+          (PIXI.particleEmitter && PIXI.particleEmitter.Emitter
+            ? PIXI.particleEmitter
+            : null) ??
+          (PIXI.particles && PIXI.particles.Emitter ? PIXI.particles : null) ??
+          (window.particleEmitter && window.particleEmitter.Emitter
+            ? window.particleEmitter
+            : null);
+
+        if (!particleNamespace || !particleNamespace.Emitter) {
+          log("❌ Плагин @pixi/particle-emitter не найден");
+          return;
+        }
+
+        log("⏳ Загружаем ассеты…");
+
+        PIXI.Assets.add({
+          alias: "skeleton",
+          src: "./assets/collect_effect.json",
+        });
+        PIXI.Assets.add({ alias: "atlas", src: "./assets/collect_effect.atlas" });
+        PIXI.Assets.add({
+          alias: "emitterConfig",
+          src: "./assets/emitter_test.json",
+        });
+        PIXI.Assets.add({
+          alias: "particleTexture",
+          src: "./assets/particle.png",
+        });
+
+        const assets = await PIXI.Assets.load([
+          "skeleton",
+          "atlas",
+          "emitterConfig",
+          "particleTexture",
+        ]);
+
+        log("✅ Ассеты загружены, создаём сцену");
+
+        const spineObject = spine.Spine.from({
+          skeleton: "skeleton",
+          atlas: "atlas",
+          scale: 0.5,
+        });
+        spineObject.state.setAnimation(0, "to_box", true);
+        spineObject.x = app.screen.width / 2;
+        spineObject.y =
+          app.screen.height / 2 + spineObject.getBounds().height / 2;
+        app.stage.addChild(spineObject);
+
+        // ---- Управление контрольными точками (drag) ----
+        app.stage.eventMode = "static";
+        app.stage.hitArea = app.screen;
+        let dragObject = null;
+        let lastX = -1, lastY = -1;
+        const endDrag = () => (dragObject = null);
+        app.stage
+          .on("pointerup", endDrag)
+          .on("pointerupoutside", endDrag)
+          .on("pointermove", ({ x, y }) => {
+            if (dragObject) {
+              dragObject.x += x - lastX;
+              dragObject.y += y - lastY;
+              lastX = x;
+              lastY = y;
+            }
+          });
+
+        const controlBoneNames = [
+          "control_point_1",
+          "control_point_2",
+          "control_point_3",
+          "control_point_4",
+        ];
+        const controlBones = [];
+
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+
+        for (let i = 0; i < controlBoneNames.length; i++) {
+          const bone = spineObject.skeleton.findBone(controlBoneNames[i]);
+          if (!bone) continue;
+          const point = { x: bone.worldX, y: bone.worldY };
+          spineObject.skeletonToPixiWorldCoordinates(point);
+
+          const control = new PIXI.Graphics()
+            .beginFill(0xff00ff)
+            .drawCircle(0, 0, 6)
+            .endFill();
+          control.x = point.x;
+          control.y = point.y;
+          controlBones.push({ bone, control });
+          app.stage.addChild(control);
+
+          control.interactive = true;
+          control.on("pointerdown", ({ x, y }) => {
+            dragObject = control;
+            lastX = x;
+            lastY = y;
+          });
+        }
+
+        const tmp = { x: 0, y: 0 };
+        spineObject.beforeUpdateWorldTransforms = () => {
+          for (const { bone, control } of controlBones) {
+            tmp.x = control.x;
+            tmp.y = control.y;
+            spineObject.pixiWorldCoordinatesToBone(tmp, bone);
+            bone.x = tmp.x;
+            bone.y = tmp.y;
+          }
+        };
+
+        const particleTextures = [assets.particleTexture];
+
+        // Используем конфиг из редактора Pixi Particle Emitter
+        // upgradeConfig конвертирует старый формат в новый (с behaviors)
+        let emitterConfig = assets.emitterConfig;
+        if (particleNamespace.upgradeConfig) {
+          emitterConfig = particleNamespace.upgradeConfig(
+            emitterConfig,
+            particleTextures
+          );
+          log("✅ Конфиг из редактора загружен и сконвертирован");
+        } else {
+          log("⚠️ upgradeConfig не найден, используется как есть");
+        }
+
+        const particleLayer = new PIXI.Container();
+        app.stage.addChild(particleLayer);
+
+        // В Pixi particle-emitter v7+ конструктор принимает (parent, config),
+        // текстура указывается внутри behaviors (через upgradeConfig).
+        const emitter = new particleNamespace.Emitter(
+          particleLayer,
+          emitterConfig
+        );
+        // Привязка к кости Spine
+        const followBone = spineObject.skeleton.findBone("Flame_line_bone");
+        const bonePoint = { x: 0, y: 0 };
+
+        emitter.emit = true;
+        emitter.autoUpdate = true;
+        emitter.emitNow();
+
+        app.ticker.add(() => {
+          if (followBone) {
+            bonePoint.x = followBone.worldX;
+            bonePoint.y = followBone.worldY;
+            spineObject.skeletonToPixiWorldCoordinates(bonePoint);
+            emitter.updateOwnerPos(bonePoint.x, bonePoint.y);
+          }
+        });
+
+        log("🔥 Spine + Particles готовы!");
+      })().catch((err) => {
+        console.error(err);
+        document.getElementById("log").textContent = "❌ " + err.message;
+      });
+    </script>
+  </body>
+</html>
+
+

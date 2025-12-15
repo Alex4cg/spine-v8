@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Train Test - Animation Control</title>
+    <script src="./assets/libs/pixi.min.js"></script>
+    <script src="./assets/libs/spine-pixi.js"></script>
+    <script src="./assets/libs/particle-emitter.min.js"></script>
+  </head>
+  <body style="margin:0;background:#1a1a1a;overflow:hidden;">
+    <div
+      id="controls"
+      style="position:absolute;top:20px;left:20px;z-index:1000;display:flex;flex-direction:column;gap:15px;"
+    >
+      <div style="color:white;font-size:14px;font-weight:600;margin-bottom:5px;">
+        Зацикленные треки (поверх idle):
+      </div>
+      <button
+        id="togglePiles"
+        style="padding:8px 15px;background:#ffcc00;color:#1a1a1a;border:none;border-radius:5px;cursor:pointer;font-size:12px;font-weight:600;"
+      >
+        Piles of Gold (ON)
+      </button>
+      <button
+        id="toggleSpeed"
+        style="padding:8px 15px;background:#00ccff;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;font-weight:600;"
+      >
+        Speed Effect (ON)
+      </button>
+      
+      <div style="color:white;font-size:14px;font-weight:600;margin-top:10px;margin-bottom:5px;">
+        Разовые анимации:
+      </div>
+      <button
+        id="playBlick"
+        style="padding:8px 15px;background:#ff3333;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;"
+      >
+        Blick Add
+      </button>
+      <button
+        id="playActive"
+        style="padding:8px 15px;background:#ff8800;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;"
+      >
+        Active
+      </button>
+      <button
+        id="playSteam1"
+        style="padding:8px 15px;background:#33ff33;color:#1a1a1a;border:none;border-radius:5px;cursor:pointer;font-size:12px;"
+      >
+        Steam 1
+      </button>
+      <button
+        id="playSteam2"
+        style="padding:8px 15px;background:#3333ff;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;"
+      >
+        Steam 2
+      </button>
+      
+      <div style="color:white;font-size:14px;font-weight:600;margin-top:15px;margin-bottom:5px;">
+        Уровни (постоянный трек):
+      </div>
+      <button
+        id="levelUp"
+        style="padding:10px 20px;background:#ff6b35;color:white;border:none;border-radius:5px;cursor:pointer;font-size:13px;font-weight:600;"
+      >
+        Level Up
+      </button>
+      <button
+        id="setLevel1"
+        style="padding:8px 15px;background:#ff6b6b;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;font-weight:600;"
+      >
+        Level 1
+      </button>
+      <button
+        id="setLevel2"
+        style="padding:8px 15px;background:#4ecdc4;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;font-weight:600;"
+      >
+        Level 2
+      </button>
+      <button
+        id="setLevel3"
+        style="padding:8px 15px;background:#95e1d3;color:#1a1a1a;border:none;border-radius:5px;cursor:pointer;font-size:12px;font-weight:600;"
+      >
+        Level 3
+      </button>
+      
+      <div style="color:white;font-size:14px;font-weight:600;margin-top:15px;margin-bottom:5px;">
+        WIN Sequence:
+      </div>
+      <button
+        id="playWin"
+        style="padding:10px 20px;background:#ff00ff;color:white;border:none;border-radius:5px;cursor:pointer;font-size:14px;font-weight:600;"
+      >
+        WIN
+      </button>
+      
+      <div style="color:white;font-size:14px;font-weight:600;margin-top:15px;margin-bottom:5px;">
+        Collect Effect:
+      </div>
+      <button
+        id="playCollectHit"
+        style="padding:10px 20px;background:#00ff00;color:#1a1a1a;border:none;border-radius:5px;cursor:pointer;font-size:14px;font-weight:600;"
+      >
+        Хит
+      </button>
+      <button
+        id="playHitToTrain"
+        style="padding:10px 20px;background:#ff6b35;color:white;border:none;border-radius:5px;cursor:pointer;font-size:14px;font-weight:600;margin-left:10px;"
+      >
+        Хит ту трейн
+      </button>
+      
+      <div style="color:white;font-size:14px;font-weight:600;margin-top:15px;margin-bottom:5px;">
+        Logo Position:
+      </div>
+      <div id="logoPosition" style="color:#00ff00;font-size:12px;margin-bottom:5px;">
+        X: 0, Y: 0
+      </div>
+    </div>
+    <script>
+      // Кастомный эмиттер фонтана монет
+      class CustomCoinEmitter {
+        constructor(container, textures, config = {}) {
+          this.container = container;
+          this.textures = textures; // Массив текстур монет (00-16)
+          this.particles = [];
+          this.activeParticles = [];
+          
+          // Конфигурация
+          this.config = {
+            startSpeed: config.startSpeed || 450,      // Начальная скорость вверх
+            gravity: config.gravity || 900,              // Гравитация вниз
+            spread: config.spread || 30,                 // Разброс угла в градусах
+            lifetime: { min: config.lifetimeMin || 1.2, max: config.lifetimeMax || 1.6 },
+            scale: { start: config.scaleStart || 1, end: config.scaleEnd || 0.5 },
+            rotationSpeed: { min: config.rotationSpeedMin || -5, max: config.rotationSpeedMax || 5 },
+            animationSpeed: config.animationSpeed || 30, // Скорость анимации монеты (30 fps = 30 кадров/сек)
+            maxParticles: config.maxParticles || 500,
+            ...config
+          };
+          
+          this.x = config.x || 0;
+          this.y = config.y || 0;
+          this.angle = config.angle || 0; // Угол направления эмиттера (в радианах)
+          this.emit = false;
+          this.emissionTimer = 0;
+          this.emissionRate = config.emissionRate || 0.02; // Частота эмиссии
+        }
+        
+        // Создание новой частицы
+        createParticle() {
+          let sprite = null;
+          
+          // Переиспользуем неактивную частицу или создаем новую
+          const inactive = this.particles.find(p => !p.active);
+          if (inactive) {
+            sprite = inactive.sprite;
+            inactive.active = true;
+          } else {
+            sprite = new PIXI.Sprite(this.textures[0]);
+            sprite.anchor.set(0.5);
+            this.container.addChild(sprite);
+            this.particles.push({ sprite, active: false });
+          }
+          
+          // Инициализация частицы
+          const particle = this.particles.find(p => p.sprite === sprite);
+          particle.active = true;
+          particle.x = this.x;
+          particle.y = this.y;
+          
+          // Учитываем направление эмиттера (угол кости)
+          const speed = this.config.startSpeed * (0.8 + Math.random() * 0.4);
+          // spread теперь в градусах, конвертируем в радианы и применяем как разброс угла
+          const spreadRad = (this.config.spread * Math.PI) / 180; // Конвертируем spread из градусов в радианы
+          const spreadAngle = (Math.random() - 0.5) * spreadRad; // Разброс относительно направления
+          const emissionAngle = this.angle + spreadAngle;
+          
+          // Начальная скорость по направлению эмиттера
+          particle.vx = Math.sin(emissionAngle) * speed;
+          particle.vy = -Math.cos(emissionAngle) * speed; // Отрицательный, т.к. Y растет вниз
+          particle.lifetime = 0;
+          particle.maxLifetime = this.config.lifetime.min + Math.random() * (this.config.lifetime.max - this.config.lifetime.min);
+          particle.rotationSpeed = this.config.rotationSpeed.min + Math.random() * (this.config.rotationSpeed.max - this.config.rotationSpeed.min);
+          // Рандомизируем начальный кадр анимации для более естественного вида
+          particle.animationFrame = Math.random() * this.textures.length;
+          particle.scaleStart = this.config.scale.start;
+          particle.scaleEnd = this.config.scale.end;
+          
+          // Сразу устанавливаем правильную текстуру с учетом начального кадра
+          const initialFrameIndex = Math.floor(particle.animationFrame) % this.textures.length;
+          sprite.texture = this.textures[initialFrameIndex];
+          
+          sprite.x = particle.x;
+          sprite.y = particle.y;
+          sprite.rotation = Math.random() * Math.PI * 2;
+          sprite.scale.set(particle.scaleStart);
+          sprite.alpha = 1;
+          sprite.visible = true;
+          
+          return particle;
+        }
+        
+        // Обновление частицы
+        updateParticle(particle, deltaTime) {
+          // Физика
+          particle.vy += this.config.gravity * deltaTime;
+          particle.x += particle.vx * deltaTime;
+          particle.y += particle.vy * deltaTime;
+          
+          // Время жизни
+          particle.lifetime += deltaTime;
+          const lifeProgress = particle.lifetime / particle.maxLifetime;
+          
+          if (lifeProgress >= 1) {
+            // Частица умерла
+            particle.active = false;
+            particle.sprite.visible = false;
+            return;
+          }
+          
+          // Обновление спрайта
+          particle.sprite.x = particle.x;
+          particle.sprite.y = particle.y;
+          particle.sprite.rotation += particle.rotationSpeed * deltaTime;
+          
+          // Анимация текстуры монеты (30 fps = 30 кадров в секунду)
+          // animationSpeed в кадрах в секунду, умножаем на deltaTime для получения кадров
+          particle.animationFrame += this.config.animationSpeed * deltaTime;
+          const frameIndex = Math.floor(particle.animationFrame) % this.textures.length;
+          particle.sprite.texture = this.textures[frameIndex];
+          
+          // Масштаб (прозрачность убрана - монеты не затухают)
+          const scale = particle.scaleStart + (particle.scaleEnd - particle.scaleStart) * lifeProgress;
+          particle.sprite.scale.set(scale);
+          particle.sprite.alpha = 1; // Постоянная полная непрозрачность
+        }
+        
+        // Обновление эмиттера
+        update(deltaTime) {
+          // Эмиссия новых частиц
+          if (this.emit) {
+            this.emissionTimer += deltaTime;
+            const activeCount = this.particles.filter(p => p.active).length;
+            
+            if (this.emissionTimer >= this.emissionRate && activeCount < this.config.maxParticles) {
+              this.createParticle();
+              this.emissionTimer = 0;
+            }
+          }
+          
+          // Обновление всех активных частиц
+          for (const particle of this.particles) {
+            if (particle.active) {
+              this.updateParticle(particle, deltaTime);
+            }
+          }
+        }
+        
+        // Установка позиции эмиттера
+        setPosition(x, y) {
+          this.x = x;
+          this.y = y;
+        }
+        
+        // Установка угла направления эмиттера
+        setAngle(angle) {
+          this.angle = angle;
+        }
+        
+        // Установка позиции и угла одновременно
+        setPositionAndAngle(x, y, angle) {
+          this.x = x;
+          this.y = y;
+          this.angle = angle;
+        }
+        
+        // Установка частоты эмиссии (чем меньше значение, тем чаще эмиссия)
+        setEmissionRate(rate) {
+          this.emissionRate = rate;
+        }
+        
+        // Установка разброса угла (spread) в градусах
+        setSpread(spread) {
+          this.config.spread = spread;
+        }
+        
+        // Взрыв частиц (burst)
+        burst(count = 40) {
+          for (let i = 0; i < count; i++) {
+            if (this.particles.filter(p => p.active).length < this.config.maxParticles) {
+              this.createParticle();
+            }
+          }
+        }
+        
+        // Очистка всех частиц
+        clear() {
+          for (const particle of this.particles) {
+            particle.active = false;
+            if (particle.sprite) {
+              particle.sprite.visible = false;
+            }
+          }
+        }
+        
+        // Уничтожение эмиттера
+        destroy() {
+          this.clear();
+          for (const particle of this.particles) {
+            if (particle.sprite) {
+              this.container.removeChild(particle.sprite);
+              particle.sprite.destroy();
+            }
+          }
+          this.particles = [];
+        }
+      }
+
+      (async () => {
+        const app = new PIXI.Application();
+        await app.init({
+          width: window.innerWidth,
+          height: window.innerHeight,
+          backgroundColor: 0x1a1a1a,
+          resolution: window.devicePixelRatio || 1,
+          autoDensity: true,
+        });
+        document.body.appendChild(app.canvas);
+        app.stage.sortableChildren = true;
+        app.stage.eventMode = "static";
+        app.stage.hitArea = app.screen;
+
+        // Определяем namespace эмиттера частиц
+        const particleNamespace =
+          (PIXI.particleEmitter && PIXI.particleEmitter.Emitter
+            ? PIXI.particleEmitter
+            : null) ??
+          (PIXI.particles && PIXI.particles.Emitter ? PIXI.particles : null) ??
+          (window.particleEmitter && window.particleEmitter.Emitter
+            ? window.particleEmitter
+            : null);
+
+        if (!particleNamespace || !particleNamespace.Emitter) {
+          console.warn("⚠️ Плагин @pixi/particle-emitter не найден, частицы не будут работать");
+        }
+
+        // Загрузка ресурсов для монет
+        const coinTextures = [];
+        for (let i = 0; i <= 16; i++) {
+          const num = i.toString().padStart(2, '0');
+          coinTextures.push({ alias: `coin_${num}`, src: `./assets/train/coin_gold/${num}.png` });
+        }
+
+        // Загрузка ресурсов
+        await PIXI.Assets.load([
+          { alias: "trainSkeleton", src: "./assets/train/skeleton.json" },
+          { alias: "trainAtlas", src: "./assets/train/skeleton.atlas" },
+          { alias: "bgSkeleton", src: "./assets/train/bg.json" },
+          { alias: "bgAtlas", src: "./assets/train/bg.atlas" },
+          { alias: "topSkeleton", src: "./assets/train/top.json" },
+          { alias: "topAtlas", src: "./assets/train/top.atlas" },
+          { alias: "logoSkeleton", src: "./assets/train/logo/skeleton.json" },
+          { alias: "logoAtlas", src: "./assets/train/logo/skeleton.atlas" },
+          { alias: "emitterConfig", src: "./assets/train/emitter.json" },
+          { alias: "smokeTexture", src: "./assets/train/m_smoke.png" },
+          { alias: "collectEffectSkeleton", src: "./assets/train/collect_effect.json" },
+          { alias: "collectEffectAtlas", src: "./assets/train/collect_effect.atlas" },
+          ...coinTextures,
+        ]);
+
+        // Создание Spine объекта
+        const train = spine.Spine.from({
+          skeleton: "trainSkeleton",
+          atlas: "trainAtlas",
+          scale: 1,
+        });
+
+        // Устанавливаем физику, если нужно
+        if (!train.skeleton.physics) {
+          train.skeleton.physics = {
+            update: () => {},
+            updateGlobal: () => {},
+          };
+        }
+
+        // Создание bg (самый нижний слой)
+        const bg = spine.Spine.from({
+          skeleton: "bgSkeleton",
+          atlas: "bgAtlas",
+          scale: 1,
+        });
+        if (!bg.skeleton.physics) {
+          bg.skeleton.physics = {
+            update: () => {},
+            updateGlobal: () => {},
+          };
+        }
+        bg.x = app.screen.width / 2;
+        bg.y = app.screen.height / 2;
+        bg.zIndex = 0; // Самый нижний слой
+        app.stage.addChild(bg);
+
+        // Центрируем поезд на экране
+        train.x = app.screen.width / 2;
+        train.y = app.screen.height / 2;
+        train.zIndex = 1; // Средний слой
+
+        // Базовая анимация idle на треке 0 (всегда включена, зациклена)
+        train.state.setAnimation(0, "00_idle", true);
+
+        // Создание top (самый верхний слой)
+        const top = spine.Spine.from({
+          skeleton: "topSkeleton",
+          atlas: "topAtlas",
+          scale: 1,
+        });
+        if (!top.skeleton.physics) {
+          top.skeleton.physics = {
+            update: () => {},
+            updateGlobal: () => {},
+          };
+        }
+        top.x = app.screen.width / 2;
+        top.y = app.screen.height / 2;
+        top.zIndex = 2; // Самый верхний слой
+        app.stage.addChild(top);
+
+        // Создание logo Spine объекта
+        const logo = spine.Spine.from({
+          skeleton: "logoSkeleton",
+          atlas: "logoAtlas",
+          scale: 1,
+        });
+        if (!logo.skeleton.physics) {
+          logo.skeleton.physics = {
+            update: () => {},
+            updateGlobal: () => {},
+          };
+        }
+        // Смещение логотипа относительно центра экрана (как у поезда)
+        // Настроенное смещение: X: -4, Y: 42
+        let logoOffsetX = -4;
+        let logoOffsetY = 42;
+
+        // Функция обновления позиции логотипа относительно центра экрана
+        const updateLogoPosition = () => {
+          logo.x = app.screen.width / 2 + logoOffsetX;
+          logo.y = app.screen.height / 2 + logoOffsetY;
+          logoHandle.x = logo.x;
+          logoHandle.y = logo.y;
+          updateLogoPositionUI();
+        };
+
+        logo.zIndex = 2.5; // Выше top (2), но ниже collectEffect (3)
+        app.stage.addChild(logo);
+
+        // Создание интерактивной ручки для позиционирования logo
+        const logoHandle = new PIXI.Graphics()
+          .lineStyle({ width: 2, color: 0x00ff00, alpha: 0.9 })
+          .beginFill(0x00ff00, 0.5)
+          .drawCircle(0, 0, 12)
+          .endFill();
+        logoHandle.cursor = "move";
+        logoHandle.eventMode = "static";
+        logoHandle.zIndex = 10; // Поверх всего
+        app.stage.addChild(logoHandle);
+
+        // Состояние для drag & drop logo
+        const logoDragState = { isDragging: false, lastX: 0, lastY: 0 };
+
+        // Функция обновления координат в UI
+        const updateLogoPositionUI = () => {
+          const positionElement = document.getElementById("logoPosition");
+          if (positionElement) {
+            positionElement.textContent = `X: ${Math.round(logo.x)}, Y: ${Math.round(logo.y)} (Offset: ${Math.round(logoOffsetX)}, ${Math.round(logoOffsetY)})`;
+          }
+        };
+
+        // Инициализация позиции
+        updateLogoPosition();
+
+        // Обработчики для drag & drop logo
+        logoHandle.on("pointerdown", (e) => {
+          logoDragState.isDragging = true;
+          logoDragState.lastX = e.global.x;
+          logoDragState.lastY = e.global.y;
+        });
+
+        const endLogoDrag = () => {
+          logoDragState.isDragging = false;
+        };
+
+        app.stage.on("pointerup", endLogoDrag);
+        app.stage.on("pointerupoutside", endLogoDrag);
+        app.stage.on("pointermove", (e) => {
+          if (logoDragState.isDragging) {
+            const deltaX = e.global.x - logoDragState.lastX;
+            const deltaY = e.global.y - logoDragState.lastY;
+            
+            // Обновляем смещение относительно центра
+            logoOffsetX += deltaX;
+            logoOffsetY += deltaY;
+            
+            logoDragState.lastX = e.global.x;
+            logoDragState.lastY = e.global.y;
+            
+            updateLogoPosition();
+          }
+        });
+
+        // Обработчик изменения размера окна для пересчета позиции
+        window.addEventListener("resize", () => {
+          // Ждем обновления размера app
+          setTimeout(() => {
+            updateLogoPosition();
+          }, 100);
+        });
+
+        // Треки для logo анимаций
+        const TRACK_LOGO_IDLE = 0; // Трек для idle/idle_1
+        const TRACK_LOGO_WIN = 1; // Трек для win анимации
+        
+        // Счетчик для idle_1 (раз в 5 idle циклов)
+        let logoIdleCycleCount = 0;
+        let isLogoWinPlaying = false;
+
+        // Запускаем дефолтный idle постоянно
+        logo.state.setAnimation(TRACK_LOGO_IDLE, "idle", true);
+        
+        // Отслеживаем завершение idle циклов для idle_1
+        logo.state.addListener({
+          complete: (entry) => {
+            if (entry.trackIndex === TRACK_LOGO_IDLE && !isLogoWinPlaying) {
+              logoIdleCycleCount++;
+              // Каждый 5-й цикл проигрываем idle_1 вместо idle
+              if (logoIdleCycleCount >= 5) {
+                logoIdleCycleCount = 0;
+                logo.state.clearTrack(TRACK_LOGO_IDLE);
+                const idle1Entry = logo.state.setAnimation(TRACK_LOGO_IDLE, "idle_1", false);
+                if (idle1Entry) {
+                  idle1Entry.listener = {
+                    complete: () => {
+                      // После idle_1 возвращаемся к обычному idle
+                      logo.state.clearTrack(TRACK_LOGO_IDLE);
+                      logo.state.setAnimation(TRACK_LOGO_IDLE, "idle", true);
+                    }
+                  };
+                }
+              }
+            }
+            // Обработка завершения win анимации
+            if (entry.trackIndex === TRACK_LOGO_WIN) {
+              isLogoWinPlaying = false;
+              logo.state.clearTrack(TRACK_LOGO_WIN);
+              logo.state.setEmptyAnimation(TRACK_LOGO_WIN, 0);
+              // Возвращаемся к idle после win
+              logo.state.clearTrack(TRACK_LOGO_IDLE);
+              logo.state.setAnimation(TRACK_LOGO_IDLE, "idle", true);
+              logoIdleCycleCount = 0; // Сбрасываем счетчик
+            }
+          }
+        });
+
+        // Функция для запуска win анимации logo
+        const playLogoWin = () => {
+          if (isLogoWinPlaying) return; // Уже играет win
+          isLogoWinPlaying = true;
+          // Приостанавливаем idle трек во время win
+          logo.state.clearTrack(TRACK_LOGO_IDLE);
+          logo.state.setEmptyAnimation(TRACK_LOGO_IDLE, 0);
+          // Запускаем win анимацию
+          logo.state.clearTrack(TRACK_LOGO_WIN);
+          logo.state.setEmptyAnimation(TRACK_LOGO_WIN, 0);
+          const entry = logo.state.setAnimation(TRACK_LOGO_WIN, "win", false);
+          if (entry) {
+            console.log("✅ Logo win анимация запущена");
+          } else {
+            console.warn("⚠️ Logo win анимация не найдена");
+            isLogoWinPlaying = false;
+            // Если win не найден, возвращаем idle
+            logo.state.clearTrack(TRACK_LOGO_IDLE);
+            logo.state.setAnimation(TRACK_LOGO_IDLE, "idle", true);
+          }
+        };
+
+        // Состояния для зацикленных треков (по умолчанию включены)
+        let pilesActive = true;
+        let speedActive = true;
+
+        // Треки для зацикленных анимаций
+        const TRACK_PILES = 1;
+        const TRACK_SPEED = 2;
+        
+        // Трек для разовых анимаций (используем трек 3)
+        const TRACK_ONESHOT = 3;
+        
+        // Треки для WIN последовательности (blick на одном треке, но 3 раза)
+        const TRACK_BLICK = 4;
+        const TRACK_STEAM_SEQUENCE = 5;
+        
+        // Трек для уровней (постоянно включен, один из level_1, level_2, level_3)
+        const TRACK_LEVEL = 6;
+        const TRACK_HIT = 9; // Трек для анимации 07_hit
+        let currentLevel = 1; // Текущий уровень (1, 2 или 3)
+        
+        // Устанавливаем начальный уровень
+        train.state.setAnimation(TRACK_LEVEL, "level_1", true);
+        train.state.getCurrent(TRACK_LEVEL).mixDuration = 0.3;
+        
+        // Включаем анимации по умолчанию
+        train.state.setAnimation(TRACK_PILES, "01_piles_of_gold", true);
+        train.state.setAnimation(TRACK_SPEED, "02_bg_speed_effect", true);
+        
+        // Счетчик для blick анимации
+        let blickPlayCount = 0;
+        let isPlayingBlickSequence = false;
+
+        // Функция переключения piles of gold
+        const togglePiles = () => {
+          pilesActive = !pilesActive;
+          const btn = document.getElementById("togglePiles");
+          if (pilesActive) {
+            train.state.setAnimation(TRACK_PILES, "01_piles_of_gold", true);
+            btn.textContent = "Piles of Gold (ON)";
+            btn.style.background = "#ffcc00";
+          } else {
+            train.state.clearTrack(TRACK_PILES);
+            btn.textContent = "Piles of Gold (OFF)";
+            btn.style.background = "#ffaa00";
+          }
+        };
+
+        // Функция переключения speed effect
+        const toggleSpeed = () => {
+          speedActive = !speedActive;
+          const btn = document.getElementById("toggleSpeed");
+          if (speedActive) {
+            train.state.setAnimation(TRACK_SPEED, "02_bg_speed_effect", true);
+            btn.textContent = "Speed Effect (ON)";
+            btn.style.background = "#00ccff";
+          } else {
+            train.state.clearTrack(TRACK_SPEED);
+            btn.textContent = "Speed Effect (OFF)";
+            btn.style.background = "#00aaff";
+          }
+        };
+
+        // Функция для разовых анимаций
+        const playOneshot = (animName) => {
+          // Убеждаемся, что трек свободен перед запуском новой анимации
+          train.state.clearTrack(TRACK_ONESHOT);
+          // Устанавливаем пустую анимацию для гарантированной очистки
+          train.state.setEmptyAnimation(TRACK_ONESHOT, 0);
+          // Запускаем новую анимацию
+          const entry = train.state.setAnimation(TRACK_ONESHOT, animName, false);
+          if (!entry) {
+            console.warn(`⚠️ Не удалось запустить анимацию ${animName}`);
+          }
+        };
+
+        // Последовательность steam анимаций для WIN
+        const steamSequence = ["04_steam_1", "05_steam_2", "04_steam_1"];
+        let currentSteamIndex = 0;
+        let isPlayingWinSequence = false;
+
+        // Функция для всплеска монет и перелета (вызывается при событии train_hit)
+        const triggerHitEffects = () => {
+          // Всплеск эмиттеров монет - создаем много частиц сразу
+          for (const { emitter } of coinEmitters) {
+            if (emitter) {
+              // Сохраняем оригинальные значения
+              const originalRate = emitter.emissionRate;
+              const originalSpread = emitter.config.spread;
+              
+              // Временно увеличиваем разброс для более широкого всплеска
+              emitter.setSpread(60); // Увеличиваем spread с 30 до 60 градусов
+              
+              // Создаем большой всплеск монет (80-100 частиц на эмиттер)
+              emitter.burst(80 + Math.floor(Math.random() * 21)); // 80-100 монет
+              
+              // Временно увеличиваем частоту эмиссии для кратковременного всплеска
+              emitter.setEmissionRate(0.01); // Очень высокая частота
+              
+              // Через 0.3 секунды возвращаем обычные значения
+              setTimeout(() => {
+                emitter.setEmissionRate(originalRate);
+                emitter.setSpread(originalSpread);
+              }, 300);
+            }
+          }
+          
+          // Очищаем треки перед запуском
+          collectEffect.state.clearTrack(TRACK_COLLECT_START_EFFECT);
+          collectEffect.state.clearTrack(TRACK_COLLECT_HIT_COIN);
+          collectEffect.state.clearTrack(TRACK_COLLECT_END_EFFECT);
+          
+          // Устанавливаем пустые анимации для гарантированной очистки
+          collectEffect.state.setEmptyAnimation(TRACK_COLLECT_START_EFFECT, 0);
+          collectEffect.state.setEmptyAnimation(TRACK_COLLECT_HIT_COIN, 0);
+          collectEffect.state.setEmptyAnimation(TRACK_COLLECT_END_EFFECT, 0);
+          
+          // Запускаем все три анимации одновременно на разных треках (не зациклены)
+          const entry0 = collectEffect.state.setAnimation(TRACK_COLLECT_START_EFFECT, "start_effect", false);
+          const entry1 = collectEffect.state.setAnimation(TRACK_COLLECT_HIT_COIN, "hit_coin", false);
+          const entry2 = collectEffect.state.setAnimation(TRACK_COLLECT_END_EFFECT, "end_effect", false);
+          
+          if (!entry0) {
+            console.warn(`⚠️ Не удалось запустить анимацию start_effect`);
+          }
+          if (!entry1) {
+            console.warn(`⚠️ Не удалось запустить анимацию hit_coin`);
+          }
+          if (!entry2) {
+            console.warn(`⚠️ Не удалось запустить анимацию end_effect`);
+          }
+          
+          if (entry0 && entry1 && entry2) {
+            console.log("✅ Анимации start_effect, hit_coin и end_effect запущены одновременно");
+          }
+          
+          console.log("✅ Всплеск монет и перелет запущены по событию train_hit");
+        };
+
+        // Функция для запуска только перелета (без всплеска монет) - для "Хит ту трейн"
+        const playCollectEffectOnly = () => {
+          // Очищаем треки перед запуском
+          collectEffect.state.clearTrack(TRACK_COLLECT_START_EFFECT);
+          collectEffect.state.clearTrack(TRACK_COLLECT_HIT_COIN);
+          collectEffect.state.clearTrack(TRACK_COLLECT_END_EFFECT);
+          
+          // Устанавливаем пустые анимации для гарантированной очистки
+          collectEffect.state.setEmptyAnimation(TRACK_COLLECT_START_EFFECT, 0);
+          collectEffect.state.setEmptyAnimation(TRACK_COLLECT_HIT_COIN, 0);
+          collectEffect.state.setEmptyAnimation(TRACK_COLLECT_END_EFFECT, 0);
+          
+          // Запускаем все три анимации одновременно на разных треках (не зациклены)
+          const entry0 = collectEffect.state.setAnimation(TRACK_COLLECT_START_EFFECT, "start_effect", false);
+          const entry1 = collectEffect.state.setAnimation(TRACK_COLLECT_HIT_COIN, "hit_coin", false);
+          const entry2 = collectEffect.state.setAnimation(TRACK_COLLECT_END_EFFECT, "end_effect", false);
+          
+          if (!entry0) {
+            console.warn(`⚠️ Не удалось запустить анимацию start_effect`);
+          }
+          if (!entry1) {
+            console.warn(`⚠️ Не удалось запустить анимацию hit_coin`);
+          }
+          if (!entry2) {
+            console.warn(`⚠️ Не удалось запустить анимацию end_effect`);
+          }
+          
+          if (entry0 && entry1 && entry2) {
+            console.log("✅ Перелет запущен (Хит ту трейн)");
+          }
+        };
+
+        // Слушатель для завершения анимаций и событий
+        train.state.addListener({
+          complete: (entry) => {
+            // Обработка завершения анимации 07_hit - очищаем трек
+            if (entry.trackIndex === TRACK_HIT) {
+              train.state.clearTrack(TRACK_HIT);
+              train.state.setEmptyAnimation(TRACK_HIT, 0);
+              console.log("✅ Анимация 07_hit завершена, трек очищен");
+            }
+            
+            // Обработка blick анимации (3 раза)
+            if (entry.trackIndex === TRACK_BLICK && isPlayingBlickSequence) {
+              blickPlayCount++;
+              if (blickPlayCount < 3) {
+                // Запускаем следующую итерацию blick
+                train.state.setAnimation(TRACK_BLICK, "03_blick_add", false);
+              } else {
+                // 3 раза проиграно, останавливаем
+                isPlayingBlickSequence = false;
+                blickPlayCount = 0;
+                train.state.clearTrack(TRACK_BLICK);
+              }
+            }
+            
+            // Обработка steam последовательности
+            if (entry.trackIndex === TRACK_STEAM_SEQUENCE && isPlayingWinSequence) {
+              currentSteamIndex++;
+              if (currentSteamIndex < steamSequence.length) {
+                // Запускаем следующую анимацию в последовательности
+                const animName = steamSequence[currentSteamIndex];
+                train.state.setAnimation(TRACK_STEAM_SEQUENCE, animName, false);
+              } else {
+                // Последовательность завершена - полностью очищаем трек
+                isPlayingWinSequence = false;
+                currentSteamIndex = 0;
+                train.state.clearTrack(TRACK_STEAM_SEQUENCE);
+                // Устанавливаем пустую анимацию для гарантированной очистки
+                train.state.setEmptyAnimation(TRACK_STEAM_SEQUENCE, 0);
+              }
+            }
+          },
+          event: (entry, event) => {
+            // Обработка события train_hit
+            if (event.data.name === "train_hit") {
+              console.log("✅ Событие train_hit получено");
+              triggerHitEffects();
+              // Запускаем win анимацию logo
+              playLogoWin();
+            }
+          }
+        });
+
+        // Функция WIN последовательности
+        const playWin = () => {
+          // Очищаем предыдущие треки WIN и сбрасываем флаги
+          train.state.clearTrack(TRACK_BLICK);
+          train.state.clearTrack(TRACK_STEAM_SEQUENCE);
+          isPlayingBlickSequence = false;
+          isPlayingWinSequence = false;
+          blickPlayCount = 0;
+          currentSteamIndex = 0;
+          
+          // Запускаем blick_add первый раз (будет проиграно 3 раза)
+          isPlayingBlickSequence = true;
+          blickPlayCount = 0;
+          train.state.setAnimation(TRACK_BLICK, "03_blick_add", false);
+          
+          // Запускаем последовательность steam анимаций
+          isPlayingWinSequence = true;
+          currentSteamIndex = 0;
+          const firstAnim = steamSequence[0];
+          train.state.setAnimation(TRACK_STEAM_SEQUENCE, firstAnim, false);
+          
+          // Запускаем win анимацию logo
+          playLogoWin();
+          
+          // Фонтан монет уже работает постоянно через эмиттеры, привязанные к костям
+        };
+
+        // Базовое значение частоты эмиссии монет
+        const BASE_EMISSION_RATE = 0.1;
+        
+        // Функция обновления частоты эмиссии в зависимости от уровня
+        const updateCoinEmissionRate = (level) => {
+          let rate = BASE_EMISSION_RATE;
+          
+          if (level === 2) {
+            // Уровень 2: на 30% больше монет (уменьшаем интервал на 30%)
+            rate = BASE_EMISSION_RATE * 0.7;
+          } else if (level === 3) {
+            // Уровень 3: на 60% больше монет (уменьшаем интервал на 60%)
+            rate = BASE_EMISSION_RATE * 0.4;
+          }
+          // Уровень 1: базовое значение (rate = BASE_EMISSION_RATE)
+          
+          // Обновляем частоту эмиссии для всех эмиттеров
+          for (const { emitter } of coinEmitters) {
+            if (emitter) {
+              emitter.setEmissionRate(rate);
+            }
+          }
+          
+          console.log(`💰 Частота эмиссии монет обновлена: ${rate.toFixed(3)} сек (уровень ${level})`);
+        };
+
+        // Функции переключения уровней
+        const setLevel = (level) => {
+          if (level === currentLevel) return; // Уже установлен этот уровень
+          
+          const animName = `level_${level}`;
+          const entry = train.state.setAnimation(TRACK_LEVEL, animName, true);
+          if (entry) {
+            entry.mixDuration = 0.3; // Переключение 0.3 секунды
+            currentLevel = level;
+            
+            // Обновляем частоту эмиссии монет
+            updateCoinEmissionRate(level);
+            
+            // Обновляем стили кнопок
+            document.getElementById("setLevel1").style.background = level === 1 ? "#ff4757" : "#ff6b6b";
+            document.getElementById("setLevel2").style.background = level === 2 ? "#2ed573" : "#4ecdc4";
+            document.getElementById("setLevel3").style.background = level === 3 ? "#70e0ff" : "#95e1d3";
+            
+            console.log(`✅ Уровень переключен на level_${level}`);
+          } else {
+            console.warn(`⚠️ Анимация ${animName} не найдена`);
+          }
+        };
+
+        // Функция Level Up - проигрывает active и переключает уровень
+        const levelUp = () => {
+          // Проигрываем анимацию 06_active
+          playOneshot("06_active");
+          
+          // Переключаем уровень на следующий по кругу (1->2->3->1)
+          let nextLevel = currentLevel + 1;
+          if (nextLevel > 3) {
+            nextLevel = 1; // Замыкаем круг: 3 -> 1
+          }
+          
+          // Переключаем уровень
+          setLevel(nextLevel);
+          
+          // Запускаем win анимацию logo
+          playLogoWin();
+          
+          console.log(`⬆️ Level Up: ${currentLevel - 1 === 0 ? 3 : currentLevel - 1} -> ${nextLevel}`);
+        };
+
+        // Настройка кнопок
+        document.getElementById("togglePiles").onclick = togglePiles;
+        document.getElementById("toggleSpeed").onclick = toggleSpeed;
+        document.getElementById("playBlick").onclick = () => playOneshot("03_blick_add");
+        document.getElementById("playActive").onclick = () => playOneshot("06_active");
+        document.getElementById("playSteam1").onclick = () => playOneshot("04_steam_1");
+        document.getElementById("playSteam2").onclick = () => playOneshot("05_steam_2");
+        document.getElementById("setLevel1").onclick = () => setLevel(1);
+        document.getElementById("setLevel2").onclick = () => setLevel(2);
+        document.getElementById("setLevel3").onclick = () => setLevel(3);
+        document.getElementById("levelUp").onclick = levelUp;
+        document.getElementById("playWin").onclick = playWin;
+        
+        // Устанавливаем начальный стиль кнопки Level 1
+        document.getElementById("setLevel1").style.background = "#ff4757";
+        
+        // Устанавливаем начальную частоту эмиссии для уровня 1 (после создания эмиттеров)
+        // Это будет вызвано после создания coinEmitters
+
+        app.stage.addChild(train);
+
+        // Создание collect effect Spine объекта
+        const collectEffect = spine.Spine.from({
+          skeleton: "collectEffectSkeleton",
+          atlas: "collectEffectAtlas",
+          scale: 1,
+        });
+
+        // Устанавливаем физику для collect effect
+        if (!collectEffect.skeleton.physics) {
+          collectEffect.skeleton.physics = {
+            update: () => {},
+            updateGlobal: () => {},
+          };
+        }
+
+        // Позиционируем collect effect
+        collectEffect.x = app.screen.width / 2;
+        collectEffect.y = app.screen.height / 2;
+        collectEffect.zIndex = 3; // Выше всех слоев (bg=0, train=1, top=2, logo=2.5)
+        
+        // Добавляем на stage сначала (как в пиньятах)
+        app.stage.addChild(collectEffect);
+
+        // Ждем один кадр (как в пиньятах - await waitNextFrame())
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+
+        // Устанавливаем скин "blue" (как в пиньятах)
+        const blueSkin = collectEffect.skeleton.data.findSkin("gold");
+        if (blueSkin) {
+          collectEffect.skeleton.setSkin(blueSkin);
+          collectEffect.skeleton.setSlotsToSetupPose();
+          if (collectEffect.skeleton.physics) {
+            collectEffect.skeleton.updateWorldTransform(collectEffect.skeleton.physics.update);
+          }
+          console.log("✅ Скин 'blue' установлен для collect effect");
+        } else {
+          console.warn("⚠️ Скин 'blue' не найден в collect effect");
+        }
+
+        // Устанавливаем начальную анимацию null (скрытое состояние)
+        collectEffect.state.setAnimation(0, "null", true);
+
+        // Треки для анимаций collect effect
+        const TRACK_COLLECT_START_EFFECT = 6;
+        const TRACK_COLLECT_HIT_COIN = 7;
+        const TRACK_COLLECT_END_EFFECT = 8;
+
+        // Blend mode применяется автоматически из JSON файла (как в пиньятах)
+
+        // Настройка управления костями для collect effect
+        const controlBoneNames = [
+          "control_point_1",
+          "control_point_2",
+          "control_point_1_t",
+          "control_point_2_t",
+        ];
+        const collectEffectControlBones = [];
+        const collectEffectDragState = { node: null, lastX: 0, lastY: 0 };
+
+        // Ждем один кадр для корректной работы bounds
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+
+        // Создаем визуальные точки управления для костей
+        for (const name of controlBoneNames) {
+          const bone = collectEffect.skeleton.findBone(name);
+          if (!bone) {
+            console.warn(`⚠️ Кость ${name} не найдена в collect effect`);
+            continue;
+          }
+
+          const world = { x: bone.worldX, y: bone.worldY };
+          collectEffect.skeletonToPixiWorldCoordinates(world);
+
+          const handle = new PIXI.Graphics()
+            .lineStyle({ width: 1, color: 0xff00ff, alpha: 0.9 })
+            .beginFill(0xff00ff, 0.4)
+            .drawCircle(0, 0, 9)
+            .endFill();
+          handle.x = world.x;
+          handle.y = world.y;
+          handle.cursor = "pointer";
+          handle.eventMode = "static";
+          handle.zIndex = 10; // Поверх всего
+
+          handle.on("pointerdown", ({ x, y }) => {
+            collectEffectDragState.node = handle;
+            collectEffectDragState.lastX = x;
+            collectEffectDragState.lastY = y;
+          });
+
+          app.stage.addChild(handle);
+          collectEffectControlBones.push({ bone, handle });
+          console.log(`✅ Точка управления создана для кости ${name}`);
+        }
+
+        // Настройка синхронизации позиций костей с визуальными точками
+        const convertPoint = { x: 0, y: 0 };
+        collectEffect.beforeUpdateWorldTransforms = () => {
+          for (const { bone, handle } of collectEffectControlBones) {
+            convertPoint.x = handle.x;
+            convertPoint.y = handle.y;
+            collectEffect.pixiWorldCoordinatesToBone(convertPoint, bone);
+            bone.x = convertPoint.x;
+            bone.y = convertPoint.y;
+          }
+        };
+
+        // Слушатель событий для collect effect
+        collectEffect.state.addListener({
+          event: (entry, event) => {
+            // Обработка события collect_effect_hit
+            if (event.data.name === "collect_effect_hit") {
+              console.log("✅ Событие collect_effect_hit получено");
+              // Запускаем либо 06_active, либо levelUp
+              // Для теста используем levelUp, в игре можно выбрать логику
+              levelUp();
+              // Или просто active: playOneshot("06_active");
+            }
+          }
+        });
+
+        // Настройка drag & drop для collect effect
+        const endCollectEffectDrag = () => {
+          collectEffectDragState.node = null;
+        };
+
+        // Добавляем обработчики для collect effect drag & drop
+        // В PIXI.js можно добавлять несколько обработчиков на одно событие
+        app.stage.on("pointerup", endCollectEffectDrag);
+        app.stage.on("pointerupoutside", endCollectEffectDrag);
+        app.stage.on("pointermove", ({ x, y }) => {
+          if (collectEffectDragState.node) {
+            collectEffectDragState.node.x += x - collectEffectDragState.lastX;
+            collectEffectDragState.node.y += y - collectEffectDragState.lastY;
+            collectEffectDragState.lastX = x;
+            collectEffectDragState.lastY = y;
+          }
+        });
+
+        // Функция для запуска анимации 07_hit
+        const playCollectHit = () => {
+          // Очищаем трек перед запуском
+          train.state.clearTrack(TRACK_HIT);
+          train.state.setEmptyAnimation(TRACK_HIT, 0);
+          
+          // Запускаем анимацию 07_hit один раз (не зациклено)
+          const entry = train.state.setAnimation(TRACK_HIT, "07_hit", false);
+          
+          if (!entry) {
+            console.warn(`⚠️ Не удалось запустить анимацию 07_hit`);
+          } else {
+            console.log("✅ Анимация 07_hit запущена");
+          }
+        };
+
+        // Настройка кнопки для запуска анимаций
+        document.getElementById("playCollectHit").onclick = playCollectHit;
+        document.getElementById("playHitToTrain").onclick = playCollectEffectOnly;
+
+        // Настройка эмиттера частиц
+        let emitter = null;
+        let emitterBone = null;
+        const bonePoint = { x: 0, y: 0 };
+
+        if (particleNamespace && particleNamespace.Emitter) {
+          // Находим кость для эмиттера
+          emitterBone = train.skeleton.findBone("place_holder_emitter_1");
+          
+          if (emitterBone) {
+            console.log("✅ Кость place_holder_emitter_1 найдена");
+            
+            // Создаем контейнер для частиц
+            const particleLayer = new PIXI.Container();
+            particleLayer.zIndex = 0.5; // Между bg и train
+            app.stage.addChild(particleLayer);
+
+            // Получаем конфигурацию и текстуру
+            const rawEmitterConfig = PIXI.Assets.get("emitterConfig");
+            const smokeTexture = PIXI.Assets.get("smokeTexture");
+
+            // Обновляем конфигурацию (конвертируем старый формат в новый, если нужно)
+            let emitterConfig = rawEmitterConfig;
+            if (particleNamespace.upgradeConfig) {
+              emitterConfig = particleNamespace.upgradeConfig(
+                rawEmitterConfig,
+                smokeTexture ? [smokeTexture] : []
+              );
+              console.log("✅ Конфигурация эмиттера обновлена");
+            } else if (smokeTexture) {
+              // Если upgradeConfig нет, добавляем текстуру напрямую
+              emitterConfig = JSON.parse(JSON.stringify(rawEmitterConfig));
+              emitterConfig.texture = smokeTexture;
+            }
+
+            // Создаем эмиттер
+            emitter = new particleNamespace.Emitter(
+              particleLayer,
+              emitterConfig
+            );
+            emitter.autoUpdate = true;
+            emitter.emit = true;
+
+            // Устанавливаем начальную позицию
+            bonePoint.x = emitterBone.worldX;
+            bonePoint.y = emitterBone.worldY;
+            train.skeletonToPixiWorldCoordinates(bonePoint);
+            emitter.updateOwnerPos(bonePoint.x, bonePoint.y);
+
+            console.log("✅ Эмиттер частиц создан и привязан к кости");
+          } else {
+            console.warn("⚠️ Кость place_holder_emitter_1 не найдена в скелете");
+          }
+        }
+
+        // Создание кастомного эмиттера монет
+        const coinTexturesArray = [];
+        for (let i = 0; i <= 16; i++) {
+          const num = i.toString().padStart(2, '0');
+          coinTexturesArray.push(PIXI.Assets.get(`coin_${num}`));
+        }
+
+        const coinLayer = new PIXI.Container();
+        coinLayer.zIndex = 1.5; // Между train и top
+        app.stage.addChild(coinLayer);
+
+        // Находим кости для эмиттеров монет
+        const goldEmitterBone1 = train.skeleton.findBone("place_holder_emitter_gold_1");
+        const goldEmitterBone2 = train.skeleton.findBone("place_holder_emitter_gold_2");
+        
+        const coinEmitters = [];
+        const goldBonePoint1 = { x: 0, y: 0 };
+        const goldBonePoint2 = { x: 0, y: 0 };
+
+        // Создаем первый эмиттер монет (если кость найдена)
+        if (goldEmitterBone1) {
+          const coinEmitter1 = new CustomCoinEmitter(coinLayer, coinTexturesArray, {
+            startSpeed: 420,      // Начальная скорость
+            gravity: 900,         // Гравитация вниз
+            spread: 30,          // Разброс угла в градусах (относительно направления кости)
+            lifetimeMin: 1,
+            lifetimeMax: 1,
+            scaleStart: 0.5,      // Начальный размер монеты
+            scaleEnd: 0.3,        // Конечный размер монеты
+            rotationSpeedMin: -5,
+            rotationSpeedMax: 5,
+            animationSpeed: 30,  // 30 fps для анимации монет
+            maxParticles: 300,   // По 250 монет на эмиттер
+            emissionRate: 0.1,   // Частота эмиссии (каждые 0.1 сек = 10 монет/сек)
+            x: 0,
+            y: 0,
+            angle: 0
+          });
+          coinEmitter1.emit = true;
+          coinEmitters.push({ emitter: coinEmitter1, bone: goldEmitterBone1, point: goldBonePoint1 });
+          console.log("✅ Эмиттер монет 1 создан и привязан к кости place_holder_emitter_gold_1");
+        } else {
+          console.warn("⚠️ Кость place_holder_emitter_gold_1 не найдена");
+        }
+
+        // Создаем второй эмиттер монет (если кость найдена)
+        if (goldEmitterBone2) {
+          const coinEmitter2 = new CustomCoinEmitter(coinLayer, coinTexturesArray, {
+            startSpeed: 420,      // Начальная скорость
+            gravity: 900,         // Гравитация вниз
+            spread: 30,           // Разброс угла в градусах (относительно направления кости)
+            lifetimeMin: 1,
+            lifetimeMax: 1,
+            scaleStart: 0.5,      // Начальный размер монеты
+            scaleEnd: 0.3,        // Конечный размер монеты
+            rotationSpeedMin: -5,
+            rotationSpeedMax: 5,
+            animationSpeed: 30,  // 30 fps для анимации монет
+            maxParticles: 300,   // По 250 монет на эмиттер
+            emissionRate: 0.1,   // Частота эмиссии
+            x: 0,
+            y: 0,
+            angle: 0
+          });
+          coinEmitter2.emit = true;
+          coinEmitters.push({ emitter: coinEmitter2, bone: goldEmitterBone2, point: goldBonePoint2 });
+          console.log("✅ Эмиттер монет 2 создан и привязан к кости place_holder_emitter_gold_2");
+        } else {
+          console.warn("⚠️ Кость place_holder_emitter_gold_2 не найдена");
+        }
+        
+        // Устанавливаем начальную частоту эмиссии для уровня 1
+        if (coinEmitters.length > 0) {
+          updateCoinEmissionRate(1);
+        }
+
+        // Обновление в ticker
+        app.ticker.add(() => {
+          // Обновляем bg
+          if (bg && bg.skeleton && bg.skeleton.physics) {
+            bg.skeleton.updateWorldTransform(bg.skeleton.physics.update);
+          }
+
+          // Обновляем train
+          if (train && train.skeleton && train.skeleton.physics) {
+            train.skeleton.updateWorldTransform(train.skeleton.physics.update);
+          }
+
+          // Обновляем top
+          if (top && top.skeleton && top.skeleton.physics) {
+            top.skeleton.updateWorldTransform(top.skeleton.physics.update);
+          }
+
+          // Обновляем logo
+          if (logo && logo.skeleton && logo.skeleton.physics) {
+            logo.skeleton.updateWorldTransform(logo.skeleton.physics.update);
+          }
+
+          // Обновляем collect effect
+          if (collectEffect && collectEffect.skeleton && collectEffect.skeleton.physics) {
+            collectEffect.skeleton.updateWorldTransform(collectEffect.skeleton.physics.update);
+          }
+
+          // Обновляем позицию эмиттера в соответствии с костью
+          if (emitter && emitterBone) {
+            bonePoint.x = emitterBone.worldX;
+            bonePoint.y = emitterBone.worldY;
+            train.skeletonToPixiWorldCoordinates(bonePoint);
+            emitter.updateOwnerPos(bonePoint.x, bonePoint.y);
+          }
+
+          // Обновляем эмиттеры монет
+          for (const { emitter, bone, point } of coinEmitters) {
+            if (bone && emitter) {
+              // Получаем мировые координаты и угол кости
+              point.x = bone.worldX;
+              point.y = bone.worldY;
+              train.skeletonToPixiWorldCoordinates(point);
+              
+              // Получаем угол поворота кости (в радианах)
+              // Используем метод Spine getWorldRotationX(), который возвращает угол в градусах
+              let boneAngle = 0;
+              if (typeof bone.getWorldRotationX === 'function') {
+                // Метод возвращает угол в градусах, конвертируем в радианы
+                const angleDeg = bone.getWorldRotationX();
+                boneAngle = (angleDeg * Math.PI) / 180;
+              } else if (bone.a !== undefined && bone.b !== undefined) {
+                // Fallback: вычисляем угол из матрицы преобразования (в радианах)
+                boneAngle = Math.atan2(bone.b, bone.a);
+              }
+              
+              // Устанавливаем позицию и угол эмиттера
+              emitter.setPositionAndAngle(point.x, point.y, boneAngle);
+              
+              // Обновляем эмиттер
+              const deltaTime = app.ticker.deltaMS / 1000;
+              emitter.update(deltaTime);
+            }
+          }
+        });
+      })()
+        .catch((err) => {
+          console.error(err);
+          document.body.innerHTML =
+            '<div style="color:#fff;font-family:monospace;padding:24px;">Ошибка: ' +
+            err.message +
+            "</div>";
+        });
+    </script>
+  </body>
+</html>
+

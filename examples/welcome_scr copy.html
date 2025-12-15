@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Spine-Pixi</title>
+    <!-- Подключение PIXI.js -->
+    <script src="https://cdn.jsdelivr.net/npm/pixi.js@latest/dist/pixi.min.js"></script>
+    <!-- Подключение локальной версии Spine-Pixi -->
+    <script src="../dist/spine-pixi.js"></script>
+    <!-- Подключение Tweakpane -->
+    <script src="https://cdn.jsdelivr.net/npm/tweakpane@3.1.9/dist/tweakpane.min.js"></script>
+    <!-- Подключение пользовательских стилей -->
+    <link rel="stylesheet" href="./index.css" />
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        background: transparent;
+        /* Устанавливаем прозрачный фон */
+      }
+    </style>
+  </head>
+  <body>
+    <script>
+      (async function () {
+        // НЕ ТРОГАЕМ: Создание приложения PIXI.js
+        const app = new PIXI.Application();
+        await app.init({
+          width: window.innerWidth,
+          height: window.innerHeight,
+          resolution: window.devicePixelRatio || 1,
+          autoDensity: true,
+          resizeTo: window,
+          backgroundColor: 0x2c3e50, // Цвет фона
+          hello: true, // Приветственное сообщение в консоли
+        });
+        document.body.appendChild(app.view);
+        // ----------------------------
+
+        // Оптимизированный код
+
+        // Предзагрузка ассетов
+        const assets = [
+          { alias: "frameData", src: "./assets/frame.json" },
+          { alias: "clawData", src: "./assets/claw.json" },
+          { alias: "symData", src: "./assets/symbols.json" },
+          { alias: "wfData", src: "./assets/winframe.json" },
+          { alias: "bgr", src: "./assets/prew_bg.json" },
+          { alias: "welcomeAtlas", src: "./assets/welcome_scr.atlas" },
+        ];
+        assets.forEach((asset) => PIXI.Assets.add(asset));
+        await Promise.all([
+          PIXI.Assets.load(["wfData", "welcomeAtlas"]),
+          PIXI.Assets.load(["frameData", "welcomeAtlas"]),
+          PIXI.Assets.load(["clawData", "welcomeAtlas"]),
+          PIXI.Assets.load(["symData", "welcomeAtlas"]),
+          PIXI.Assets.load(["bgr", "bgrAtlas"]),
+        ]);
+
+        // Вспомогательные функции
+        const setAnimationSequence = (target, animations, startDelay = 0) => {
+          setTimeout(() => {
+            animations.forEach((anim, index) => {
+              if (index === 0) {
+                target.state.setAnimation(0, anim.name, anim.loop);
+              } else {
+                target.state.addAnimation(0, anim.name, anim.loop, anim.delay);
+              }
+            });
+          }, startDelay * 1000);
+        };
+
+        const setPosition = (target, xOffset, yOffset, scale = 1) => {
+          const cw = window.innerWidth / 2;
+          const ch = window.innerHeight / 2;
+          target.x = cw - xOffset * scale;
+          target.y = ch - yOffset * scale;
+        };
+
+        const createSpine = (skeleton, atlas, scale = 1) =>
+          spine.Spine.from({ skeleton, atlas, scale });
+
+        // Переменные
+        const tOffset = { box1: 1, box2: 6, box3: 12 };
+        const boxScale = 1;
+
+        // Создание экземпляров Spine
+        const frame_01 = createSpine("frameData", "welcomeAtlas", boxScale);
+        const frame_02 = createSpine("frameData", "welcomeAtlas", boxScale);
+        const frame_03 = createSpine("frameData", "welcomeAtlas", boxScale);
+
+        const wframes = Array.from({ length: 6 }, () =>
+          createSpine("wfData", "welcomeAtlas", boxScale)
+        );
+        const [wframe_01, wframe_02, wframe_03, wframe_01a, wframe_02a, wframe_03a] = wframes;
+
+        const claws = Array.from({ length: 9 }, () =>
+          createSpine("clawData", "welcomeAtlas", boxScale)
+        );
+        const [
+          claw_01,
+          claw_02,
+          claw_03,
+          claw_04,
+          claw_05,
+          claw_06,
+          claw_07,
+          claw_08,
+          claw_09,
+        ] = claws;
+
+        const sym = Array.from({ length: 9 }, () =>
+          createSpine("symData", "welcomeAtlas", boxScale)
+        );
+        const [sym_01, sym_02, sym_03, sym_04, sym_05, sym_06, puff_01, puff_02, puff_03] = sym;
+
+        // Инициализация блоков
+        async function initBox1() {
+          // Позиционирование
+          setPosition(wframe_01, 0, 0, boxScale);
+          setPosition(wframe_01a, 0, 0, boxScale);
+          setPosition(frame_01, 0, 0, boxScale);
+          setPosition(claw_01, 94, 27.3, boxScale);
+          setPosition(claw_02, 2, 27.3, boxScale);
+          setPosition(claw_03, -91, 27.3, boxScale);
+          setPosition(sym_01, 90, -47.7, boxScale);
+          setPosition(sym_02, 0, -47.7, boxScale);
+          setPosition(sym_03, -90, -47.7, boxScale);
+          setPosition(puff_01, 90, -47.7, boxScale);
+          setPosition(puff_02, 0, -47.7, boxScale);
+          setPosition(puff_03, -90, -47.7, boxScale);
+
+          // Анимации
+          setAnimationSequence(claw_01, [
+            { name: "lock_static", loop: false, delay: 0 },
+            { name: "unlock", loop: false, delay: 3 + tOffset.box1 },
+            { name: "claw_idle", loop: true, delay: 0 },
+          ]);
+          setAnimationSequence(claw_02, [
+            { name: "lock_static", loop: false, delay: 0 },
+            { name: "unlock", loop: false, delay: 3.3 + tOffset.box1 },
+            { name: "claw_idle", loop: true, delay: 0 },
+          ]);
+          setAnimationSequence(claw_03, [
+            { name: "lock_static", loop: false, delay: 0 },
+            { name: "unlock", loop: false, delay: 3.6 + tOffset.box1 },
+            { name: "claw_idle", loop: true, delay: 0 },
+          ]);
+          setAnimationSequence(sym_01, [
+            { name: "low_purple_idle", loop: false, delay: 0 },
+            { name: "drope_00", loop: false, delay: 1 + tOffset.box1 },
+            { name: "low_blue_booster_idle", loop: false, delay: 0 },
+            { name: "low_blue_idle", loop: false, delay: 0.8 },
+          ]);
+          setAnimationSequence(sym_02, [
+            { name: "high_pink_idle", loop: false, delay: 0 },
+            { name: "drope_01", loop: false, delay: 1.2 + tOffset.box1 },
+            { name: "high_blue_booster_idle", loop: false, delay: 0 },
+            { name: "high_pink_idle", loop: false, delay: 0.8 },
+          ]);
+          setAnimationSequence(sym_03, [
+            { name: "low_pink_idle", loop: false, delay: 0 },
+            { name: "drope_02", loop: false, delay: 1.4 + tOffset.box1 },
+            { name: "high_orange_booster_idle", loop: false, delay: 0 },
+            { name: "high_orange_idle", loop: false, delay: 0.8 },
+          ]);
+          setAnimationSequence(puff_01, [{ name: "disappearance", loop: false, delay: 0 }], 3 + tOffset.box1);
+          setAnimationSequence(puff_02, [{ name: "disappearance", loop: false, delay: 0 }], 3.3 + tOffset.box1);
+          setAnimationSequence(puff_03, [{ name: "disappearance", loop: false, delay: 0 }], 3.6 + tOffset.box1);
+          setAnimationSequence(frame_01, [
+            { name: "frame_start", loop: false, delay: 0 },
+            { name: "bar_1", loop: false, delay: 2.6 + tOffset.box1 },
+            { name: "bar_2", loop: false, delay: 0 },
+            { name: "bar_3", loop: false, delay: 0 },
+            { name: "bar_3_idle", loop: true, delay: 0 },
+          ]);
+          setAnimationSequence(wframe_01, [
+            { name: "idle", loop: false, delay: 0 },
+            { name: "loop", loop: true, delay: 0.5 + tOffset.box1 },
+            { name: "idle", loop: false, delay: 5 },
+          ]);
+          setAnimationSequence(wframe_01a, [
+            { name: "idle", loop: false, delay: 0 },
+            { name: "start", loop: false, delay: 0.5 + tOffset.box1 },
+          ]);
+
+          const container1 = new PIXI.Container();
+          container1.addChild(
+            frame_01,
+            sym_01,
+            sym_02,
+            sym_03,
+            puff_01,
+            puff_02,
+            puff_03,
+            claw_01,
+            claw_02,
+            claw_03,
+            wframe_01,
+            wframe_01a
+          );
+          app.stage.addChild(container1);
+          return container1;
+        }
+
+        async function initBox2() {
+          setPosition(wframe_02, 0, 0, boxScale);
+          setPosition(wframe_02a, 0, 0, boxScale);
+          setPosition(frame_02, 0, 0, boxScale);
+          setPosition(claw_04, 94, 27.3, boxScale);
+          setPosition(claw_05, 2, 27.3, boxScale);
+          setPosition(claw_06, -91, 27.3, boxScale);
+          setPosition(sym_04, 90, -47.7, boxScale);
+          setPosition(sym_05, 0, -47.7, boxScale);
+          setPosition(sym_06, -90, -47.7, boxScale);
+
+          setAnimationSequence(claw_04, [
+            { name: "claw_idle", loop: true, delay: 0 },
+            { name: "claw_down", loop: false, delay: 1 + tOffset.box2 },
+            { name: "claw_bomb_25", loop: false, delay: 0 },
+            { name: "claw_idle", loop: true, delay: 0 },
+          ]);
+          setAnimationSequence(claw_05, [
+            { name: "claw_idle", loop: true, delay: 0 },
+            { name: "claw_down", loop: false, delay: 2 + tOffset.box2 },
+            { name: "claw_bomb_10", loop: false, delay: 0 },
+            { name: "claw_idle", loop: true, delay: 0 },
+          ]);
+          setAnimationSequence(claw_06, [
+            { name: "claw_idle", loop: true, delay: 0 },
+            { name: "claw_down", loop: false, delay: 3 + tOffset.box2 },
+            { name: "claw_bomb_50", loop: false, delay: 0 },
+            { name: "claw_idle", loop: true, delay: 0 },
+          ]);
+          setAnimationSequence(sym_04, [{ name: "high_blue_idle", loop: false, delay: 0 }]);
+          setAnimationSequence(sym_05, [{ name: "high_pink_idle", loop: false, delay: 0 }]);
+          setAnimationSequence(sym_06, [{ name: "high_green_idle", loop: false, delay: 0 }]);
+          setAnimationSequence(frame_02, [{ name: "frame_start", loop: false, delay: 0 }]);
+          setAnimationSequence(wframe_02, [
+            { name: "idle", loop: false, delay: 0 },
+            { name: "loop", loop: true, delay: 0.5 + tOffset.box2 },
+            { name: "idle", loop: false, delay: 5 },
+          ]);
+          setAnimationSequence(wframe_02a, [
+            { name: "idle", loop: false, delay: 0 },
+            { name: "start", loop: false, delay: 0.5 + tOffset.box2 },
+          ]);
+
+          [claw_04, claw_05, claw_06, sym_04, sym_05, sym_06, frame_02].forEach(
+            (item) => (item.state.data.defaultMix = 0.2)
+          );
+
+          const container2 = new PIXI.Container();
+          container2.addChild(
+            frame_02,
+            claw_04,
+            claw_05,
+            claw_06,
+            sym_04,
+            sym_05,
+            sym_06,
+            wframe_02,
+            wframe_02a
+          );
+          app.stage.addChild(container2);
+          return container2;
+        }
+
+        async function initBox3() {
+          setPosition(wframe_03, 0, 0, boxScale);
+          setPosition(wframe_03a, 0, 0, boxScale);
+          setPosition(frame_03, 0, 0, boxScale);
+          setPosition(claw_07, 0, 0, boxScale);
+          setPosition(claw_08, 0, 0, boxScale);
+          setPosition(claw_09, 0, 0, boxScale);
+
+          setAnimationSequence(claw_07, [
+            { name: "big_bomb_idle", loop: true, delay: 0 },
+            { name: "big_bomb_boom", loop: false, delay: 0 + tOffset.box3 },
+            { name: "big_bomb_idle2", loop: true, delay: 0 },
+          ]);
+          setAnimationSequence(frame_03, [{ name: "frame_start2", loop: false, delay: 0 }]);
+          setAnimationSequence(wframe_03, [
+            { name: "idle", loop: false, delay: 0 },
+            { name: "loop", loop: true, delay: 0.5 + tOffset.box3 },
+            { name: "idle", loop: false, delay: 4 },
+          ]);
+          setAnimationSequence(wframe_03a, [
+            { name: "idle", loop: false, delay: 0 },
+            { name: "start", loop: false, delay: tOffset.box3 },
+          ]);
+
+          claw_07.state.data.defaultMix = 0.2;
+          frame_03.state.data.defaultMix = 0.2;
+
+          const container3 = new PIXI.Container();
+          container3.addChild(
+            frame_03,
+            claw_08,
+            claw_09,
+            claw_07,
+            wframe_03,
+            wframe_03a
+          );
+          app.stage.addChild(container3);
+          return container3;
+        }
+
+        const cbox1 = await initBox1();
+        cbox1.x = -160;
+        cbox1.y = -140;
+
+        const cbox2 = await initBox2();
+        cbox2.x = 160;
+        cbox2.y = -140;
+
+        const cbox3 = await initBox3();
+        cbox3.x = 0;
+        cbox3.y = 180;
+      })();
+    </script>
+  </body>
+</html>
