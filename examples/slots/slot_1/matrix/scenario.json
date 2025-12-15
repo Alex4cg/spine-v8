@@ -4,7 +4,7 @@
     "winLines": [1]
   },
   {
-    "matrix": [[0, 3, 6], [8, 5, 0], [1, 4, 7]],
+    "matrix": [[0, 3, 6], [8, 10, 0], [1, 4, 7]],
     "coinValues": [[null, null, null], [5.25, null, null], [null, null, null]],
     "winLines": []
   },
