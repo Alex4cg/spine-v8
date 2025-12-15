@@ -534,9 +534,10 @@ export class SlotMachine {
   onAllReelsStopped() {
     this.isSpinning = false;
     
-    // Получаем винлайны из сценария для ТЕКУЩЕГО спина (который только что показался)
+    // Получаем винлайны и события из сценария для ТЕКУЩЕГО спина (который только что показался)
     // Важно: делаем это ПЕРЕД nextSpin()
     const winLines = this.scenarios.getCurrentWinLines();
+    const events = this.scenarios.getCurrentEvents();
     const scenarioData = this.scenarios.getCurrentMatrix(); // Теперь это объект { matrix, coinValues }
     const currentMatrix = scenarioData?.matrix || scenarioData; // Поддержка старого формата - просто массив
     const coinValues = scenarioData?.coinValues || null;
@@ -544,6 +545,40 @@ export class SlotMachine {
     // Устанавливаем флаги в CoinManager
     if (this.coinManager) {
       this.coinManager.setHasWinLines(winLines && winLines.length > 0);
+      // Проверяем наличие события coin_collector и находим позицию коллектора
+      const hasCoinCollectorEvent = events && events.includes('coin_collector');
+      let collectorPosition = null;
+      
+      if (hasCoinCollectorEvent && currentMatrix && Array.isArray(currentMatrix)) {
+        // Ищем коллектор (индекс 10) в матрице
+        // currentMatrix[position][reelIndex]
+        // position: 0 = верхний видимый, 1 = средний, 2 = нижний видимый
+        // В сетке: positionIndex 0 = нижний, 1 = средний, 2 = верхний
+        for (let position = 0; position < currentMatrix.length; position++) {
+          for (let reelIndex = 0; reelIndex < this.config.reels.count; reelIndex++) {
+            if (currentMatrix[position] && currentMatrix[position][reelIndex] === 10) {
+              // Преобразуем position в positionIndex для сетки
+              // position 0 (верхний) -> positionIndex 2 (верхний)
+              // position 1 (средний) -> positionIndex 1 (средний)
+              // position 2 (нижний) -> positionIndex 0 (нижний)
+              const positionIndex = 2 - position;
+              collectorPosition = { reelIndex, positionIndex };
+              console.log(`SlotMachine: Collector found at reelIndex ${reelIndex}, positionIndex ${positionIndex}`);
+              break;
+            }
+          }
+          if (collectorPosition) break;
+        }
+      }
+      
+      this.coinManager.setHasCoinCollectorEvent(hasCoinCollectorEvent, collectorPosition);
+      if (hasCoinCollectorEvent) {
+        if (collectorPosition) {
+          console.log(`SlotMachine: Coin collector event detected - coins will play second shot and fly to collector at (${collectorPosition.reelIndex}, ${collectorPosition.positionIndex})`);
+        } else {
+          console.warn('SlotMachine: Coin collector event detected but collector not found in matrix');
+        }
+      }
     }
     
     // Проверяем матрицу на наличие монеток (индекс 8) и показываем их

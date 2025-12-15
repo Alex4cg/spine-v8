@@ -112,6 +112,26 @@ export class GameScenarios {
     return [];
   }
 
+  /**
+   * Получает события текущего спина
+   * @returns {Array<string>} Массив событий
+   */
+  getCurrentEvents() {
+    if (!this.scenario || this.currentSpinIndex >= this.scenario.length) {
+      return [];
+    }
+    
+    const currentSpin = this.scenario[this.currentSpinIndex];
+    
+    // Если сценарий в новом формате (объект с events)
+    if (currentSpin && typeof currentSpin === 'object' && Array.isArray(currentSpin.events)) {
+      return currentSpin.events;
+    }
+    
+    // Если событий нет - возвращаем пустой массив
+    return [];
+  }
+
   nextSpin() {
     if (this.scenario && this.currentSpinIndex < this.scenario.length) {
       this.currentSpinIndex++;

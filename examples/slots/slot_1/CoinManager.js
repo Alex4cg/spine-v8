@@ -19,6 +19,8 @@ export class CoinManager {
     this.collectEffect = collectEffect; // Ссылка на CollectEffect для проигрывания анимации при событии start_flight
     this.hasWinLines = false; // Флаг наличия выигрышных линий (для определения поведения после полета монетки)
     this.reelIndicators = {}; // Пул индикаторов рилов: { "reelIndex": SpineAnimation }
+    this.hasCoinCollectorEvent = false; // Флаг наличия события coin_collector
+    this.collectorPosition = null; // Позиция коллектора { reelIndex, positionIndex } для перелета
   }
 
   /**
@@ -327,7 +329,7 @@ export class CoinManager {
   }
 
   /**
-   * Проигрывает последовательность анимаций монетки: shot -> idle
+   * Проигрывает последовательность анимаций монетки: shot -> (shot второй раз если есть coin_collector) -> idle
    * @param {SpineAnimation} coinSpine - Spine анимация монетки
    */
   playCoinAnimationSequence(coinSpine) {
@@ -382,10 +384,73 @@ export class CoinManager {
           }
         },
         complete: () => {
-          // После завершения shot переключаемся на idle в цикле
-          if (coinSpine.spine && coinSpine.spine.state) {
-            coinSpine.spine.state.setAnimation(0, 'idle', true);
-            console.log('CoinManager: Shot animation completed, switched to idle');
+          // После завершения shot проверяем, нужно ли проиграть второй shot
+          if (this.hasCoinCollectorEvent) {
+            // Если есть событие coin_collector - проигрываем shot второй раз перед idle
+            const secondShotTrackEntry = coinSpine.spine.state.setAnimation(0, 'shot', false);
+            if (secondShotTrackEntry) {
+              // Подписываемся на события из второго shot (для перелета в коллектор)
+              secondShotTrackEntry.listener = {
+                event: (entry, event) => {
+                  // При событии start_flight запускаем анимацию hit_coin в CollectEffect с координатами коллектора
+                  if (event.data.name === 'start_flight' && this.collectEffect && this.collectorPosition) {
+                    // Получаем позицию монетки для передачи в collect effect
+                    const container = coinSpine.getContainer();
+                    const startPosition = {
+                      x: container.x,
+                      y: container.y
+                    };
+                    
+                    // Получаем координаты коллектора используя getGridPosition
+                    const collectorEndPosition = this.getGridPosition(
+                      this.collectorPosition.reelIndex,
+                      this.collectorPosition.positionIndex
+                    );
+                    
+                    // Получаем reelIndex и positionIndex из coinSpine
+                    const reelIndex = coinSpine.reelIndex;
+                    const positionIndex = coinSpine.positionIndex;
+                    
+                    // Создаем callback для завершения анимации hit_coin
+                    const coinKey = `${reelIndex}_${positionIndex}`;
+                    const coinSpineRef = coinSpine;
+                    const onFlightComplete = () => {
+                      console.log(`CoinManager: Flight to collector completed for coin at ${coinKey}`);
+                      
+                      // После перелета в коллектор переключаемся на idle в цикле
+                      if (coinSpineRef && coinSpineRef.spine && coinSpineRef.spine.state) {
+                        coinSpineRef.spine.state.setAnimation(0, 'idle', true);
+                        console.log(`CoinManager: Switching coin at ${coinKey} to idle loop after collector flight`);
+                      }
+                    };
+                    
+                    // Проигрываем анимацию hit_coin в collect effect с координатами коллектора
+                    this.collectEffect.playHitCoin(startPosition, onFlightComplete, collectorEndPosition).catch(err => {
+                      console.error('CoinManager: Error playing hit_coin to collector:', err);
+                    });
+                    console.log(`CoinManager: Second shot start_flight event triggered, playing hit_coin to collector at (${collectorEndPosition.x}, ${collectorEndPosition.y})`);
+                  }
+                },
+                complete: () => {
+                  // После завершения второго shot переключаемся на idle в цикле
+                  // (если не было события start_flight)
+                  if (coinSpine.spine && coinSpine.spine.state) {
+                    coinSpine.spine.state.setAnimation(0, 'idle', true);
+                    console.log('CoinManager: Second shot animation completed (coin_collector event), switched to idle');
+                  }
+                }
+              };
+            } else {
+              // Если анимация shot не найдена, сразу переключаемся на idle
+              console.warn('CoinManager: Second shot animation not found, playing idle directly');
+              coinSpine.spine.state.setAnimation(0, 'idle', true);
+            }
+          } else {
+            // Если нет события coin_collector - сразу переключаемся на idle в цикле
+            if (coinSpine.spine && coinSpine.spine.state) {
+              coinSpine.spine.state.setAnimation(0, 'idle', true);
+              console.log('CoinManager: Shot animation completed, switched to idle');
+            }
           }
         }
       };
@@ -506,6 +571,16 @@ export class CoinManager {
    */
   setHasWinLines(hasWinLines) {
     this.hasWinLines = hasWinLines;
+  }
+
+  /**
+   * Устанавливает флаг наличия события coin_collector и позицию коллектора
+   * @param {boolean} hasCoinCollectorEvent - true если есть событие coin_collector
+   * @param {object} collectorPosition - Позиция коллектора { reelIndex, positionIndex } или null
+   */
+  setHasCoinCollectorEvent(hasCoinCollectorEvent, collectorPosition = null) {
+    this.hasCoinCollectorEvent = hasCoinCollectorEvent;
+    this.collectorPosition = collectorPosition;
   }
 
   /**

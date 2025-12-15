@@ -180,9 +180,14 @@ export class CollectEffect {
     // Показываем контейнер
     container.visible = true;
 
-    // Получаем конечную позицию (позицию поезда)
+    // Получаем конечную позицию
     let endPosition = null;
-    if (this.trainManager) {
+    
+    // Если передана кастомная конечная позиция (например, для коллектора) - используем её
+    if (customEndPosition) {
+      endPosition = customEndPosition;
+    } else if (this.trainManager) {
+      // Иначе используем позицию поезда (по умолчанию)
       // Используем позицию кости coin_target для точного попадания
       endPosition = this.trainManager.getCoinTargetPosition();
       // Fallback на позицию поезда, если кость не найдена
