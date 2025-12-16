@@ -168,6 +168,13 @@
       // Включаем сортировку по zIndex
       app.stage.sortableChildren = true;
       
+      // Применяем глобальное замедление для отладки
+      if (config.debug && config.debug.timeScale !== undefined) {
+        const timeScale = config.debug.timeScale;
+        app.ticker.speed = timeScale;
+        console.log(`Global timeScale applied: ${timeScale}x (${timeScale < 1 ? 'slower' : 'faster'})`);
+      }
+      
       // Создаем слот-машину
       const slotMachine = new SlotMachine(config, app);
       await slotMachine.init(); // Инициализация с загрузкой текстур

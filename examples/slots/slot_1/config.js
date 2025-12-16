@@ -11,11 +11,9 @@ export const SLOT_CONFIG = {
     // Если не задано, используются значения по умолчанию (spinOffset=max, totalSymbols=40)
     // Пример: разные смещения для каждого рила (5, 6, 7, 8, 9)
     reelConfigs: [
-      { spinOffset: 7, totalSymbols: 20 },  // рил 0: смещение 5, всего 20 символов
-      { spinOffset: 8, totalSymbols: 20 },  // рил 1: смещение 6, всего 25 символов
-      { spinOffset: 9, totalSymbols: 20 },  // рил 2: смещение 7, всего 30 символов
-      { spinOffset: 10, totalSymbols: 20 },  // рил 3: смещение 8, всего 35 символов
-      { spinOffset: 11, totalSymbols: 20 },  // рил 4: смещение 9, всего 40 символов
+      { spinOffset: 7, totalSymbols: 20 },  // рил 0
+      { spinOffset: 12, totalSymbols: 20 },  // рил 1
+      { spinOffset: 16, totalSymbols: 50 },  // рил 2
     ]
   },
   
@@ -80,7 +78,17 @@ export const SLOT_CONFIG = {
   // Настройки сценариев игры
   scenarios: {
     enabled: true, // включить систему сценариев
-    scenarioPath: './matrix/scenario.json' // путь к файлу сценария
+    scenarioPath: './matrix/scenario_v2.json' // путь к файлу сценария
+  },
+  
+  // Настройки для события "intriga"
+  intriga: {
+    // Настройки рилов при событии "intriga"
+    reelConfigs: [
+      { spinOffset: 7, totalSymbols: 20 },  // рил 0
+      { spinOffset: 12, totalSymbols: 20 },  // рил 1
+      { spinOffset: 40, totalSymbols: 50 },  // рил 2
+    ]
   },
   
   // Настройки Spine анимаций

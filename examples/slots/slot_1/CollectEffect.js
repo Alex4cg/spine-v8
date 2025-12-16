@@ -172,8 +172,9 @@ export class CollectEffect {
    * @param {Function} coinCallback - Callback при завершении анимации
    * @param {object} customEndPosition - Кастомная конечная позиция {x, y} (если не указана, используется позиция поезда)
    * @param {string} targetType - Тип цели: 'train' (поезд) или 'collector' (коллектор)
+   * @param {object} collectorInfo - Информация о коллекторе {reelIndex, positionIndex} (только для targetType='collector')
    */
-  async playHitCoin(startPosition = null, coinCallback = null, customEndPosition = null, targetType = 'train') {
+  async playHitCoin(startPosition = null, coinCallback = null, customEndPosition = null, targetType = 'train', collectorInfo = null) {
     if (!startPosition) {
       console.warn('CollectEffect: Start position not provided');
       return;
@@ -230,7 +231,8 @@ export class CollectEffect {
       container,
       startPosition,
       endPosition,
-      targetType // Сохраняем тип цели для использования в слушателе событий
+      targetType, // Сохраняем тип цели для использования в слушателе событий
+      collectorInfo // Сохраняем информацию о коллекторе (если есть)
     };
     
     this.activeFlights.push(flightData);
@@ -244,9 +246,9 @@ export class CollectEffect {
             console.log(`CollectEffect: Событие collect_effect_hit получено (target: ${flightData.targetType})`);
             // Вызываем соответствующий callback в зависимости от типа цели
             if (flightData.targetType === 'collector') {
-              // Для коллектора вызываем специальный callback
+              // Для коллектора вызываем специальный callback с информацией о коллекторе
               if (this.onCollectorHitCallback) {
-                this.onCollectorHitCallback();
+                this.onCollectorHitCallback(flightData.collectorInfo);
               }
             } else {
               // Для поезда вызываем обычный callback

@@ -4,38 +4,24 @@
     "winLines": [1]
   },
   {
-    "matrix": [[8, 3, 6], [3, 10, 8], [1, 4, 7]],
-    "coinValues": [[3, null, null], [null, null, 5], [null, null, null]],
-    "collectorValue": 8,
+    "matrix": [[8, 2, 4], [8, 10, 3], [8, 10, 1]],
+    "coinValues": [[5, null, null], [10, null, null], [7, null, null]],
+    "collectorValue": 22,
     "winLines": [],
     "events": ["coin_collector", "intriga"]
   },
   {
-    "matrix": [[5, 7, 2], [8, 0, 4], [3, 6, 0]],
-    "coinValues": [[null, null, null], [8, null, null], [null, null, null]],
+    "matrix": [[2, 3, 4], [8, 1, 5], [6, 7, 8]],
+    "coinValues": [[null, null, null], [10, null, null], [null, null, 15]],
     "winLines": []
   },
   {
-    "matrix": [[1, 1, 1], [1, 1, 8], [2, 5, 0]],
-    "coinValues": [[null, null, null], [null, null, 13], [null, null, null]],
-    "winLines": [1]
+    "matrix": [[1, 1, 1], [2, 2, 2], [3, 3, 3]],
+    "winLines": [1, 2, 3]
   },
   {
-    "matrix": [[8, 1, 1], [1, 1, 1], [1, 1, 1]],
-    "coinValues": [[100, null, null], [null, null, null], [null, null, null]],
-    "winLines": [2, 3, 5]
-  },
-  {
-    "matrix": [[3, 5, 7], [8, 2, 4], [0, 0, 1]],
-    "coinValues": [[null, null, null], [9, null, null], [null, null, null]],
-    "winLines": []
-  },
-  {
-    "matrix": [[2, 4, 6], [0, 0, 3], [5, 7, 2]],
-    "winLines": []
-  },
-  {
-    "matrix": [[7, 2, 2], [1, 3, 5], [4, 6, 0]],
+    "matrix": [[8, 3, 6], [4, 5, 8], [2, 1, 0]],
+    "coinValues": [[8, null, null], [null, null, 12], [null, null, null]],
     "winLines": []
   },
   {
@@ -43,7 +29,28 @@
     "winLines": [2]
   },
   {
-    "matrix": [[0, 0, 3], [5, 7, 2], [2, 4, 6]],
+    "matrix": [[8, 1, 1], [3, 10, 2], [4, 5, 6]],
+    "coinValues": [[6, null, null], [null, null, null], [null, null, null]],
+    "collectorValue": 6,
+    "winLines": [],
+    "events": ["coin_collector", "intriga"]
+  },
+  {
+    "matrix": [[2, 4, 6], [0, 0, 3], [5, 7, 2]],
+    "winLines": []
+  },
+  {
+    "matrix": [[7, 2, 2], [1, 3, 5], [8, 6, 0]],
+    "coinValues": [[null, null, null], [null, null, null], [20, null, null]],
+    "winLines": []
+  },
+  {
+    "matrix": [[0, 2, 4], [6, 6, 6], [1, 3, 5]],
+    "winLines": [2]
+  },
+  {
+    "matrix": [[8, 0, 3], [2, 1, 8], [4, 5, 6]],
+    "coinValues": [[4, null, null], [null, null, 8], [null, null, null]],
     "winLines": []
   },
   {
@@ -53,6 +60,11 @@
   {
     "matrix": [[2, 5, 0], [3, 3, 3], [1, 4, 7]],
     "winLines": [2]
+  },
+  {
+    "matrix": [[8, 1, 1], [1, 1, 1], [1, 1, 1]],
+    "coinValues": [[50, null, null], [null, null, null], [null, null, null]],
+    "winLines": [2, 3, 5]
   },
   {
     "matrix": [[6, 0, 1], [4, 6, 0], [2, 5, 2]],
@@ -69,6 +81,13 @@
   {
     "matrix": [[3, 6, 2], [1, 3, 5], [7, 2, 2]],
     "winLines": []
+  },
+  {
+    "matrix": [[8, 2, 8], [4, 10, 1], [3, 5, 6]],
+    "coinValues": [[3, null, 5], [null, null, null], [null, null, null]],
+    "collectorValue": 8,
+    "winLines": [],
+    "events": ["coin_collector", "intriga"]
   },
   {
     "matrix": [[0, 0, 8], [4, 6, 0], [0, 2, 4]],
@@ -88,8 +107,8 @@
     "winLines": []
   },
   {
-    "matrix": [[8, 3, 8], [3, 10, 7], [6, 2, 4]],
-    "coinValues": [[3, null, 3], [null, null, null], [null, null, null]],
+    "matrix": [[8, 3, 8], [2, 10, 4], [1, 5, 7]],
+    "coinValues": [[2, null, 4], [null, null, null], [null, null, null]],
     "collectorValue": 6,
     "winLines": [],
     "events": ["coin_collector", "intriga"]
@@ -107,8 +126,8 @@
     "winLines": [3]
   },
   {
-    "matrix": [[0, 3, 6], [8, 4, 0], [2, 5, 2]],
-    "coinValues": [[null, null, null], [7, null, null], [null, null, null]],
+    "matrix": [[8, 1, 0], [3, 4, 8], [2, 5, 2]],
+    "coinValues": [[6, null, null], [null, null, 9], [null, null, null]],
     "winLines": []
   },
   {
