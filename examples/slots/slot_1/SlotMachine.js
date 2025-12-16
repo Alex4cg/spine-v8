@@ -621,7 +621,9 @@ export class SlotMachine {
       // В сетке: positionIndex 0 = нижний, 1 = средний, 2 = верхний
       for (let reelIndex = 0; reelIndex < this.config.reels.count; reelIndex++) {
         let hasCoin = false;
+        let hasCollector = false;
         
+        // Проверяем монетки (индекс 8)
         // Проверяем нижний видимый (currentMatrix[2]) -> positionIndex 0
         if (currentMatrix[2] && currentMatrix[2][reelIndex] === 8) {
           const coinValue = coinValues && coinValues[2] ? coinValues[2][reelIndex] : null;
@@ -644,41 +646,39 @@ export class SlotMachine {
           hasCoin = true;
         }
         
+        // Проверяем коллекторы (индекс 10) и показываем их
+        if (this.collectorManager) {
+          // Берем значение коллектора из сценария (как для монеток)
+          // Если collectorValue не указан, используем 0 (как fallback)
+          const value = collectorValue !== null && collectorValue !== undefined ? collectorValue : 0;
+          
+          // Проверяем нижний видимый (currentMatrix[2]) -> positionIndex 0
+          if (currentMatrix[2] && currentMatrix[2][reelIndex] === 10) {
+            this.collectorManager.showCollector(reelIndex, 0, value);
+            hasCollector = true;
+          }
+          // Проверяем средний (currentMatrix[1]) -> positionIndex 1
+          if (currentMatrix[1] && currentMatrix[1][reelIndex] === 10) {
+            this.collectorManager.showCollector(reelIndex, 1, value);
+            hasCollector = true;
+          }
+          // Проверяем верхний видимый (currentMatrix[0]) -> positionIndex 2
+          if (currentMatrix[0] && currentMatrix[0][reelIndex] === 10) {
+            this.collectorManager.showCollector(reelIndex, 2, value);
+            hasCollector = true;
+          }
+        }
+        
         // Показываем или скрываем индикатор монетки под рилом
-        if (hasCoin) {
+        // Индикаторы показываются если есть монетка ИЛИ коллектор (или оба)
+        if (hasCoin || hasCollector) {
           this.coinManager.showIndicator(reelIndex);
-          // Показываем индикатор рила (coin_indicator_reel) только если есть монетка
+          // Показываем индикатор рила (coin_indicator_reel) если есть монетка или коллектор
           this.coinManager.showReelIndicator(reelIndex);
         } else {
           this.coinManager.hideIndicator(reelIndex);
-          // Скрываем индикатор рила если нет монетки
+          // Скрываем индикатор рила если нет ни монетки, ни коллектора
           this.coinManager.hideReelIndicator(reelIndex);
-        }
-      }
-    }
-    
-    // Проверяем матрицу на наличие коллекторов (индекс 10) и показываем их
-    if (this.collectorManager && currentMatrix && Array.isArray(currentMatrix)) {
-      // currentMatrix[position][reelIndex]
-      // position: 0 = верхний видимый, 1 = средний, 2 = нижний видимый
-      // В сетке: positionIndex 0 = нижний, 1 = средний, 2 = верхний
-      for (let reelIndex = 0; reelIndex < this.config.reels.count; reelIndex++) {
-        // Берем значение коллектора из сценария (как для монеток)
-1        // Если collectorValue не указан, используем 0 (как fallback)
-        const value = collectorValue !== null && collectorValue !== undefined ? collectorValue : 0;
-        console.log(`SlotMachine: Collector value from scenario: ${collectorValue}, using: ${value}`);
-        
-        // Проверяем нижний видимый (currentMatrix[2]) -> positionIndex 0
-        if (currentMatrix[2] && currentMatrix[2][reelIndex] === 10) {
-          this.collectorManager.showCollector(reelIndex, 0, value);
-        }
-        // Проверяем средний (currentMatrix[1]) -> positionIndex 1
-        if (currentMatrix[1] && currentMatrix[1][reelIndex] === 10) {
-          this.collectorManager.showCollector(reelIndex, 1, value);
-        }
-        // Проверяем верхний видимый (currentMatrix[0]) -> positionIndex 2
-        if (currentMatrix[0] && currentMatrix[0][reelIndex] === 10) {
-          this.collectorManager.showCollector(reelIndex, 2, value);
         }
       }
     }

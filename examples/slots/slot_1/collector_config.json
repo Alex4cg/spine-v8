@@ -1,0 +1,11 @@
+{
+  "spineName": "coin_collector",
+  "zIndex": 105,
+  "initialAnimation": "idle",
+  "animationLoop": true,
+  "scale": {
+    "x": 1,
+    "y": 1
+  }
+}
+
