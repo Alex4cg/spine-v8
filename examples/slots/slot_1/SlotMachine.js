@@ -147,6 +147,8 @@ export class SlotMachine {
     this.collectorManager = new CollectorManager(this.config, this.app, this.spineContainer, this.reelsContainer, this.aclonicaText);
     // Загружаем конфиг коллектора
     await this.collectorManager.loadConfig();
+    // Устанавливаем ссылку на collectEffect для перелетов
+    this.collectorManager.setCollectEffect(this.collectEffect);
     // Синхронизируем с reelsContainer для учета сдвига от дебаггера
     this.collectorManager.syncWithReelsContainer(this.reelsContainer);
     
