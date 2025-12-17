@@ -18,14 +18,14 @@
     }
     
     body {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
       background: #1a1a1a;
       font-family: Arial, sans-serif;
       overflow: hidden; /* Предотвращаем скролл */
-      position: relative; /* Для абсолютного позиционирования дочерних элементов */
+      position: relative;
     }
     
     #game-container {
@@ -174,26 +174,39 @@
       const updateScale = () => {
         const gameWidth = config.resolution.width;
         const gameHeight = config.resolution.height;
-        const windowWidth = window.innerWidth;
-        const windowHeight = window.innerHeight;
+        
+        // Получаем реальные размеры viewport
+        // Используем document.documentElement для более точного определения на мобильных
+        const windowWidth = Math.min(window.innerWidth, document.documentElement.clientWidth);
+        const windowHeight = Math.min(window.innerHeight, document.documentElement.clientHeight);
         
         // Вычисляем масштаб, чтобы игра помещалась в окно
         const scaleX = windowWidth / gameWidth;
         const scaleY = windowHeight / gameHeight;
-        const scale = Math.min(scaleX, scaleY); // Используем меньший масштаб для сохранения пропорций
+        let scale = Math.min(scaleX, scaleY); // Используем меньший масштаб для сохранения пропорций
+        
+        // На мобильных устройствах может быть проблема с devicePixelRatio
+        // Ограничиваем масштаб разумными пределами
+        scale = Math.max(0.1, Math.min(scale, 1.5));
         
         // Устанавливаем размеры контейнера
         container.style.width = `${gameWidth}px`;
         container.style.height = `${gameHeight}px`;
         
-        // Применяем масштаб с центрированием через translate
-        // translate(-50%, -50%) центрирует элемент, scale() масштабирует
+        // Применяем масштаб с центрированием
+        // translate(-50%, -50%) центрирует элемент относительно его центра
         container.style.transform = `translate(-50%, -50%) scale(${scale})`;
       };
       
       // Применяем масштаб при загрузке и изменении размера окна
       updateScale();
       window.addEventListener('resize', updateScale);
+      
+      // Обработка поворота экрана на мобильных устройствах
+      window.addEventListener('orientationchange', () => {
+        // Задержка для корректного определения размера после поворота
+        setTimeout(updateScale, 150);
+      });
       
       // Включаем сортировку по zIndex
       app.stage.sortableChildren = true;
