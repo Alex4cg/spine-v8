@@ -22,6 +22,7 @@ export class CoinManager {
     this.hasCoinCollectorEvent = false; // Флаг наличия события coin_collector
     this.collectorPositions = []; // Массив позиций коллекторов { reelIndex, positionIndex } для перелета
     this.coinFlightCounters = {}; // Счетчики перелетов для каждой монетки: { "reelIndex_positionIndex": number }
+    this.hasBonusEvent = false; // Флаг наличия события bonus (для win анимации после shot)
   }
 
   /**
@@ -432,13 +433,26 @@ export class CoinManager {
             // Сохраняем ссылку на coinSpine для использования в callback
             const coinSpineRef = coinSpine;
             const onFlightComplete = () => {
-              console.log(`CoinManager: Flight completed for coin at ${coinKey}, hasWinLines: ${this.hasWinLines}`);
+              console.log(`CoinManager: Flight completed for coin at ${coinKey}, hasWinLines: ${this.hasWinLines}, hasBonusEvent: ${this.hasBonusEvent}`);
               
               if (this.hasWinLines) {
                 // Если есть выигрышные линии - скрываем Spine монетку и показываем спрайт на риле
                 this.hideCoin(reelIndex, positionIndex);
+              } else if (this.hasBonusEvent) {
+                // Если есть событие bonus - проигрываем win анимацию после полета
+                const hasWin = coinSpineRef.spine.state.data.skeletonData.animations.some(
+                  anim => anim.name === 'win'
+                );
+                if (hasWin && coinSpineRef && coinSpineRef.spine && coinSpineRef.spine.state) {
+                  coinSpineRef.spine.state.setAnimation(0, 'win', true);
+                  console.log(`CoinManager: Bonus event - playing win animation after flight for coin at ${coinKey}`);
+                } else {
+                  // Если win анимации нет, переключаемся на idle
+                  coinSpineRef.spine.state.setAnimation(0, 'idle', true);
+                  console.log(`CoinManager: Win animation not found, switching to idle for coin at ${coinKey}`);
+                }
               } else {
-                // Если нет выигрышных линий - переключаем монетку на idle в цикле
+                // Если нет выигрышных линий и нет бонуса - переключаем монетку на idle в цикле
                 if (coinSpineRef && coinSpineRef.spine && coinSpineRef.spine.state) {
                   coinSpineRef.spine.state.setAnimation(0, 'idle', true);
                   console.log(`CoinManager: No win lines, switching coin at ${coinKey} to idle loop`);
@@ -454,7 +468,7 @@ export class CoinManager {
           }
         },
         complete: () => {
-          // После завершения shot проверяем, нужно ли проиграть второй shot
+          // После завершения shot проверяем, нужно ли проиграть второй shot или win анимацию
           if (this.hasCoinCollectorEvent) {
             // Если есть событие coin_collector - проигрываем shot второй раз перед idle
             const secondShotTrackEntry = coinSpine.spine.state.setAnimation(0, 'shot', false);
@@ -530,9 +544,24 @@ export class CoinManager {
                   }
                 },
                 complete: () => {
-                  // После завершения второго shot не скрываем монетку сразу
-                  // Монетка будет скрыта после завершения всех перелетов к коллекторам
-                  console.log(`CoinManager: Second shot completed, waiting for all flights to complete`);
+                  // После завершения второго shot проверяем, нужно ли проиграть win анимацию (для бонуса)
+                  if (this.hasBonusEvent) {
+                    // Для бонуса проигрываем win анимацию после shot
+                    const hasWin = coinSpine.spine.state.data.skeletonData.animations.some(
+                      anim => anim.name === 'win'
+                    );
+                    if (hasWin && coinSpine.spine && coinSpine.spine.state) {
+                      const winTrackEntry = coinSpine.spine.state.setAnimation(0, 'win', true);
+                      console.log(`CoinManager: Bonus event - playing win animation after second shot for coin at ${coinSpine.reelIndex}_${coinSpine.positionIndex}`);
+                    } else {
+                      // Если win анимации нет, переключаемся на idle
+                      coinSpine.spine.state.setAnimation(0, 'idle', true);
+                    }
+                  } else {
+                    // После завершения второго shot не скрываем монетку сразу
+                    // Монетка будет скрыта после завершения всех перелетов к коллекторам
+                    console.log(`CoinManager: Second shot completed, waiting for all flights to complete`);
+                  }
                 }
               };
             } else {
@@ -541,10 +570,26 @@ export class CoinManager {
               coinSpine.spine.state.setAnimation(0, 'idle', true);
             }
           } else {
-            // Если нет события coin_collector - сразу переключаемся на idle в цикле
-            if (coinSpine.spine && coinSpine.spine.state) {
-              coinSpine.spine.state.setAnimation(0, 'idle', true);
-              console.log('CoinManager: Shot animation completed, switched to idle');
+            // Если нет события coin_collector - проверяем, нужно ли проиграть win анимацию (для бонуса)
+            if (this.hasBonusEvent) {
+              // Для бонуса проигрываем win анимацию после shot
+              const hasWin = coinSpine.spine.state.data.skeletonData.animations.some(
+                anim => anim.name === 'win'
+              );
+              if (hasWin && coinSpine.spine && coinSpine.spine.state) {
+                const winTrackEntry = coinSpine.spine.state.setAnimation(0, 'win', true);
+                console.log(`CoinManager: Bonus event - playing win animation after shot for coin at ${coinSpine.reelIndex}_${coinSpine.positionIndex}`);
+              } else {
+                // Если win анимации нет, переключаемся на idle
+                coinSpine.spine.state.setAnimation(0, 'idle', true);
+                console.log('CoinManager: Shot animation completed, win animation not found, switched to idle');
+              }
+            } else {
+              // Если нет события bonus - сразу переключаемся на idle в цикле
+              if (coinSpine.spine && coinSpine.spine.state) {
+                coinSpine.spine.state.setAnimation(0, 'idle', true);
+                console.log('CoinManager: Shot animation completed, switched to idle');
+              }
             }
           }
         }
@@ -676,6 +721,14 @@ export class CoinManager {
   setHasCoinCollectorEvent(hasCoinCollectorEvent, collectorPositions = null) {
     this.hasCoinCollectorEvent = hasCoinCollectorEvent;
     this.collectorPositions = collectorPositions || [];
+  }
+  
+  /**
+   * Устанавливает флаг наличия события bonus
+   * @param {boolean} hasBonusEvent - true если есть событие bonus
+   */
+  setHasBonusEvent(hasBonusEvent) {
+    this.hasBonusEvent = hasBonusEvent;
   }
 
   /**
