@@ -2,40 +2,36 @@
 
 ## ✅ Шаги для публикации игры
 
-### 1. Закоммить изменения
+### 1. Изменения уже запушены! ✅
 
-```bash
-git add .
-git commit -m "Add GitHub Pages support and bonus round features"
-git push origin 2025-12-16-trij
-```
+Изменения уже отправлены в репозиторий: https://github.com/Alex4cg/spine-v8
 
 ### 2. Настроить GitHub Pages
 
-1. Перейдите на GitHub: https://github.com/pixijs/spine-v8
-2. Откройте **Settings** → **Pages**
+1. Перейдите на GitHub: **https://github.com/Alex4cg/spine-v8**
+2. Откройте **Settings** → **Pages** (в левом меню)
 3. В разделе **Source** выберите:
-   - **Branch**: `2025-12-16-trij` (или `main`/`master` если хотите использовать основную ветку)
-   - **Folder**: `/ (root)`
+   - **Branch**: `2025-12-16-trij` (или `main` если хотите использовать основную ветку)
+   - **Folder**: `/ (root)` или `/examples` (в зависимости от структуры)
 4. Нажмите **Save**
 
 ### 3. Дождаться публикации
 
 GitHub Pages обычно публикует сайт в течение 1-2 минут. Вы увидите сообщение:
-> "Your site is live at https://pixijs.github.io/spine-v8/..."
+> "Your site is live at https://alex4cg.github.io/spine-v8/..."
 
 ### 4. Открыть игру
 
 После публикации игра будет доступна по адресу:
 
-**https://pixijs.github.io/spine-v8/examples/slots/slot_1/index.html**
+**https://alex4cg.github.io/spine-v8/examples/slots/slot_1/index.html**
 
 ## 🔗 Прямая ссылка для шаринга
 
 После настройки GitHub Pages, вы можете поделиться этой ссылкой:
 
 ```
-https://pixijs.github.io/spine-v8/examples/slots/slot_1/index.html
+https://alex4cg.github.io/spine-v8/examples/slots/slot_1/index.html
 ```
 
 ## 📝 Примечания
