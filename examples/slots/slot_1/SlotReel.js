@@ -12,8 +12,11 @@ export class SlotReel {
     this.animationId = null;
     this.startPositions = [];
     const maxSpinOffset = this.totalSymbols - this.visibleSymbols;
-    this.spinOffset = spinOffset !== null ? Math.max(3, Math.min(maxSpinOffset, spinOffset)) : maxSpinOffset;
+    // Если spinOffset задан явно в конфиге, используем его без ограничения maxSpinOffset
+    // Это позволяет делать длинные спины для эффекта
+    this.spinOffset = spinOffset !== null ? Math.max(3, spinOffset) : maxSpinOffset;
     this.onSpinComplete = null;
+    this.onReelStopped = null; // Callback для обработки индикаторов при остановке рила
     
     this.init();
   }
@@ -300,6 +303,12 @@ export class SlotReel {
           this.symbols[i].y = startPositions[i] + targetDistance;
         }
         console.log(`Reel ${this.reelIndex} spin completed, moved ${targetDistance}px`);
+        
+        // Вызываем callback для обработки индикаторов при остановке рила
+        if (this.onReelStopped) {
+          this.onReelStopped(this.reelIndex);
+        }
+        
         if (this.onSpinComplete) {
           this.onSpinComplete();
         }
@@ -663,6 +672,42 @@ export class SlotReel {
     for (let i = 0; i < this.symbols.length; i++) {
       this.removeDarkeningFilter(i);
     }
+  }
+  
+  updateTotalSymbols(newTotalSymbols) {
+    // Обновляет totalSymbols и пересоздает символы
+    if (newTotalSymbols === this.totalSymbols) return;
+    
+    const minTotalSymbols = Math.max(this.visibleSymbols + 5, newTotalSymbols);
+    
+    // Удаляем старые символы
+    this.symbols.forEach(symbol => {
+      this.reelContainer.removeChild(symbol);
+      if (symbol.destroy) symbol.destroy();
+    });
+    this.symbols = [];
+    this.startPositions = [];
+    
+    // Обновляем totalSymbols
+    this.totalSymbols = minTotalSymbols;
+    
+    // Пересоздаем символы
+    for (let i = 0; i < this.totalSymbols; i++) {
+      const textureIndex = Math.floor(Math.random() * this.config.symbolTextures.length);
+      const symbolY = (this.totalSymbols - 2 - i) * this.symbolSpacing;
+      
+      this.startPositions.push(symbolY);
+      const symbolNumber = i;
+      
+      const symbol = this.createSymbol(textureIndex, symbolNumber);
+      symbol.y = symbolY;
+      symbol.visible = true;
+      symbol.renderable = true;
+      this.symbols.push(symbol);
+      this.reelContainer.addChild(symbol);
+    }
+    
+    console.log(`SlotReel ${this.reelIndex}: totalSymbols updated to ${this.totalSymbols}`);
   }
   
   destroy() {
