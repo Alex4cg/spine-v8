@@ -43,27 +43,87 @@ export class SpineAnimation {
         };
       }
       
+      // Добавляем глобальный слушатель для логирования всех Spine событий (только для коллектора)
+      const isCollector = this.spineName === 'coin_collector';
+      this.spine.state.addListener({
+        start: (entry) => {
+          if (!isCollector) return;
+          const animName = entry.animation ? entry.animation.name : 'unknown';
+          const trackIndex = entry.trackIndex;
+          const loop = entry.loop;
+          console.log(`[Spine ${this.spineName}] START: track=${trackIndex}, animation="${animName}", loop=${loop}`);
+        },
+        interrupt: (entry) => {
+          if (!isCollector) return;
+          const animName = entry.animation ? entry.animation.name : 'unknown';
+          const trackIndex = entry.trackIndex;
+          console.log(`[Spine ${this.spineName}] INTERRUPT: track=${trackIndex}, animation="${animName}"`);
+        },
+        end: (entry) => {
+          if (!isCollector) return;
+          const animName = entry.animation ? entry.animation.name : 'unknown';
+          const trackIndex = entry.trackIndex;
+          console.log(`[Spine ${this.spineName}] END: track=${trackIndex}, animation="${animName}"`);
+        },
+        complete: (entry) => {
+          if (!isCollector) return;
+          // Пропускаем зацикленные анимации для коллектора
+          if (entry.loop) return;
+          const animName = entry.animation ? entry.animation.name : 'unknown';
+          const trackIndex = entry.trackIndex;
+          // Безопасный расчет loopCount
+          let loopCount = 'N/A';
+          if (entry.animation && entry.animation.duration && entry.animation.duration > 0) {
+            loopCount = (entry.trackTime / entry.animation.duration).toFixed(2);
+          }
+          console.log(`[Spine ${this.spineName}] COMPLETE: track=${trackIndex}, animation="${animName}", loopCount=${loopCount}`);
+        },
+        event: (entry, event) => {
+          if (!isCollector) return;
+          const animName = entry.animation ? entry.animation.name : 'unknown';
+          const trackIndex = entry.trackIndex;
+          const eventName = event.data ? event.data.name : 'unknown';
+          const eventInt = event.intValue !== undefined ? event.intValue : null;
+          const eventFloat = event.floatValue !== undefined ? event.floatValue : null;
+          const eventString = event.stringValue || null;
+          let eventData = '';
+          if (eventInt !== null) eventData += ` int=${eventInt}`;
+          if (eventFloat !== null) eventData += ` float=${eventFloat}`;
+          if (eventString) eventData += ` string="${eventString}"`;
+          console.log(`[Spine ${this.spineName}] EVENT: track=${trackIndex}, animation="${animName}", event="${eventName}"${eventData}`);
+        },
+        dispose: (entry) => {
+          if (!isCollector) return;
+          const animName = entry.animation ? entry.animation.name : 'unknown';
+          const trackIndex = entry.trackIndex;
+          console.log(`[Spine ${this.spineName}] DISPOSE: track=${trackIndex}, animation="${animName}"`);
+        }
+      });
+      
       // Проверяем доступные анимации через skeletonData
       const animations = this.spine.state.data.skeletonData.animations;
       const animationNames = animations.map(anim => anim.name);
       
       // Устанавливаем анимацию только если она указана (не null/undefined)
       if (this.animationName && animationNames.includes(this.animationName)) {
-        this.spine.state.setAnimation(0, this.animationName, this.loop);
-        console.log(`Spine ${this.spineName}: Playing animation "${this.animationName}"`);
+        const entry = this.spine.state.setAnimation(0, this.animationName, this.loop);
+        if (isCollector) {
+          console.log(`[Spine ${this.spineName}] setAnimation(0, "${this.animationName}", ${this.loop}) -> entry:`, entry ? 'OK' : 'FAILED');
+        }
       } else if (this.animationName) {
-        // Если указано имя, но оно не найдено
-        console.warn(`Spine ${this.spineName}: Animation "${this.animationName}" not found. Available:`, animationNames);
-        // Пробуем найти первую доступную анимацию
+        // Если указано имя, но оно не найдено, пробуем найти первую доступную анимацию
         if (animations.length > 0) {
           const firstAnim = animations[0].name;
-          console.log(`Spine ${this.spineName}: Using first available animation "${firstAnim}"`);
-          this.spine.state.setAnimation(0, firstAnim, this.loop);
+          const entry = this.spine.state.setAnimation(0, firstAnim, this.loop);
+          if (isCollector) {
+            console.log(`[Spine ${this.spineName}] setAnimation(0, "${firstAnim}", ${this.loop}) [fallback] -> entry:`, entry ? 'OK' : 'FAILED');
+          }
           this.animationName = firstAnim; // Обновляем имя текущей анимации
         }
       } else {
-        // Если animationName = null/undefined - не устанавливаем анимацию
-        console.log(`Spine ${this.spineName}: Loaded without initial animation (available:`, animationNames, ')');
+        if (isCollector) {
+          console.log(`[Spine ${this.spineName}] No initial animation set`);
+        }
       }
       
       // Добавляем спайн в его контейнер
@@ -72,10 +132,8 @@ export class SpineAnimation {
       // Добавляем контейнер в родительский контейнер
       this.parentContainer.addChild(this.container);
       
-      console.log(`Spine ${this.spineName} loaded successfully`);
       return true;
     } catch (error) {
-      console.error(`Failed to load Spine ${this.spineName}:`, error);
       return false;
     }
   }
@@ -102,7 +160,6 @@ export class SpineAnimation {
   
   playAnimation(animationName, loop = null) {
     if (!this.spine) {
-      console.warn(`Spine ${this.spineName}: Not loaded yet`);
       return;
     }
     
@@ -110,33 +167,42 @@ export class SpineAnimation {
     const animations = this.spine.state.data.skeletonData.animations;
     const animationNames = animations.map(anim => anim.name);
     
+    const isCollector = this.spineName === 'coin_collector';
     if (animationNames.includes(animationName)) {
       const shouldLoop = loop !== null ? loop : this.loop;
-      this.spine.state.setAnimation(0, animationName, shouldLoop);
+      const entry = this.spine.state.setAnimation(0, animationName, shouldLoop);
+      if (isCollector) {
+        console.log(`[Spine ${this.spineName}] playAnimation("${animationName}", ${shouldLoop}) -> entry:`, entry ? 'OK' : 'FAILED');
+      }
       this.animationName = animationName;
       this.loop = shouldLoop;
-      console.log(`Spine ${this.spineName}: Playing animation "${animationName}"`);
     } else {
-      console.warn(`Spine ${this.spineName}: Animation "${animationName}" not found. Available:`, animationNames);
+      if (isCollector) {
+        console.warn(`[Spine ${this.spineName}] playAnimation("${animationName}") - animation not found`);
+      }
     }
   }
   
   // Метод для установки анимации на конкретном треке
   setAnimationOnTrack(trackIndex, animationName, loop = false) {
     if (!this.spine) {
-      console.warn(`Spine ${this.spineName}: Not loaded yet`);
       return null;
     }
     
     const animations = this.spine.state.data.skeletonData.animations;
     const animationNames = animations.map(anim => anim.name);
     
+    const isCollector = this.spineName === 'coin_collector';
     if (animationNames.includes(animationName)) {
       const entry = this.spine.state.setAnimation(trackIndex, animationName, loop);
-      console.log(`Spine ${this.spineName}: Playing animation "${animationName}" on track ${trackIndex} (loop: ${loop})`);
+      if (isCollector) {
+        console.log(`[Spine ${this.spineName}] setAnimationOnTrack(${trackIndex}, "${animationName}", ${loop}) -> entry:`, entry ? 'OK' : 'FAILED');
+      }
       return entry;
     } else {
-      console.warn(`Spine ${this.spineName}: Animation "${animationName}" not found. Available:`, animationNames);
+      if (isCollector) {
+        console.warn(`[Spine ${this.spineName}] setAnimationOnTrack(${trackIndex}, "${animationName}", ${loop}) - animation not found`);
+      }
       return null;
     }
   }
@@ -144,6 +210,10 @@ export class SpineAnimation {
   // Метод для очистки трека
   clearTrack(trackIndex) {
     if (this.spine) {
+      const isCollector = this.spineName === 'coin_collector';
+      if (isCollector) {
+        console.log(`[Spine ${this.spineName}] clearTrack(${trackIndex})`);
+      }
       this.spine.state.clearTrack(trackIndex);
     }
   }
@@ -151,6 +221,10 @@ export class SpineAnimation {
   // Метод для установки пустой анимации на треке
   setEmptyAnimation(trackIndex, mixDuration = 0) {
     if (this.spine) {
+      const isCollector = this.spineName === 'coin_collector';
+      if (isCollector) {
+        console.log(`[Spine ${this.spineName}] setEmptyAnimation(${trackIndex}, ${mixDuration})`);
+      }
       this.spine.state.setEmptyAnimation(trackIndex, mixDuration);
     }
   }

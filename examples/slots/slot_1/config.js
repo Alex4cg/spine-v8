@@ -78,12 +78,22 @@ export const SLOT_CONFIG = {
   // Настройки сценариев игры
   scenarios: {
     enabled: true, // включить систему сценариев
-    scenarioPath: './matrix/scenario_v2.json' // путь к файлу сценария
+    scenarioPath: './matrix/scenario_bonus.json' // путь к файлу сценария
   },
   
   // Настройки для события "intriga"
   intriga: {
     // Настройки рилов при событии "intriga"
+    reelConfigs: [
+      { spinOffset: 7, totalSymbols: 20 },  // рил 0
+      { spinOffset: 12, totalSymbols: 20 },  // рил 1
+      { spinOffset: 40, totalSymbols: 50 },  // рил 2
+    ]
+  },
+  
+  // Настройки для события "bonus"
+  bonus: {
+    // Настройки рилов при событии "bonus"
     reelConfigs: [
       { spinOffset: 7, totalSymbols: 20 },  // рил 0
       { spinOffset: 12, totalSymbols: 20 },  // рил 1

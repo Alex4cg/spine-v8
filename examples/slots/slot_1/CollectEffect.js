@@ -252,8 +252,8 @@ export class CollectEffect {
               }
             } else {
               // Для поезда вызываем обычный callback
-              if (this.onHitCallback) {
-                this.onHitCallback();
+            if (this.onHitCallback) {
+              this.onHitCallback();
               }
             }
           }
