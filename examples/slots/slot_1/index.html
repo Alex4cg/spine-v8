@@ -24,6 +24,7 @@
       min-height: 100vh;
       background: #1a1a1a;
       font-family: Arial, sans-serif;
+      overflow: hidden; /* Предотвращаем скролл */
     }
     
     #game-container {
@@ -31,6 +32,7 @@
       background: #2a2a2a;
       border: 2px solid #444;
       box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+      transform-origin: center center; /* Центр масштабирования */
     }
     
     /* Экран загрузки */
@@ -164,6 +166,28 @@
       });
       
       container.appendChild(app.canvas);
+      
+      // Функция для масштабирования контейнера под размер окна
+      const updateScale = () => {
+        const gameWidth = config.resolution.width;
+        const gameHeight = config.resolution.height;
+        const windowWidth = window.innerWidth;
+        const windowHeight = window.innerHeight;
+        
+        // Вычисляем масштаб, чтобы игра помещалась в окно
+        const scaleX = windowWidth / gameWidth;
+        const scaleY = windowHeight / gameHeight;
+        const scale = Math.min(scaleX, scaleY); // Используем меньший масштаб для сохранения пропорций
+        
+        // Применяем масштаб
+        container.style.transform = `scale(${scale})`;
+        container.style.width = `${gameWidth}px`;
+        container.style.height = `${gameHeight}px`;
+      };
+      
+      // Применяем масштаб при загрузке и изменении размера окна
+      updateScale();
+      window.addEventListener('resize', updateScale);
       
       // Включаем сортировку по zIndex
       app.stage.sortableChildren = true;
