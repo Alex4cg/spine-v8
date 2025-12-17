@@ -20,6 +20,7 @@ export class CollectorManager {
     this.collectorTextAlphaUpdaters = {}; // Функции обновления альфы: { "reelIndex_positionIndex": Function }
     this.winTextSprite = null; // Контейнер win текста с подложкой (остается до начала нового спина)
     this.ellipseTexture = null; // Текстура Ellipse.png для фона под текстом
+    this.hasBonusEvent = false; // Флаг наличия события bonus (для win анимации после shot)
   }
 
   /**
@@ -76,6 +77,14 @@ export class CollectorManager {
    */
   setMiniWinText(miniWinText) {
     this.miniWinText = miniWinText;
+  }
+  
+  /**
+   * Устанавливает флаг наличия события bonus
+   * @param {boolean} hasBonusEvent - true если есть событие bonus
+   */
+  setHasBonusEvent(hasBonusEvent) {
+    this.hasBonusEvent = hasBonusEvent;
   }
 
   /**
@@ -407,11 +416,27 @@ export class CollectorManager {
                     }
                   },
                   complete: () => {
-                    console.log(`CollectorManager: Shot animation completed for ${key}, switching to idle`);
-                    // После завершения shot переключаемся на idle в цикле
-                    if (collectorSpine.spine && collectorSpine.spine.state) {
-                      collectorSpine.spine.state.setAnimation(0, 'idle', true);
-                      console.log(`CollectorManager: Idle animation started (loop) for ${key}`);
+                    console.log(`CollectorManager: Shot animation completed for ${key}`);
+                    // После завершения shot проверяем, нужно ли проиграть win анимацию (для бонуса)
+                    if (this.hasBonusEvent) {
+                      // Для бонуса проигрываем win анимацию после shot
+                      const hasWin = collectorSpine.spine.state.data.skeletonData.animations.some(
+                        anim => anim.name === 'win'
+                      );
+                      if (hasWin && collectorSpine.spine && collectorSpine.spine.state) {
+                        collectorSpine.spine.state.setAnimation(0, 'win', true);
+                        console.log(`CollectorManager: Bonus event - playing win animation after shot for ${key}`);
+                      } else {
+                        // Если win анимации нет, переключаемся на idle
+                        collectorSpine.spine.state.setAnimation(0, 'idle', true);
+                        console.log(`CollectorManager: Win animation not found, switching to idle for ${key}`);
+                      }
+                    } else {
+                      // Если нет события bonus - переключаемся на idle в цикле
+                      if (collectorSpine.spine && collectorSpine.spine.state) {
+                        collectorSpine.spine.state.setAnimation(0, 'idle', true);
+                        console.log(`CollectorManager: Idle animation started (loop) for ${key}`);
+                      }
                     }
                   }
                 };
@@ -465,11 +490,27 @@ export class CollectorManager {
             }
           },
           complete: () => {
-            console.log(`CollectorManager: Shot animation completed (no appear) for ${key}, switching to idle`);
-            // После завершения shot переключаемся на idle в цикле
-            if (collectorSpine.spine && collectorSpine.spine.state) {
-              collectorSpine.spine.state.setAnimation(0, 'idle', true);
-              console.log(`CollectorManager: Idle animation started (loop, no appear) for ${key}`);
+            console.log(`CollectorManager: Shot animation completed (no appear) for ${key}`);
+            // После завершения shot проверяем, нужно ли проиграть win анимацию (для бонуса)
+            if (this.hasBonusEvent) {
+              // Для бонуса проигрываем win анимацию после shot
+              const hasWin = collectorSpine.spine.state.data.skeletonData.animations.some(
+                anim => anim.name === 'win'
+              );
+              if (hasWin && collectorSpine.spine && collectorSpine.spine.state) {
+                collectorSpine.spine.state.setAnimation(0, 'win', true);
+                console.log(`CollectorManager: Bonus event - playing win animation after shot (no appear) for ${key}`);
+              } else {
+                // Если win анимации нет, переключаемся на idle
+                collectorSpine.spine.state.setAnimation(0, 'idle', true);
+                console.log(`CollectorManager: Win animation not found, switching to idle (no appear) for ${key}`);
+              }
+            } else {
+              // Если нет события bonus - переключаемся на idle в цикле
+              if (collectorSpine.spine && collectorSpine.spine.state) {
+                collectorSpine.spine.state.setAnimation(0, 'idle', true);
+                console.log(`CollectorManager: Idle animation started (loop, no appear) for ${key}`);
+              }
             }
           }
         };
