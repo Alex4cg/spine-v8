@@ -25,10 +25,13 @@
       background: #1a1a1a;
       font-family: Arial, sans-serif;
       overflow: hidden; /* Предотвращаем скролл */
+      position: relative; /* Для абсолютного позиционирования дочерних элементов */
     }
     
     #game-container {
-      position: relative;
+      position: absolute;
+      top: 50%;
+      left: 50%;
       background: #2a2a2a;
       border: 2px solid #444;
       box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
@@ -179,10 +182,13 @@
         const scaleY = windowHeight / gameHeight;
         const scale = Math.min(scaleX, scaleY); // Используем меньший масштаб для сохранения пропорций
         
-        // Применяем масштаб
-        container.style.transform = `scale(${scale})`;
+        // Устанавливаем размеры контейнера
         container.style.width = `${gameWidth}px`;
         container.style.height = `${gameHeight}px`;
+        
+        // Применяем масштаб с центрированием через translate
+        // translate(-50%, -50%) центрирует элемент, scale() масштабирует
+        container.style.transform = `translate(-50%, -50%) scale(${scale})`;
       };
       
       // Применяем масштаб при загрузке и изменении размера окна
