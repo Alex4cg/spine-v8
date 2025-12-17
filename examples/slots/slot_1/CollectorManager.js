@@ -623,11 +623,12 @@ export class CollectorManager {
     if (reelIndex !== null && positionIndex !== null) {
       // Если указан конкретный коллектор, проигрываем только для него
       const key = `${reelIndex}_${positionIndex}`;
-      if (this.activeCollectors.has(key)) {
+      // Проверяем как в activeCollectors, так и в collectorSpines (на случай если коллектор был скрыт, но еще существует)
+      if (this.activeCollectors.has(key) || this.collectorSpines[key]) {
         collectorsToAnimate = [key];
         console.log(`CollectorManager: Playing hit animation for specific collector: ${key}`);
       } else {
-        console.warn(`CollectorManager: Collector ${key} not found in active collectors`);
+        console.warn(`CollectorManager: Collector ${key} not found in active collectors or collectorSpines`);
         return;
       }
     } else {
