@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Eggs Test Stand - Spine Animation Control</title>
+    <script src="../../assets/libs/pixi.min.js"></script>
+    <script src="../../assets/libs/spine-pixi.js"></script>
+    <script src="../../assets/libs/particle-emitter.min.js"></script>
+    <script src="./DebugPositionEditor.js"></script>
+    <script src="./EggsAnimationController.js"></script>
+    <script src="./StoryController.js"></script>
+  </head>
+  <body style="margin:0;background:#1a1a1a;overflow:hidden;">
+    <div
+      id="controls"
+      style="position:absolute;top:20px;left:20px;z-index:1000;display:flex;flex-direction:column;gap:15px;max-height:90vh;overflow-y:auto;padding-right:10px;"
+    >
+      <div style="color:white;font-size:16px;font-weight:600;margin-bottom:10px;">
+        Eggs Test Stand
+      </div>
+      
+      <div style="color:white;font-size:14px;font-weight:600;margin-bottom:5px;">
+        Скины:
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+        <button
+          id="skin_00_gold"
+          style="padding:6px 12px;background:#ffd700;color:#1a1a1a;border:none;border-radius:4px;cursor:pointer;font-size:11px;font-weight:600;"
+        >
+          00 Gold
+        </button>
+        <button
+          id="skin_01_blue"
+          style="padding:6px 12px;background:#4a90e2;color:white;border:none;border-radius:4px;cursor:pointer;font-size:11px;"
+        >
+          01 Blue
+        </button>
+        <button
+          id="skin_02_red"
+          style="padding:6px 12px;background:#4a90e2;color:white;border:none;border-radius:4px;cursor:pointer;font-size:11px;"
+        >
+          02 Red
+        </button>
+        <button
+          id="skin_03_purple"
+          style="padding:6px 12px;background:#4a90e2;color:white;border:none;border-radius:4px;cursor:pointer;font-size:11px;"
+        >
+          03 Purple
+        </button>
+        <button
+          id="skin_04_mini"
+          style="padding:6px 12px;background:#ffe100;color:#1a1a1a;border:none;border-radius:4px;cursor:pointer;font-size:11px;font-weight:600;"
+        >
+          04 Mini
+        </button>
+        <button
+          id="skin_05_midi"
+          style="padding:6px 12px;background:#ffe100;color:#1a1a1a;border:none;border-radius:4px;cursor:pointer;font-size:11px;font-weight:600;"
+        >
+          05 Midi
+        </button>
+        <button
+          id="skin_06_major"
+          style="padding:6px 12px;background:#ffe100;color:#1a1a1a;border:none;border-radius:4px;cursor:pointer;font-size:11px;font-weight:600;"
+        >
+          06 Major
+        </button>
+        <button
+          id="skin_07_grand"
+          style="padding:6px 12px;background:#ffe100;color:#1a1a1a;border:none;border-radius:4px;cursor:pointer;font-size:11px;font-weight:600;"
+        >
+          07 Grand
+        </button>
+      </div>
+      
+      <div style="color:white;font-size:14px;font-weight:600;margin-top:15px;margin-bottom:5px;">
+        Анимации (трек 0):
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <button
+          id="anim_null"
+          style="padding:8px 15px;background:#4a90e2;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;font-weight:600;"
+        >
+          Null (зациклено)
+        </button>
+        <button
+          id="anim_idle"
+          style="padding:8px 15px;background:#4a90e2;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;font-weight:600;"
+        >
+          Idle (зациклено)
+        </button>
+        <button
+          id="anim_idle_no_text"
+          style="padding:8px 15px;background:#4a90e2;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;font-weight:600;"
+        >
+          Idle No Text (зациклено)
+        </button>
+      </div>
+      
+      <div style="color:white;font-size:14px;font-weight:600;margin-top:15px;margin-bottom:5px;">
+        Анимации (трек 1):
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <button
+          id="anim_appearance"
+          style="padding:8px 15px;background:#ff6b35;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;"
+        >
+          Appearance
+        </button>
+        <button
+          id="anim_start"
+          style="padding:8px 15px;background:#ff6b35;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;"
+        >
+          Start
+        </button>
+        <button
+          id="anim_hit"
+          style="padding:8px 15px;background:#ff6b35;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;"
+        >
+          Hit
+        </button>
+        <button
+          id="anim_shot"
+          style="padding:8px 15px;background:#ff6b35;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;"
+        >
+          Shot
+        </button>
+        <button
+          id="anim_shot_to_total"
+          style="padding:8px 15px;background:#ff6b35;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;"
+        >
+          Shot to Total
+        </button>
+        <button
+          id="anim_color_to_gold"
+          style="padding:8px 15px;background:#ff6b35;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;"
+        >
+          Color to Gold
+        </button>
+        <button
+          id="anim_jp_to_mult"
+          style="padding:8px 15px;background:#ff6b35;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;"
+        >
+          JP to Mult
+        </button>
+        <button
+          id="anim_win"
+          style="padding:8px 15px;background:#ff6b35;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;font-weight:600;"
+        >
+          Win
+        </button>
+      </div>
+      
+      <div style="color:white;font-size:14px;font-weight:600;margin-top:15px;margin-bottom:5px;">
+        Track анимации (трек 2):
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button
+          id="anim_track_jp_mult"
+          style="padding:8px 15px;background:#4ecdc4;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;font-weight:600;"
+        >
+          Track JP Mult
+        </button>
+        <button
+          id="anim_track_no_jp_mult"
+          style="padding:8px 15px;background:#4ecdc4;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;font-weight:600;"
+        >
+          Track No JP Mult
+        </button>
+      </div>
+      
+      <div style="color:white;font-size:12px;margin-top:15px;padding:10px;background:#333;border-radius:5px;">
+        <div>Текущий скин: <span id="currentSkin" style="color:#4ecdc4;">00_gold</span></div>
+        <div style="margin-top:5px;">Текущая анимация: <span id="currentAnim" style="color:#4ecdc4;">idle</span></div>
+      </div>
+      
+      <div style="color:white;font-size:14px;font-weight:600;margin-top:15px;margin-bottom:5px;">
+        Второй экземпляр (сюжет):
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button
+          id="action_btn"
+          style="padding:10px 20px;background:#9b59b6;color:white;border:none;border-radius:5px;cursor:pointer;font-size:14px;font-weight:600;"
+        >
+          Action
+        </button>
+      </div>
+    </div>
+    
+    <script>
+      (async () => {
+        const app = new PIXI.Application();
+        await app.init({
+          width: window.innerWidth,
+          height: window.innerHeight,
+          backgroundColor: 0x1a1a1a,
+          resolution: window.devicePixelRatio || 1,
+          autoDensity: true,
+        });
+        document.body.appendChild(app.canvas);
+        app.stage.sortableChildren = true;
+
+        // Загрузка фона
+        const bgTexture = await PIXI.Assets.load("./png/bg1.png");
+        const bgSprite = new PIXI.Sprite(bgTexture);
+        bgSprite.x = app.screen.width / 2;
+        bgSprite.y = app.screen.height / 2;
+        bgSprite.anchor.set(0.5);
+        bgSprite.zIndex = 0;
+        app.stage.addChild(bgSprite);
+
+        // Загрузка Spine ресурсов
+        await PIXI.Assets.load([
+          { alias: "eggsSkeleton", src: "./spine/eggs/skeleton.json" },
+          { alias: "eggsAtlas", src: "./spine/eggs/skeleton.atlas" },
+        ]);
+
+        // Создание первого Spine объекта
+        const eggs = spine.Spine.from({
+          skeleton: "eggsSkeleton",
+          atlas: "eggsAtlas",
+          scale: 1,
+        });
+
+        // Устанавливаем физику, если нужно
+        if (!eggs.skeleton.physics) {
+          eggs.skeleton.physics = {
+            update: () => {},
+            updateGlobal: () => {},
+          };
+        }
+
+        // Центрируем на экране (смещаем влево для первого)
+        eggs.x = app.screen.width / 2 - 200;
+        eggs.y = app.screen.height / 2;
+        eggs.zIndex = 1;
+
+        app.stage.addChild(eggs);
+
+        // Создание второго Spine объекта (для сюжета)
+        const eggs2 = spine.Spine.from({
+          skeleton: "eggsSkeleton",
+          atlas: "eggsAtlas",
+          scale: 1,
+        });
+
+        // Устанавливаем физику для второго экземпляра
+        if (!eggs2.skeleton.physics) {
+          eggs2.skeleton.physics = {
+            update: () => {},
+            updateGlobal: () => {},
+          };
+        }
+
+        // Центрируем на экране (смещаем вправо для второго)
+        eggs2.x = app.screen.width / 2 + 200;
+        eggs2.y = app.screen.height / 2;
+        eggs2.zIndex = 1;
+
+        app.stage.addChild(eggs2);
+
+        // Инициализация дебаггера позиций (только для первого экземпляра)
+        const debugEditor = new DebugPositionEditor(app, eggs, bgSprite);
+
+        // Инициализация контроллера анимаций для первого экземпляра
+        const eggsController = new EggsAnimationController(eggs);
+        eggsController.setupUIHandlers();
+
+        // Инициализация контроллера сюжета для второго экземпляра
+        const storyController = new StoryController(eggs2);
+        storyController.setupUIHandlers();
+
+        // Обновление в ticker
+        app.ticker.add(() => {
+          if (eggs && eggs.skeleton && eggs.skeleton.physics) {
+            eggs.skeleton.updateWorldTransform(eggs.skeleton.physics.update);
+          }
+          if (eggs2 && eggs2.skeleton && eggs2.skeleton.physics) {
+            eggs2.skeleton.updateWorldTransform(eggs2.skeleton.physics.update);
+          }
+        });
+
+        // Обработчик изменения размера окна
+        window.addEventListener("resize", () => {
+          setTimeout(() => {
+            eggs.x = app.screen.width / 2 - 200;
+            eggs.y = app.screen.height / 2;
+            eggs2.x = app.screen.width / 2 + 200;
+            eggs2.y = app.screen.height / 2;
+            bgSprite.x = app.screen.width / 2;
+            bgSprite.y = app.screen.height / 2;
+          }, 100);
+        });
+
+        console.log("✅ Eggs Test Stand загружен");
+      })()
+        .catch((err) => {
+          console.error(err);
+          document.body.innerHTML =
+            '<div style="color:#fff;font-family:monospace;padding:24px;">Ошибка: ' +
+            err.message +
+            "</div>";
+        });
+    </script>
+  </body>
+</html>
+
