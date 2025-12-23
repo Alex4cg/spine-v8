@@ -69,9 +69,9 @@ class QuizGame {
     this.preloadPrizeImages();
   }
   
-  // Предзагрузка всех изображений для призовой части (шутки + слайд-шоу)
+  // Предзагрузка всех ресурсов для призовой части (изображения + видео)
   async preloadPrizeImages() {
-    console.log('Начало фоновой загрузки изображений для приза...');
+    console.log('Начало фоновой загрузки ресурсов для приза...');
     
     // Изображения для шуток
     const jokeImages = [
@@ -83,7 +83,7 @@ class QuizGame {
     const allImages = [...jokeImages, ...SLIDESHOW_IMAGES];
     
     // Загружаем все изображения параллельно
-    const preloadPromises = allImages.map(imgPath => {
+    const imagePromises = allImages.map(imgPath => {
       return new Promise((resolve) => {
         const img = new Image();
         img.onload = () => {
@@ -98,8 +98,32 @@ class QuizGame {
       });
     });
     
-    await Promise.all(preloadPromises);
-    console.log(`Все изображения приза предзагружены (${allImages.length} файлов)`);
+    // Предзагружаем видео
+    const videoPromise = new Promise((resolve) => {
+      this.prizeVideo.preload = 'auto'; // Включаем автопредзагрузку
+      this.prizeVideo.load(); // Принудительно начинаем загрузку
+      
+      // Ждем загрузки метаданных видео
+      this.prizeVideo.addEventListener('loadedmetadata', () => {
+        console.log('Видео предзагружено (метаданные)');
+        resolve();
+      }, { once: true });
+      
+      // Если видео уже загружено
+      if (this.prizeVideo.readyState >= 1) {
+        resolve();
+      }
+      
+      // Таймаут на случай проблем с загрузкой
+      setTimeout(() => {
+        console.log('Таймаут предзагрузки видео');
+        resolve();
+      }, 10000);
+    });
+    
+    // Ждем загрузки всех ресурсов
+    await Promise.all([...imagePromises, videoPromise]);
+    console.log(`Все ресурсы приза предзагружены (${allImages.length} изображений + видео)`);
   }
   
   // Запуск фоновой музыки
