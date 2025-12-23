@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Викторина с загадками</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="quiz-container" class="quiz-container">
+    <!-- Кнопка выключения звука -->
+    <button id="sound-toggle" class="sound-toggle" title="Включить/выключить звук">
+      <span id="sound-icon">🔊</span>
+    </button>
+    
+    <!-- Экран викторины -->
+    <div id="quiz-screen" class="screen active">
+      <div class="quiz-header">
+        <h1>Викторина с загадками</h1>
+        <div class="progress">
+          <span id="progress-text">Загадка 1 из 8</span>
+        </div>
+      </div>
+      
+      <div class="quiz-content">
+        <div class="riddle-container">
+          <h2 id="riddle-text" class="riddle-text"></h2>
+        </div>
+        
+        <div class="input-container">
+          <input 
+            type="text" 
+            id="answer-input" 
+            class="answer-input" 
+            placeholder="Введите ваш ответ..."
+            autocomplete="off"
+          >
+        </div>
+        
+        <div id="hint-container" class="hint-container hidden">
+          <p class="hint-label">Подсказка:</p>
+          <p id="hint-text" class="hint-text"></p>
+        </div>
+        
+        <div class="message-container">
+          <p id="message-text" class="message-text"></p>
+        </div>
+        
+        <div class="buttons-container">
+          <button id="check-button" class="btn btn-primary">Проверить ответ</button>
+          <button id="next-button" class="btn btn-secondary hidden">Следующая загадка</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Экран шутки перед слайд-шоу -->
+    <div id="joke-screen" class="screen hidden">
+      <div class="joke-container">
+        <img id="joke-image" class="joke-image" alt="Joke">
+        <div class="joke-caption">
+          <p id="joke-text" class="joke-text"></p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Экран слайд-шоу -->
+    <div id="slideshow-screen" class="screen hidden">
+      <div class="slideshow-container">
+        <img id="slideshow-image" class="slideshow-image" alt="Slideshow">
+        <div class="slideshow-progress">
+          <span id="slideshow-counter"></span>
+        </div>
+        <div class="slideshow-caption">
+          <p class="slideshow-caption-text">но потом я понял что тебе точно пригодится.</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Экран видео -->
+    <div id="video-screen" class="screen hidden">
+      <div class="video-container">
+        <video id="prize-video" class="prize-video" controls loop>
+          <source src="source/fight.webm" type="video/webm">
+          Ваш браузер не поддерживает видео.
+        </video>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Фоновая музыка -->
+  <audio id="background-music" loop>
+    <source src="source/tema-iz-fil-ma-rokki-bez-nazvaniya.mp3" type="audio/mpeg">
+    Ваш браузер не поддерживает аудио.
+  </audio>
+  
+  <script src="quiz.js"></script>
+</body>
+</html>
+
