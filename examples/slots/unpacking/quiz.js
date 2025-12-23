@@ -28,6 +28,7 @@ class QuizGame {
     this.wrongAnswersInRow = 0;
     this.hintLettersRevealed = 0;
     this.correctAnswersCount = 0;
+    this.preloadedImages = new Map(); // Хранилище предзагруженных изображений
     
     // DOM элементы
     this.quizScreen = document.getElementById('quiz-screen');
@@ -310,11 +311,33 @@ class QuizGame {
     }
   }
   
+  // Предзагрузка изображений для слайд-шоу
+  async preloadSlideshowImages() {
+    const preloadPromises = SLIDESHOW_IMAGES.map(imgPath => {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          this.preloadedImages.set(imgPath, img);
+          resolve();
+        };
+        img.onerror = () => resolve();
+        img.src = imgPath;
+      });
+    });
+    
+    await Promise.all(preloadPromises);
+    console.log('Все изображения слайд-шоу предзагружены');
+  }
+  
   // Запуск призовой последовательности
   startPrizeSequence() {
     console.log('Запуск призовой последовательности');
     this.quizScreen.classList.add('hidden');
-    this.startJokeSequence();
+    
+    // Предзагружаем изображения слайд-шоу заранее
+    this.preloadSlideshowImages().then(() => {
+      this.startJokeSequence();
+    });
   }
   
   // Запуск шутки перед слайд-шоу
@@ -330,11 +353,15 @@ class QuizGame {
       }
     ];
     
-    // Предзагружаем все изображения
+    // Предзагружаем все изображения и сохраняем их
     const preloadImages = jokes.map(joke => {
       return new Promise((resolve) => {
         const img = new Image();
-        img.onload = () => resolve();
+        img.onload = () => {
+          // Сохраняем предзагруженное изображение
+          this.preloadedImages.set(joke.image, img);
+          resolve();
+        };
         img.onerror = () => resolve(); // Продолжаем даже при ошибке
         img.src = joke.image;
       });
@@ -420,8 +447,15 @@ class QuizGame {
         return;
       }
       
-      // Устанавливаем изображение (текст уже на месте в HTML)
-      this.slideshowImage.src = SLIDESHOW_IMAGES[currentSlide];
+      // Устанавливаем изображение (используем предзагруженное из кэша)
+      const imgPath = SLIDESHOW_IMAGES[currentSlide];
+      const preloadedImg = this.preloadedImages.get(imgPath);
+      if (preloadedImg && preloadedImg.complete) {
+        // Изображение уже загружено, браузер использует кэш
+        this.slideshowImage.src = imgPath;
+      } else {
+        this.slideshowImage.src = imgPath;
+      }
       this.slideshowCounter.textContent = `${currentSlide + 1} / ${SLIDESHOW_IMAGES.length}`;
       
       // Вычисляем интервал для следующего слайда (уменьшаемся с каждым слайдом)
