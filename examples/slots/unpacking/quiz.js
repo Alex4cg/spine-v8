@@ -64,6 +64,42 @@ class QuizGame {
     this.showCurrentRiddle();
     // Настройка музыки (но не запуск)
     this.backgroundMusic.volume = 0.5; // Устанавливаем громкость 50%
+    
+    // Предзагружаем все изображения для призовой части в фоне
+    this.preloadPrizeImages();
+  }
+  
+  // Предзагрузка всех изображений для призовой части (шутки + слайд-шоу)
+  async preloadPrizeImages() {
+    console.log('Начало фоновой загрузки изображений для приза...');
+    
+    // Изображения для шуток
+    const jokeImages = [
+      'source/foto/tiket.webp',
+      'source/foto/bdsm.webp'
+    ];
+    
+    // Все изображения для загрузки
+    const allImages = [...jokeImages, ...SLIDESHOW_IMAGES];
+    
+    // Загружаем все изображения параллельно
+    const preloadPromises = allImages.map(imgPath => {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          this.preloadedImages.set(imgPath, img);
+          resolve();
+        };
+        img.onerror = () => {
+          console.warn(`Не удалось загрузить: ${imgPath}`);
+          resolve(); // Продолжаем даже при ошибке
+        };
+        img.src = imgPath;
+      });
+    });
+    
+    await Promise.all(preloadPromises);
+    console.log(`Все изображения приза предзагружены (${allImages.length} файлов)`);
   }
   
   // Запуск фоновой музыки
@@ -311,33 +347,13 @@ class QuizGame {
     }
   }
   
-  // Предзагрузка изображений для слайд-шоу
-  async preloadSlideshowImages() {
-    const preloadPromises = SLIDESHOW_IMAGES.map(imgPath => {
-      return new Promise((resolve) => {
-        const img = new Image();
-        img.onload = () => {
-          this.preloadedImages.set(imgPath, img);
-          resolve();
-        };
-        img.onerror = () => resolve();
-        img.src = imgPath;
-      });
-    });
-    
-    await Promise.all(preloadPromises);
-    console.log('Все изображения слайд-шоу предзагружены');
-  }
-  
   // Запуск призовой последовательности
   startPrizeSequence() {
     console.log('Запуск призовой последовательности');
     this.quizScreen.classList.add('hidden');
     
-    // Предзагружаем изображения слайд-шоу заранее
-    this.preloadSlideshowImages().then(() => {
-      this.startJokeSequence();
-    });
+    // Изображения уже предзагружены в фоне, сразу показываем шутки
+    this.startJokeSequence();
   }
   
   // Запуск шутки перед слайд-шоу
@@ -353,69 +369,90 @@ class QuizGame {
       }
     ];
     
-    // Предзагружаем все изображения и сохраняем их
-    const preloadImages = jokes.map(joke => {
-      return new Promise((resolve) => {
-        const img = new Image();
-        img.onload = () => {
-          // Сохраняем предзагруженное изображение
-          this.preloadedImages.set(joke.image, img);
-          resolve();
-        };
-        img.onerror = () => resolve(); // Продолжаем даже при ошибке
-        img.src = joke.image;
-      });
+    // Изображения уже предзагружены в фоне при инициализации, сразу показываем
+    // Проверяем, загружены ли они (на случай если загрузка еще не завершилась)
+    const allPreloaded = jokes.every(joke => {
+      const preloaded = this.preloadedImages.get(joke.image);
+      return preloaded && preloaded.complete;
     });
     
-    // Ждем загрузки всех изображений, затем показываем шутки
-    Promise.all(preloadImages).then(() => {
-      let currentJoke = 0;
-      
-      const showJoke = () => {
-        if (currentJoke >= jokes.length) {
-          // Шутки закончились, переходим к слайд-шоу
-          this.jokeScreen.classList.add('hidden');
-          this.slideshowScreen.classList.remove('hidden');
-          this.startSlideshow();
-          return;
-        }
-        
-        // Запускаем музыку при показе первой шутки
-        if (currentJoke === 0) {
-          this.backgroundMusic.play().catch(error => {
-            console.log('Не удалось запустить музыку:', error);
-          });
-        }
-        
-        // Скрываем текст сначала
-        this.jokeText.classList.remove('visible');
-        
-        // Устанавливаем текст и изображение ДО показа экрана
-        this.jokeText.textContent = jokes[currentJoke].text;
-        this.jokeImage.src = jokes[currentJoke].image;
-        
-        // Показываем экран шутки
-        this.jokeScreen.classList.remove('hidden');
-        
-        // Ждем следующего кадра рендеринга, чтобы браузер правильно позиционировал текст
-        requestAnimationFrame(() => {
-          // Еще один кадр для гарантии правильного позиционирования
-          requestAnimationFrame(() => {
-            // Теперь показываем текст - он уже на правильной позиции
-            this.jokeText.classList.add('visible');
-          });
+    if (allPreloaded) {
+      console.log('Все изображения шуток предзагружены, показываем сразу');
+      this.showJokes();
+    } else {
+      console.log('Ожидаем завершения предзагрузки изображений...');
+      // Если изображения еще загружаются, ждем их
+      const checkInterval = setInterval(() => {
+        const allReady = jokes.every(joke => {
+          const preloaded = this.preloadedImages.get(joke.image);
+          return preloaded && preloaded.complete;
         });
-        
-        currentJoke++;
-        
-        // Через 6 секунд показываем следующую шутку или переходим к слайд-шоу
-        setTimeout(showJoke, 6000);
-      };
-      
-      showJoke();
-    });
+        if (allReady) {
+          clearInterval(checkInterval);
+          this.showJokes();
+        }
+      }, 100);
+    }
   }
   
+  // Показ шуток (вынесено в отдельный метод)
+  showJokes() {
+    const jokes = [
+      {
+        image: 'source/foto/tiket.webp',
+        text: 'Сначала я хотел подарить тебе билеты в лучшие столицы мира, но потом подумал: "да ты наверное там уже была".'
+      },
+      {
+        image: 'source/foto/bdsm.webp',
+        text: 'Потом я хотел подарить тебе какую то полезную игрушку, но подумал: "ой да у нее то точно они даааавноооо есть"'
+      }
+    ];
+    
+    let currentJoke = 0;
+    
+    const showJoke = () => {
+      if (currentJoke >= jokes.length) {
+        // Шутки закончились, переходим к слайд-шоу
+        this.jokeScreen.classList.add('hidden');
+        this.slideshowScreen.classList.remove('hidden');
+        this.startSlideshow();
+        return;
+      }
+      
+      // Запускаем музыку при показе первой шутки
+      if (currentJoke === 0) {
+        this.backgroundMusic.play().catch(error => {
+          console.log('Не удалось запустить музыку:', error);
+        });
+      }
+      
+      // Скрываем текст сначала
+      this.jokeText.classList.remove('visible');
+      
+      // Устанавливаем текст и изображение ДО показа экрана
+      this.jokeText.textContent = jokes[currentJoke].text;
+      this.jokeImage.src = jokes[currentJoke].image;
+      
+      // Показываем экран шутки
+      this.jokeScreen.classList.remove('hidden');
+      
+      // Ждем следующего кадра рендеринга, чтобы браузер правильно позиционировал текст
+      requestAnimationFrame(() => {
+        // Еще один кадр для гарантии правильного позиционирования
+        requestAnimationFrame(() => {
+          // Теперь показываем текст - он уже на правильной позиции
+          this.jokeText.classList.add('visible');
+        });
+      });
+      
+      currentJoke++;
+      
+      // Через 6 секунд показываем следующую шутку или переходим к слайд-шоу
+      setTimeout(showJoke, 6000);
+    };
+    
+    showJoke();
+  }
   // Запуск слайд-шоу
   startSlideshow() {
     // Скрываем текст сначала
