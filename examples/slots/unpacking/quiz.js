@@ -10,15 +10,15 @@ const RIDDLES_DATA = `Если часы показывают верное вре
 
 // Пути к изображениям для слайд-шоу
 const SLIDESHOW_IMAGES = [
-  'source/foto/00.png',
-  'source/foto/01.png',
-  'source/foto/02.png',
-  'source/foto/03.png',
-  'source/foto/04.png',
-  'source/foto/05.png',
-  'source/foto/06.png',
-  'source/foto/07.png',
-  'source/foto/08.png'
+  'source/foto/00.webp',
+  'source/foto/01.webp',
+  'source/foto/02.webp',
+  'source/foto/03.webp',
+  'source/foto/04.webp',
+  'source/foto/05.webp',
+  'source/foto/06.webp',
+  'source/foto/07.webp',
+  'source/foto/08.webp'
 ];
 
 class QuizGame {
@@ -124,7 +124,7 @@ class QuizGame {
   
   // Проверка размеров изображений (1024x1024)
   async checkImageSizes() {
-    const imagesToCheck = [...SLIDESHOW_IMAGES, 'source/foto/bg.png'];
+    const imagesToCheck = [...SLIDESHOW_IMAGES, 'source/foto/bg.webp'];
     
     for (const imgPath of imagesToCheck) {
       try {
@@ -321,11 +321,11 @@ class QuizGame {
   startJokeSequence() {
     const jokes = [
       {
-        image: 'source/foto/tiket.png',
+        image: 'source/foto/tiket.webp',
         text: 'Сначала я хотел подарить тебе билеты в лучшие столицы мира, но потом подумал: "да ты наверное там уже была".'
       },
       {
-        image: 'source/foto/bdsm.png',
+        image: 'source/foto/bdsm.webp',
         text: 'Потом я хотел подарить тебе какую то полезную игрушку, но подумал: "ой да у нее то точно они даааавноооо есть"'
       }
     ];
