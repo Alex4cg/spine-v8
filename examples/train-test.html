@@ -55,6 +55,12 @@
       >
         Steam 2
       </button>
+      <button
+        id="playSkyLightning"
+        style="padding:8px 15px;background:#ff00ff;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;"
+      >
+        Sky Lightning
+      </button>
       
       <div style="color:white;font-size:14px;font-weight:600;margin-top:15px;margin-bottom:5px;">
         Уровни (постоянный трек):
@@ -354,18 +360,18 @@
 
         // Загрузка ресурсов
         await PIXI.Assets.load([
-          { alias: "trainSkeleton", src: "./assets/train/skeleton.json" },
-          { alias: "trainAtlas", src: "./assets/train/skeleton.atlas" },
+          { alias: "trainSkeleton", src: "./slots/slot_1/spine/train_2/skeleton.json" },
+          { alias: "trainAtlas", src: "./slots/slot_1/spine/train_2/skeleton.atlas" },
           { alias: "bgSkeleton", src: "./assets/train/bg.json" },
           { alias: "bgAtlas", src: "./assets/train/bg.atlas" },
           { alias: "topSkeleton", src: "./assets/train/top.json" },
           { alias: "topAtlas", src: "./assets/train/top.atlas" },
-          { alias: "logoSkeleton", src: "./assets/train/logo/skeleton.json" },
-          { alias: "logoAtlas", src: "./assets/train/logo/skeleton.atlas" },
+          { alias: "logoSkeleton", src: "./slots/slot_1/spine/logo_2/skeleton.json" },
+          { alias: "logoAtlas", src: "./slots/slot_1/spine/logo_2/skeleton.atlas" },
           { alias: "emitterConfig", src: "./assets/train/emitter.json" },
           { alias: "smokeTexture", src: "./assets/train/m_smoke.png" },
-          { alias: "collectEffectSkeleton", src: "./assets/train/collect_effect.json" },
-          { alias: "collectEffectAtlas", src: "./assets/train/collect_effect.atlas" },
+          { alias: "collectEffectSkeleton", src: "./slots/slot_1/spine/collect_effect_2/skeleton.json" },
+          { alias: "collectEffectAtlas", src: "./slots/slot_1/spine/collect_effect_2/skeleton.atlas" },
           ...coinTextures,
         ]);
 
@@ -910,6 +916,7 @@
         document.getElementById("playActive").onclick = () => playOneshot("06_active");
         document.getElementById("playSteam1").onclick = () => playOneshot("04_steam_1");
         document.getElementById("playSteam2").onclick = () => playOneshot("05_steam_2");
+        document.getElementById("playSkyLightning").onclick = () => playOneshot("09_sky_lightning");
         document.getElementById("setLevel1").onclick = () => setLevel(1);
         document.getElementById("setLevel2").onclick = () => setLevel(2);
         document.getElementById("setLevel3").onclick = () => setLevel(3);
@@ -951,7 +958,7 @@
         await new Promise((resolve) => requestAnimationFrame(resolve));
 
         // Устанавливаем скин "blue" (как в пиньятах)
-        const blueSkin = collectEffect.skeleton.data.findSkin("gold");
+        const blueSkin = collectEffect.skeleton.data.findSkin("blue");
         if (blueSkin) {
           collectEffect.skeleton.setSkin(blueSkin);
           collectEffect.skeleton.setSlotsToSetupPose();
