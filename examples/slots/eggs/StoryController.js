@@ -2,10 +2,11 @@
  * Контроллер для управления сюжетом и вторым экземпляром Eggs
  */
 class StoryController {
-  constructor(spineObject) {
+  constructor(spineObject, config = {}) {
     this.spine = spineObject;
     this.storyInProgress = false;
     this.storyTimeout = null;
+    this.particleSystem = config.particleSystem || null; // Ссылка на систему частиц
     
     // Маппинг названий анимаций для второго экземпляра
     this.ANIM_NAME_MAP = {
@@ -20,6 +21,13 @@ class StoryController {
     
     // Устанавливаем начальную анимацию null
     this.spine.state.setAnimation(0, "00_null", true);
+  }
+  
+  /**
+   * Устанавливает ссылку на систему частиц (вызывается после инициализации ParticleSystem)
+   */
+  setParticleSystem(particleSystem) {
+    this.particleSystem = particleSystem;
   }
   
   /**
@@ -105,8 +113,16 @@ class StoryController {
             if (colorToGoldEntry) {
               colorToGoldEntry.mixDuration = 0.2;
               
-              // После завершения color_to_gold начинаем часть 2
+              // Добавляем слушатель события egg_shot для запуска второго перелета
               colorToGoldEntry.listener = {
+                event: (entry, event) => {
+                  if (event.data.name === "egg_shot") {
+                    console.log("🎯 Событие egg_shot - запуск второго перелета");
+                    if (controller.particleSystem) {
+                      controller.particleSystem.startSecondFly();
+                    }
+                  }
+                },
                 complete: () => {
                   console.log("✅ Color to gold завершена, начало части 2");
                   
@@ -132,8 +148,16 @@ class StoryController {
                           if (shotToTotalEntry) {
                             shotToTotalEntry.mixDuration = 0.2;
                             
-                            // После завершения shot_to_total переходим к idle_no_text (финал)
+                            // Добавляем слушатель события egg_shot для запуска третьего перелета
                             shotToTotalEntry.listener = {
+                              event: (entry, event) => {
+                                if (event.data.name === "egg_shot") {
+                                  console.log("🎯 Событие egg_shot (shot_to_total) - запуск третьего перелета");
+                                  if (controller.particleSystem) {
+                                    controller.particleSystem.startThirdFly();
+                                  }
+                                }
+                              },
                               complete: () => {
                                 console.log("✅ Shot to total завершена, переход к idle_no_text (финал)");
                                 controller.playAnimation("idle_no_text", true, 0);

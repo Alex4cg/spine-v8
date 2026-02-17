@@ -1,0 +1,30 @@
+{
+  "bg": {
+    "x": 0,
+    "y": 0,
+    "scale": 1,
+    "zIndex": 0
+  },
+  "gid": {
+    "x": 361,
+    "y": 641,
+    "scale": 1,
+    "zIndex": 10
+  },
+  "fieldRegular": {
+    "x": -94,
+    "y": 207,
+    "scale": 1,
+    "zIndex": 25
+  },
+  "gameField": {
+    "x": 0,
+    "y": 75,
+    "scale": 1,
+    "zIndex": 50
+  },
+  "checkboxes": {
+    "debugOverlay": false,
+    "gidVisible": false
+  }
+}

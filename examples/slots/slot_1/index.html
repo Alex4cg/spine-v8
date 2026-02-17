@@ -135,14 +135,8 @@
     </div>
   </div>
 
-  <script type="importmap">
-    {
-      "imports": {
-        "pixi.js": "https://cdn.jsdelivr.net/npm/pixi.js@latest/dist/pixi.min.js"
-      }
-    }
-  </script>
-  <script src="https://cdn.jsdelivr.net/npm/pixi.js@latest/dist/pixi.min.js"></script>
+  <!-- Используем локальные библиотеки, как в train-test.html -->
+  <script src="../../assets/libs/pixi.min.js"></script>
   <script src="../../assets/libs/spine-pixi.js"></script>
   <script src="../../assets/libs/particle-emitter.min.js"></script>
   
@@ -158,13 +152,14 @@
       const loadingScreen = document.getElementById('loading-screen');
       const container = document.getElementById('game-container');
       
-      // Создаем PixiJS приложение
+      // Создаем PixiJS приложение (настройки как в train-test.html)
       const app = new PIXI.Application();
       await app.init({
         width: config.resolution.width,
         height: config.resolution.height,
         backgroundColor: 0x1a1a1a,
-        resolution: 1,
+        resolution: window.devicePixelRatio || 1,
+        autoDensity: true,
         antialias: true,
       });
       

@@ -1,8 +1,9 @@
 class DebugPositionEditor {
-  constructor(app, eggs, bgSprite) {
+  constructor(app, eggs, bgSprite, particleSystem = null) {
     this.app = app;
     this.eggs = eggs;
     this.bgSprite = bgSprite;
+    this.particleSystem = particleSystem; // Ссылка на систему частиц
     this.currentElement = null;
     this.elements = {};
     this.panel = null;
@@ -25,10 +26,20 @@ class DebugPositionEditor {
     console.log('DebugPositionEditor: Panel created, toggle button should be visible');
     
     // Загружаем сохраненные значения из файла после небольшой задержки
-    // чтобы все элементы были готовы
+    // чтобы все элементы были готовы (увеличена задержка для точек из ParticleSystem)
     setTimeout(async () => {
+      // Если есть particleSystem, перерегистрируем элементы, чтобы убедиться, что точки зарегистрированы
+      if (this.particleSystem) {
+        this.registerElements();
+      }
       await this.loadSavedValues();
-    }, 100);
+    }, 300);
+  }
+  
+  // Метод для перерегистрации элементов после создания точек (вызывается явно если нужно)
+  refreshElements() {
+    this.registerElements();
+    this.updateElementList();
   }
   
   createPanel() {
@@ -267,6 +278,64 @@ class DebugPositionEditor {
         }
       }
     };
+    
+    // Добавляем точки из ParticleSystem, если они доступны
+    if (this.particleSystem) {
+      const defaultX = this.app.screen.width / 2;
+      const defaultY = this.app.screen.height / 2;
+      
+      if (this.particleSystem.point1) {
+        this.elements['point1'] = {
+          name: 'Point 1 (Particles)',
+          getElement: () => this.particleSystem.point1,
+          defaultValues: { 
+            x: defaultX - 200, 
+            y: defaultY, 
+            scale: 1, 
+            zIndex: 1000 
+          }
+        };
+      }
+      
+      if (this.particleSystem.point2) {
+        this.elements['point2'] = {
+          name: 'Point 2 (Particles)',
+          getElement: () => this.particleSystem.point2,
+          defaultValues: { 
+            x: defaultX + 200, 
+            y: defaultY, 
+            scale: 1, 
+            zIndex: 1000 
+          }
+        };
+      }
+      
+      if (this.particleSystem.point3) {
+        this.elements['point3'] = {
+          name: 'Point 3 (Particles)',
+          getElement: () => this.particleSystem.point3,
+          defaultValues: { 
+            x: defaultX + 400, 
+            y: defaultY, 
+            scale: 1, 
+            zIndex: 1000 
+          }
+        };
+      }
+      
+      if (this.particleSystem.point4) {
+        this.elements['point4'] = {
+          name: 'Point 4 (Particles)',
+          getElement: () => this.particleSystem.point4,
+          defaultValues: { 
+            x: defaultX + 400, 
+            y: defaultY - 200, 
+            scale: 1, 
+            zIndex: 1000 
+          }
+        };
+      }
+    }
   }
   
   updateElementList() {
@@ -470,10 +539,18 @@ class DebugPositionEditor {
     // Загружаем настройки из файла
     await this.loadAllSettings();
     
+    // Если есть particleSystem, убеждаемся, что элементы зарегистрированы
+    if (this.particleSystem) {
+      this.registerElements();
+    }
+    
     // Применяем загруженные настройки к элементам
     for (const [key, elementInfo] of Object.entries(this.elements)) {
       const element = elementInfo.getElement();
-      if (!element) continue;
+      if (!element) {
+        console.warn(`DebugPositionEditor: Element ${key} not available, skipping`);
+        continue;
+      }
       
       let values = null;
       

@@ -63,8 +63,9 @@ export function createDebugMenu(app, elements, config) {
   // Функция применения значений к элементу
   function applyValuesToElement(element, values, defaultValues, options = {}) {
     if (!element) return;
-    let x = values.x !== undefined ? values.x : defaultValues.x;
-    let y = values.y !== undefined ? values.y : defaultValues.y;
+    // Используем значения из values, если они есть, иначе из defaultValues
+    let x = values && values.x !== undefined ? values.x : (defaultValues ? defaultValues.x : 0);
+    let y = values && values.y !== undefined ? values.y : (defaultValues ? defaultValues.y : 0);
     if (options.worldToLocalParent) {
       const parent = options.worldToLocalParent;
       x = x - (parent.x || 0);
@@ -72,12 +73,16 @@ export function createDebugMenu(app, elements, config) {
     }
     element.x = x;
     element.y = y;
-    const scaleVal = values.scale !== undefined ? values.scale : defaultValues.scale;
+    const scaleVal = values && values.scale !== undefined ? values.scale : (defaultValues ? defaultValues.scale : 1);
     if (element.scale) {
       element.scale.x = scaleVal;
       element.scale.y = scaleVal;
     }
-    if (values.zIndex !== undefined) element.zIndex = values.zIndex;
+    if (values && values.zIndex !== undefined) {
+      element.zIndex = values.zIndex;
+    } else if (defaultValues && defaultValues.zIndex !== undefined) {
+      element.zIndex = defaultValues.zIndex;
+    }
   }
   
   // Функция получения позиции элемента
@@ -93,17 +98,29 @@ export function createDebugMenu(app, elements, config) {
   
   // Функции загрузки настроек
   async function loadAllSettings(forceReload = false) {
-    if (allSettings !== null && !forceReload) return allSettings;
+    if (allSettings !== null && !forceReload) {
+      console.log('loadAllSettings: Using cached settings');
+      return allSettings;
+    }
+    
+    // Пытаемся загрузить из файла
     try {
       const response = await fetch(DEBUG_POSITIONS_PATH);
       if (response.ok) {
         allSettings = await response.json();
-        console.log('Loaded debug positions from', DEBUG_POSITIONS_PATH);
+        console.log('loadAllSettings: Successfully loaded debug positions from', DEBUG_POSITIONS_PATH);
+        console.log('loadAllSettings: Loaded settings:', allSettings);
+        // Если файл загружен успешно, не перезаписываем значения из localStorage
         return allSettings;
+      } else {
+        console.warn('loadAllSettings: File not found or not ok, status:', response.status);
       }
     } catch (e) {
-      console.warn('Failed to load debug_positions.json, using localStorage or defaults:', e);
+      console.warn('loadAllSettings: Failed to load debug_positions.json:', e.message);
     }
+    
+    // Если файл не загрузился, используем localStorage
+    console.log('loadAllSettings: Falling back to localStorage');
     allSettings = {};
     // Загружаем все настройки из localStorage
     for (let i = 0; i < localStorage.length; i++) {
@@ -123,29 +140,53 @@ export function createDebugMenu(app, elements, config) {
       }
     }
     // Для элементов из elementList, которых нет в localStorage, используем defaultValues
+    // НО только если файл не был загружен (чтобы не перезаписывать значения из файла)
     for (const [key, info] of Object.entries(elementList)) {
-      if (!allSettings[key]) {
+      if (!allSettings[key] && info.defaultValues) {
         allSettings[key] = info.defaultValues;
       }
     }
+    console.log('loadAllSettings: Final settings from localStorage/defaults:', allSettings);
     return allSettings;
   }
   
   async function loadSavedValues() {
     await loadAllSettings();
+    console.log('loadSavedValues: Applying settings to', Object.keys(elementList).length, 'elements');
+    console.log('loadSavedValues: Available settings keys:', Object.keys(allSettings));
+    console.log('loadSavedValues: All settings:', JSON.stringify(allSettings, null, 2));
+    
+    // Сначала применяем значения к элементам без parentKey
     for (const [key, info] of Object.entries(elementList)) {
       if (info.parentKey) continue;
+      if (!info.element) {
+        console.warn(`loadSavedValues: Element ${key} has no element reference`);
+        continue;
+      }
       const values = allSettings[key];
-      if (!values || !info.element) continue;
+      if (!values) {
+        console.log(`loadSavedValues: No saved values for ${key}, using defaults:`, info.defaultValues);
+        if (info.defaultValues) {
+          applyValuesToElement(info.element, null, info.defaultValues);
+        }
+        continue;
+      }
+      console.log(`loadSavedValues: Applying saved values to ${key}:`, values, 'defaults:', info.defaultValues);
       applyValuesToElement(info.element, values, info.defaultValues);
+      console.log(`loadSavedValues: ✓ Applied to ${key} - x=${info.element.x}, y=${info.element.y}, scale=${info.element.scale?.x}, zIndex=${info.element.zIndex}`);
     }
+    
+    // Затем применяем значения к элементам с parentKey
     for (const [key, info] of Object.entries(elementList)) {
       if (!info.parentKey) continue;
+      if (!info.element) continue;
       const values = allSettings[key];
-      if (!values || !info.element) continue;
+      if (!values) continue;
       const parentEl = elementList[info.parentKey] && elementList[info.parentKey].element;
+      console.log(`loadSavedValues: Applying to ${key} (with parent ${info.parentKey}):`, values);
       applyValuesToElement(info.element, values, info.defaultValues, parentEl ? { worldToLocalParent: parentEl } : {});
     }
+    
     if (app && app.stage && app.stage.sortableChildren) app.stage.sortChildren();
     if (currentElement && positionControls && positionControls.x) {
       const pos = getDisplayPosition(currentElement.info);
@@ -160,6 +201,7 @@ export function createDebugMenu(app, elements, config) {
       positionControls.zIndex.input.value = el.zIndex ?? 0;
       positionControls.zIndex.valueDisplay.textContent = (el.zIndex ?? 0).toFixed(0);
     }
+    console.log('loadSavedValues: ✓ All values applied');
   }
   
   if (app && elements) {
@@ -403,10 +445,17 @@ export function createDebugMenu(app, elements, config) {
       if (allSettings === null) {
         await loadAllSettings();
       }
-      if (allSettings && allSettings[key]) {
-        const info = elementList[key];
-        const parentEl = parentKey && elementList[parentKey] && elementList[parentKey].element;
-        applyValuesToElement(info.element, allSettings[key], info.defaultValues, parentEl ? { worldToLocalParent: parentEl } : {});
+      // Применяем сохраненные значения, если они есть, иначе дефолтные
+      const savedValues = allSettings && allSettings[key];
+      const parentEl = parentKey && elementList[parentKey] && elementList[parentKey].element;
+      if (savedValues) {
+        console.log(`addElement: Applying saved values to ${key}:`, savedValues);
+        applyValuesToElement(element, savedValues, defaultValues, parentEl ? { worldToLocalParent: parentEl } : {});
+        console.log(`addElement: Applied to ${key} - x=${element.x}, y=${element.y}, scale=${element.scale?.x}, zIndex=${element.zIndex}`);
+      } else if (defaultValues) {
+        // Если сохраненных значений нет, применяем дефолтные
+        console.log(`addElement: Using defaults for ${key}:`, defaultValues);
+        applyValuesToElement(element, null, defaultValues, parentEl ? { worldToLocalParent: parentEl } : {});
       }
       if (updateElementListFn) {
         updateElementListFn();

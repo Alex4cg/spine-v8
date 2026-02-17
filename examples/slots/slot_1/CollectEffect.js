@@ -40,7 +40,7 @@ export class CollectEffect {
       this.config,
       this.app,
       this.stage,
-      'collect_effect',
+      'collect_effect_2',
       'null', // Начальная анимация null (скрытое состояние)
       true
     );
@@ -70,18 +70,23 @@ export class CollectEffect {
       }
     }
 
-    // Устанавливаем скин "gold" (если есть)
+    // Ждем один кадр (как в train-test.html)
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+
+    // Устанавливаем скин "blue" (как в train-test.html)
     if (this.spineAnimation.spine && this.spineAnimation.spine.skeleton) {
-      const goldSkin = this.spineAnimation.spine.skeleton.data.findSkin("gold");
-      if (goldSkin) {
-        this.spineAnimation.spine.skeleton.setSkin(goldSkin);
+      const blueSkin = this.spineAnimation.spine.skeleton.data.findSkin("blue");
+      if (blueSkin) {
+        this.spineAnimation.spine.skeleton.setSkin(blueSkin);
         this.spineAnimation.spine.skeleton.setSlotsToSetupPose();
         if (this.spineAnimation.spine.skeleton.physics) {
           this.spineAnimation.spine.skeleton.updateWorldTransform(
             this.spineAnimation.spine.skeleton.physics.update
           );
         }
-        console.log('CollectEffect: Скин "gold" установлен');
+        console.log('CollectEffect: Скин "blue" установлен');
+      } else {
+        console.warn('CollectEffect: Скин "blue" не найден');
       }
     }
     
@@ -124,7 +129,7 @@ export class CollectEffect {
       this.config,
       this.app,
       this.stage,
-      'collect_effect',
+      'collect_effect_2',
       'null',
       true
     );
@@ -148,17 +153,23 @@ export class CollectEffect {
       }
     }
     
-    // Устанавливаем скин "gold" (если есть)
+    // Ждем один кадр перед установкой скина
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+
+    // Устанавливаем скин "blue" (как в train-test.html)
     if (flightSpine.spine && flightSpine.spine.skeleton) {
-      const goldSkin = flightSpine.spine.skeleton.data.findSkin("gold");
-      if (goldSkin) {
-        flightSpine.spine.skeleton.setSkin(goldSkin);
+      const blueSkin = flightSpine.spine.skeleton.data.findSkin("blue");
+      if (blueSkin) {
+        flightSpine.spine.skeleton.setSkin(blueSkin);
         flightSpine.spine.skeleton.setSlotsToSetupPose();
         if (flightSpine.spine.skeleton.physics) {
           flightSpine.spine.skeleton.updateWorldTransform(
             flightSpine.spine.skeleton.physics.update
           );
         }
+        console.log('CollectEffect: Скин "blue" установлен для flight instance');
+      } else {
+        console.warn('CollectEffect: Скин "blue" не найден для flight instance');
       }
     }
     

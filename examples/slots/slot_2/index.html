@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Slot 2</title>
+  <script src="../../assets/libs/pixi.min.js"></script>
+  <script src="../../assets/libs/spine-pixi.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      background-image: url('bg_png/1920х1080.png');
+      background-size: auto;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      font-family: 'Arial', sans-serif;
+    }
+
+    #controls {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    button {
+      padding: 10px 20px;
+      background: #00ff00;
+      color: #1a1a1a;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background: #00cc00;
+    }
+
+    button:active {
+      background: #00aa00;
+    }
+
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="controls">
+    <button id="hitButton">Hit</button>
+  </div>
+
+  <script>
+    (async () => {
+      // Создание PIXI приложения
+      const app = new PIXI.Application();
+      await app.init({
+        width: window.innerWidth,
+        height: window.innerHeight,
+        backgroundAlpha: 0, // Прозрачный фон, чтобы был виден CSS background-image
+        resolution: window.devicePixelRatio || 1,
+        autoDensity: true,
+        resizeTo: window,
+      });
+      document.body.appendChild(app.canvas);
+
+      // Загрузка Spine ресурсов
+      PIXI.Assets.add({ alias: "collectEffectSkeleton", src: "./spine/collect_effect/skeleton.json" });
+      PIXI.Assets.add({ alias: "collectEffectAtlas", src: "./spine/collect_effect/skeleton.atlas" });
+      await PIXI.Assets.load(["collectEffectSkeleton", "collectEffectAtlas"]);
+
+      // Создание Spine объекта
+      const collectEffect = spine.Spine.from({
+        skeleton: "collectEffectSkeleton",
+        atlas: "collectEffectAtlas",
+        scale: 1,
+      });
+
+      // Устанавливаем физику для collect effect
+      if (!collectEffect.skeleton.physics) {
+        collectEffect.skeleton.physics = {
+          update: () => {},
+          updateGlobal: () => {},
+        };
+      }
+
+      // Позиционируем collect effect по центру экрана
+      collectEffect.x = app.screen.width / 2;
+      collectEffect.y = app.screen.height / 2;
+      collectEffect.zIndex = 1;
+
+      // Добавляем на stage
+      app.stage.addChild(collectEffect);
+
+      // Устанавливаем скин "collect"
+      const collectSkin = collectEffect.skeleton.data.findSkin("collect");
+      if (collectSkin) {
+        collectEffect.skeleton.setSkin(collectSkin);
+        collectEffect.skeleton.setSlotsToSetupPose();
+        if (collectEffect.skeleton.physics) {
+          collectEffect.skeleton.updateWorldTransform(collectEffect.skeleton.physics.update);
+        }
+        console.log("✅ Скин 'collect' установлен");
+      } else {
+        console.warn("⚠️ Скин 'collect' не найден");
+      }
+
+      // Функция для проигрывания анимации ray с дополнительными эффектами
+      const playRayAnimation = () => {
+        // Сбрасываем Spine в setup pose перед запуском анимации, чтобы attachment аддитивного слоя включился
+        collectEffect.skeleton.setSlotsToSetupPose();
+        collectEffect.skeleton.setBonesToSetupPose();
+        if (collectEffect.skeleton.physics && collectEffect.skeleton.physics.update) {
+          collectEffect.skeleton.updateWorldTransform(collectEffect.skeleton.physics.update);
+        }
+        
+        // Очищаем все треки перед запуском
+        collectEffect.state.clearTrack(0);
+        collectEffect.state.clearTrack(1);
+        collectEffect.state.clearTrack(2);
+        
+        // Устанавливаем пустые анимации для гарантированной очистки
+        collectEffect.state.setEmptyAnimation(0, 0);
+        collectEffect.state.setEmptyAnimation(1, 0);
+        collectEffect.state.setEmptyAnimation(2, 0);
+        
+        // Запускаем все три анимации одновременно на разных треках (не зациклены)
+        const entry0 = collectEffect.state.setAnimation(0, "ray", false);
+        const entry1 = collectEffect.state.setAnimation(1, "round-effect-start", false);
+        const entry2 = collectEffect.state.setAnimation(2, "round-effect-end", false);
+        
+        // Устанавливаем mixDuration = 0 для мгновенного перехода
+        if (entry0) {
+          entry0.mixDuration = 0;
+        }
+        if (entry1) {
+          entry1.mixDuration = 0;
+        }
+        if (entry2) {
+          entry2.mixDuration = 0;
+        }
+        
+        if (!entry0) {
+          console.warn("⚠️ Не удалось запустить анимацию ray");
+        }
+        if (!entry1) {
+          console.warn("⚠️ Не удалось запустить анимацию round-effect-start");
+        }
+        if (!entry2) {
+          console.warn("⚠️ Не удалось запустить анимацию round-effect-end");
+        }
+        
+        if (entry0 && entry1 && entry2) {
+          console.log("✅ Анимации ray, round-effect-start и round-effect-end запущены одновременно");
+        }
+      };
+
+      // Настройка кнопки
+      document.getElementById("hitButton").onclick = playRayAnimation;
+
+      // Обновление в ticker
+      app.ticker.add(() => {
+        // Обновляем collect effect
+        if (collectEffect && collectEffect.skeleton && collectEffect.skeleton.physics) {
+          collectEffect.skeleton.updateWorldTransform(collectEffect.skeleton.physics.update);
+        }
+      });
+
+      // Обработка изменения размера окна
+      window.addEventListener("resize", () => {
+        setTimeout(() => {
+          collectEffect.x = app.screen.width / 2;
+          collectEffect.y = app.screen.height / 2;
+        }, 100);
+      });
+    })().catch((err) => {
+      console.error(err);
+      document.body.innerHTML =
+        '<div style="color:#fff;font-family:monospace;padding:24px;">Ошибка: ' +
+        err.message +
+        "</div>";
+    });
+  </script>
+</body>
+</html>
+

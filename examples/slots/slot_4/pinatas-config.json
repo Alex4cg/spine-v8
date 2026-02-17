@@ -1,0 +1,88 @@
+{
+  "pinatas": [
+    {
+      "id": 0,
+      "name": "Pinata 1",
+      "skin": "big",
+      "skeletonAlias": "pinataSkeleton1",
+      "atlasAlias": "pinataAtlas1",
+      "xOffset": -150,
+      "yOffset": 0,
+      "zIndex": 3,
+      "scale": 1,
+      "initialAnimation": "00_idle_a_1"
+    },
+    {
+      "id": 1,
+      "name": "Pinata 2",
+      "skin": "blue",
+      "skeletonAlias": "pinataSkeleton2",
+      "atlasAlias": "pinataAtlas2",
+      "xOffset": 150,
+      "yOffset": 0,
+      "zIndex": 3,
+      "scale": 1,
+      "initialAnimation": "00_idle_a_1"
+    },
+    {
+      "id": 2,
+      "name": "Pinata 3",
+      "skin": "green",
+      "skeletonAlias": "pinataSkeleton3",
+      "atlasAlias": "pinataAtlas3",
+      "xOffset": -50,
+      "yOffset": 0,
+      "zIndex": 3,
+      "scale": 1,
+      "initialAnimation": "00_idle_a_1"
+    },
+    {
+      "id": 3,
+      "name": "Pinata 4",
+      "skin": "red",
+      "skeletonAlias": "pinataSkeleton4",
+      "atlasAlias": "pinataAtlas4",
+      "xOffset": 50,
+      "yOffset": 0,
+      "zIndex": 3,
+      "scale": 1,
+      "initialAnimation": "00_idle_a_1"
+    }
+  ],
+  "animationButtons": [
+    {
+      "class": "hit",
+      "animation": "02_hit_1",
+      "label": "Hit"
+    },
+    {
+      "class": "shoot",
+      "animation": "03_shoot_1",
+      "label": "Shoot"
+    },
+    {
+      "class": "hitup",
+      "animation": "04_hitup_1",
+      "label": "Hit Up"
+    },
+    {
+      "class": "boom",
+      "animation": "05_boom_1",
+      "label": "Boom"
+    },
+    {
+      "class": "test",
+      "sequence": "idle-hit-idle",
+      "label": "Test Sequence"
+    }
+  ],
+  "testSequence": {
+    "animations": [
+      { "name": "00_idle_a_1", "loop": false, "delay": 0 },
+      { "name": "02_hit_1", "loop": false, "delay": 0 },
+      { "name": "00_idle_a_1", "loop": false, "delay": 0 }
+    ],
+    "trackIndex": 0,
+    "startDelay": 0
+  }
+}

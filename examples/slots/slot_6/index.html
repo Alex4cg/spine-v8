@@ -165,6 +165,7 @@
       <div class="button-group">
         <button id="generate-btn">Generate Scenario</button>
         <button id="play-btn" disabled>Play Scenario</button>
+        <button id="spin-btn" disabled>Spin</button>
         <button id="pause-btn" disabled>Pause</button>
         <button id="stop-btn" disabled>Stop</button>
       </div>
@@ -224,33 +225,42 @@
         height: 600
       });
 
-      // Добавляем элементы в дебаг меню
-      // Контейнер стека ожидающих символов (4x3 сетка)
-      debugMenu.addElement('stackContainer', 'Поле ожидающих символов (стек)', visualizer.stackContainer, {
-        x: CONFIG.POSITIONS.STACK_START_X,
-        y: CONFIG.POSITIONS.STACK_START_Y,
-        scale: 1,
-        zIndex: 10
-      });
+      // Добавляем элементы в дебаг меню и загружаем сохраненные позиции
+      (async () => {
+        try {
+          // Контейнер стека ожидающих символов (4x3 сетка)
+          await debugMenu.addElement('stackContainer', 'Поле ожидающих символов (стек)', visualizer.stackContainer, {
+            x: CONFIG.POSITIONS.STACK_START_X,
+            y: CONFIG.POSITIONS.STACK_START_Y,
+            scale: 1,
+            zIndex: 10
+          });
 
-      // Контейнер игрового поля (3 символа в ряд)
-      debugMenu.addElement('fieldContainer', 'Основное игровое поле', visualizer.fieldContainer, {
-        x: CONFIG.POSITIONS.FIELD_START_X,
-        y: CONFIG.POSITIONS.FIELD_Y,
-        scale: 1,
-        zIndex: 20
-      });
+          // Контейнер игрового поля (3 символа в ряд)
+          await debugMenu.addElement('fieldContainer', 'Основное игровое поле', visualizer.fieldContainer, {
+            x: CONFIG.POSITIONS.FIELD_START_X,
+            y: CONFIG.POSITIONS.FIELD_Y,
+            scale: 1,
+            zIndex: 20
+          });
 
-      // Загружаем сохраненные позиции после добавления всех элементов
-      debugMenu.reloadAllSettings();
+          // Перезагружаем все настройки после добавления всех элементов
+          await debugMenu.reloadAllSettings();
+          console.log('Debug menu initialized and settings loaded');
+        } catch (err) {
+          console.warn('Failed to initialize debug menu:', err);
+        }
+      })();
 
       // Состояние приложения
       let currentScenario = null;
       let isPlaying = false;
+      let currentSpinIndex = -1; // Текущий индекс спина для ручного переключения
 
       // Элементы UI
       const generateBtn = document.getElementById('generate-btn');
       const playBtn = document.getElementById('play-btn');
+      const spinBtn = document.getElementById('spin-btn');
       const pauseBtn = document.getElementById('pause-btn');
       const stopBtn = document.getElementById('stop-btn');
       const saveBtn = document.getElementById('save-btn');
@@ -258,13 +268,13 @@
       const stepDelayInput = document.getElementById('step-delay');
       const fileInput = document.getElementById('file-input');
       
-      // Инициализация состояния кнопки сохранения
-      saveBtn.disabled = true;
-      
       const stepInfo = document.getElementById('step-info');
       const spinInfo = document.getElementById('spin-info');
       const winInfo = document.getElementById('win-info');
       const multipliersInfo = document.getElementById('multipliers-info');
+      
+      // Инициализация состояния кнопки сохранения
+      saveBtn.disabled = true;
 
       // Обновление информации
       function updateInfo(step, totalSteps) {
@@ -297,15 +307,17 @@
           console.log('Scenario generated:', stats);
           console.log('Total steps:', currentScenario.length);
           
-        generateBtn.disabled = false;
-        generateBtn.textContent = 'Generate Scenario';
-        playBtn.disabled = false;
-        saveBtn.disabled = false;
-        
-        // Сохраняем сценарий в консоль для отладки
-        console.log('Scenario:', currentScenario);
-      }, 100);
-    });
+          generateBtn.disabled = false;
+          generateBtn.textContent = 'Generate Scenario';
+          playBtn.disabled = false;
+          spinBtn.disabled = false;
+          saveBtn.disabled = false;
+          currentSpinIndex = -1; // Сбрасываем индекс спина
+          
+          // Сохраняем сценарий в консоль для отладки
+          console.log('Scenario:', currentScenario);
+        }, 100);
+      });
 
       // Сохранение сценария
       saveBtn.addEventListener('click', () => {
@@ -317,7 +329,7 @@
         generator.saveToFile('scenario.json');
       });
 
-      // Воспроизведение сценария
+      // Воспроизведение сценария (автоплей)
       playBtn.addEventListener('click', async () => {
         if (!currentScenario || currentScenario.length === 0) {
           alert('Please generate or load a scenario first!');
@@ -327,8 +339,10 @@
         isPlaying = true;
         generateBtn.disabled = true;
         playBtn.disabled = true;
+        spinBtn.disabled = true;
         pauseBtn.disabled = false;
         stopBtn.disabled = false;
+        currentSpinIndex = -1; // Сбрасываем индекс спина при автоплее
         
         const delay = parseInt(stepDelayInput.value) || 500;
         visualizer.setStepDelay(delay);
@@ -340,8 +354,56 @@
         isPlaying = false;
         generateBtn.disabled = false;
         playBtn.disabled = false;
+        spinBtn.disabled = false;
         pauseBtn.disabled = true;
         stopBtn.disabled = true;
+      });
+
+      // Ручное переключение спинов
+      spinBtn.addEventListener('click', async () => {
+        if (!currentScenario || currentScenario.length === 0) {
+          alert('Please generate or load a scenario first!');
+          return;
+        }
+        
+        if (isPlaying) {
+          // Если идет автоплей, останавливаем его
+          visualizer.stop();
+          isPlaying = false;
+          playBtn.disabled = false;
+          pauseBtn.disabled = true;
+          stopBtn.disabled = true;
+        }
+        
+        // Находим следующий спин
+        currentSpinIndex++;
+        
+        // Находим все шаги текущего спина
+        const spinSteps = currentScenario.filter(step => step.spinIndex === currentSpinIndex);
+        
+        if (spinSteps.length === 0) {
+          // Если спинов больше нет, сбрасываем
+          currentSpinIndex = -1;
+          alert('No more spins! Reset to start.');
+          return;
+        }
+        
+        // Показываем шаги спина последовательно
+        spinBtn.disabled = true;
+        generateBtn.disabled = true;
+        
+        for (let i = 0; i < spinSteps.length; i++) {
+          const step = spinSteps[i];
+          await visualizer.showStep(step);
+          updateInfo(step, currentScenario.length);
+          // Небольшая задержка между шагами спина
+          if (i < spinSteps.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 300));
+          }
+        }
+        
+        spinBtn.disabled = false;
+        generateBtn.disabled = false;
       });
 
       // Пауза
@@ -356,9 +418,11 @@
         isPlaying = false;
         generateBtn.disabled = false;
         playBtn.disabled = false;
+        spinBtn.disabled = false;
         pauseBtn.disabled = true;
         stopBtn.disabled = true;
         pauseBtn.textContent = 'Pause';
+        currentSpinIndex = -1; // Сбрасываем индекс спина
         saveBtn.disabled = currentScenario && currentScenario.length > 0 ? false : true;
       });
 
@@ -380,11 +444,13 @@
             generator.loadScenario(jsonData);
             currentScenario = generator.scenario;
             
-          console.log('Scenario loaded:', currentScenario.length, 'steps');
-          playBtn.disabled = false;
-          saveBtn.disabled = false;
-          
-          alert(`Scenario loaded: ${currentScenario.length} steps`);
+            console.log('Scenario loaded:', currentScenario.length, 'steps');
+            playBtn.disabled = false;
+            spinBtn.disabled = false;
+            saveBtn.disabled = false;
+            currentSpinIndex = -1; // Сбрасываем индекс спина
+            
+            alert(`Scenario loaded: ${currentScenario.length} steps`);
           } catch (error) {
             console.error('Error loading scenario:', error);
             alert('Error loading scenario: ' + error.message);

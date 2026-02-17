@@ -34,7 +34,7 @@ export class TrainManager {
       this.config,
       this.app,
       this.stage, // Добавляем контейнер поезда напрямую на stage
-      'train',
+      'train_2',
       trainConfig.animationName || '00_idle',
       trainConfig.loop !== undefined ? trainConfig.loop : true
     );

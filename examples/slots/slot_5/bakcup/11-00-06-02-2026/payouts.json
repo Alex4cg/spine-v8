@@ -1,0 +1,301 @@
+{
+  "version": "1.0",
+  "description": "Конфигурация выигрышных комбинаций для каскадной слот-игры 6x5",
+  "gameType": "cascade",
+  "grid": {
+    "cols": 6,
+    "rows": 5
+  },
+  "winRules": {
+    "minSymbols": 7,
+    "description": "Минимальное количество одинаковых символов на поле для выигрыша"
+  },
+  "payouts": {
+    "5": {
+      "description": "5 одинаковых символов на поле",
+      "h1_diamond": 100,
+      "h2_gold": 75,
+      "h3_silver": 50,
+      "h4_copper": 25,
+      "l1_watermelon": 10,
+      "l2_grape": 10,
+      "l3_lemon": 10,
+      "l4_cherry": 10
+    },
+    "6": {
+      "description": "6 одинаковых символов на поле",
+      "h1_diamond": 150,
+      "h2_gold": 110,
+      "h3_silver": 75,
+      "h4_copper": 40,
+      "l1_watermelon": 15,
+      "l2_grape": 15,
+      "l3_lemon": 15,
+      "l4_cherry": 15
+    },
+    "7": {
+      "description": "7 одинаковых символов на поле",
+      "h1_diamond": 200,
+      "h2_gold": 150,
+      "h3_silver": 100,
+      "h4_copper": 60,
+      "l1_watermelon": 20,
+      "l2_grape": 20,
+      "l3_lemon": 20,
+      "l4_cherry": 20
+    },
+    "8": {
+      "description": "8 одинаковых символов на поле",
+      "h1_diamond": 300,
+      "h2_gold": 225,
+      "h3_silver": 150,
+      "h4_copper": 90,
+      "l1_watermelon": 30,
+      "l2_grape": 30,
+      "l3_lemon": 30,
+      "l4_cherry": 30
+    },
+    "9": {
+      "description": "9 одинаковых символов на поле",
+      "h1_diamond": 400,
+      "h2_gold": 300,
+      "h3_silver": 200,
+      "h4_copper": 120,
+      "l1_watermelon": 40,
+      "l2_grape": 40,
+      "l3_lemon": 40,
+      "l4_cherry": 40
+    },
+    "10": {
+      "description": "10 одинаковых символов на поле",
+      "h1_diamond": 500,
+      "h2_gold": 375,
+      "h3_silver": 250,
+      "h4_copper": 150,
+      "l1_watermelon": 50,
+      "l2_grape": 50,
+      "l3_lemon": 50,
+      "l4_cherry": 50
+    },
+    "11": {
+      "description": "11 одинаковых символов на поле",
+      "h1_diamond": 600,
+      "h2_gold": 450,
+      "h3_silver": 300,
+      "h4_copper": 180,
+      "l1_watermelon": 60,
+      "l2_grape": 60,
+      "l3_lemon": 60,
+      "l4_cherry": 60
+    },
+    "12": {
+      "description": "12 одинаковых символов на поле",
+      "h1_diamond": 750,
+      "h2_gold": 560,
+      "h3_silver": 375,
+      "h4_copper": 225,
+      "l1_watermelon": 75,
+      "l2_grape": 75,
+      "l3_lemon": 75,
+      "l4_cherry": 75
+    },
+    "13": {
+      "description": "13 одинаковых символов на поле",
+      "h1_diamond": 900,
+      "h2_gold": 675,
+      "h3_silver": 450,
+      "h4_copper": 270,
+      "l1_watermelon": 90,
+      "l2_grape": 90,
+      "l3_lemon": 90,
+      "l4_cherry": 90
+    },
+    "14": {
+      "description": "14 одинаковых символов на поле",
+      "h1_diamond": 1100,
+      "h2_gold": 825,
+      "h3_silver": 550,
+      "h4_copper": 330,
+      "l1_watermelon": 110,
+      "l2_grape": 110,
+      "l3_lemon": 110,
+      "l4_cherry": 110
+    },
+    "15": {
+      "description": "15 одинаковых символов на поле",
+      "h1_diamond": 1300,
+      "h2_gold": 975,
+      "h3_silver": 650,
+      "h4_copper": 390,
+      "l1_watermelon": 130,
+      "l2_grape": 130,
+      "l3_lemon": 130,
+      "l4_cherry": 130
+    },
+    "16": {
+      "description": "16 одинаковых символов на поле",
+      "h1_diamond": 1500,
+      "h2_gold": 1125,
+      "h3_silver": 750,
+      "h4_copper": 450,
+      "l1_watermelon": 150,
+      "l2_grape": 150,
+      "l3_lemon": 150,
+      "l4_cherry": 150
+    },
+    "17": {
+      "description": "17+ одинаковых символов на поле (редкий случай)",
+      "h1_diamond": 2000,
+      "h2_gold": 1500,
+      "h3_silver": 1000,
+      "h4_copper": 600,
+      "l1_watermelon": 200,
+      "l2_grape": 200,
+      "l3_lemon": 200,
+      "l4_cherry": 200
+    },
+    "18": {
+      "description": "18+ одинаковых символов на поле",
+      "h1_diamond": 2500,
+      "h2_gold": 1875,
+      "h3_silver": 1250,
+      "h4_copper": 750,
+      "l1_watermelon": 250,
+      "l2_grape": 250,
+      "l3_lemon": 250,
+      "l4_cherry": 250
+    },
+    "19": {
+      "description": "19+ одинаковых символов на поле",
+      "h1_diamond": 3000,
+      "h2_gold": 2250,
+      "h3_silver": 1500,
+      "h4_copper": 900,
+      "l1_watermelon": 300,
+      "l2_grape": 300,
+      "l3_lemon": 300,
+      "l4_cherry": 300
+    },
+    "20": {
+      "description": "20 одинаковых символов на поле",
+      "h1_diamond": 5000,
+      "h2_gold": 3750,
+      "h3_silver": 2500,
+      "h4_copper": 1500,
+      "l1_watermelon": 500,
+      "l2_grape": 500,
+      "l3_lemon": 500,
+      "l4_cherry": 500
+    },
+    "21": {
+      "description": "21+ одинаковых символов на поле (максимум для сетки 6x5)",
+      "h1_diamond": 6000,
+      "h2_gold": 4500,
+      "h3_silver": 3000,
+      "h4_copper": 1800,
+      "l1_watermelon": 600,
+      "l2_grape": 600,
+      "l3_lemon": 600,
+      "l4_cherry": 600
+    },
+    "22": {
+      "description": "22+ одинаковых символов на поле",
+      "h1_diamond": 7000,
+      "h2_gold": 5250,
+      "h3_silver": 3500,
+      "h4_copper": 2100,
+      "l1_watermelon": 700,
+      "l2_grape": 700,
+      "l3_lemon": 700,
+      "l4_cherry": 700
+    },
+    "23": {
+      "description": "23+ одинаковых символов на поле",
+      "h1_diamond": 8000,
+      "h2_gold": 6000,
+      "h3_silver": 4000,
+      "h4_copper": 2400,
+      "l1_watermelon": 800,
+      "l2_grape": 800,
+      "l3_lemon": 800,
+      "l4_cherry": 800
+    },
+    "24": {
+      "description": "24+ одинаковых символов на поле",
+      "h1_diamond": 9000,
+      "h2_gold": 6750,
+      "h3_silver": 4500,
+      "h4_copper": 2700,
+      "l1_watermelon": 900,
+      "l2_grape": 900,
+      "l3_lemon": 900,
+      "l4_cherry": 900
+    },
+    "25": {
+      "description": "25+ одинаковых символов на поле",
+      "h1_diamond": 10000,
+      "h2_gold": 7500,
+      "h3_silver": 5000,
+      "h4_copper": 3000,
+      "l1_watermelon": 1000,
+      "l2_grape": 1000,
+      "l3_lemon": 1000,
+      "l4_cherry": 1000
+    },
+    "26": {
+      "description": "26+ одинаковых символов на поле",
+      "h1_diamond": 12000,
+      "h2_gold": 9000,
+      "h3_silver": 6000,
+      "h4_copper": 3600,
+      "l1_watermelon": 1200,
+      "l2_grape": 1200,
+      "l3_lemon": 1200,
+      "l4_cherry": 1200
+    },
+    "27": {
+      "description": "27+ одинаковых символов на поле",
+      "h1_diamond": 15000,
+      "h2_gold": 11250,
+      "h3_silver": 7500,
+      "h4_copper": 4500,
+      "l1_watermelon": 1500,
+      "l2_grape": 1500,
+      "l3_lemon": 1500,
+      "l4_cherry": 1500
+    },
+    "28": {
+      "description": "28+ одинаковых символов на поле",
+      "h1_diamond": 18000,
+      "h2_gold": 13500,
+      "h3_silver": 9000,
+      "h4_copper": 5400,
+      "l1_watermelon": 1800,
+      "l2_grape": 1800,
+      "l3_lemon": 1800,
+      "l4_cherry": 1800
+    },
+    "29": {
+      "description": "29+ одинаковых символов на поле",
+      "h1_diamond": 22000,
+      "h2_gold": 16500,
+      "h3_silver": 11000,
+      "h4_copper": 6600,
+      "l1_watermelon": 2200,
+      "l2_grape": 2200,
+      "l3_lemon": 2200,
+      "l4_cherry": 2200
+    },
+    "30": {
+      "description": "30 одинаковых символов на поле (весь экран для сетки 6x5)",
+      "h1_diamond": 30000,
+      "h2_gold": 22500,
+      "h3_silver": 15000,
+      "h4_copper": 9000,
+      "l1_watermelon": 3000,
+      "l2_grape": 3000,
+      "l3_lemon": 3000,
+      "l4_cherry": 3000
+    }
+  }
+}

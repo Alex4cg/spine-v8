@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Flight Test - Spine Animation</title>
+    <script src="../../assets/libs/pixi.min.js"></script>
+    <script src="../../assets/libs/spine-pixi.js"></script>
+  </head>
+  <body style="margin:0;background:#1a1a1a;overflow:hidden;">
+    <div
+      id="controls"
+      style="position:absolute;top:20px;left:20px;z-index:1000;display:flex;flex-direction:column;gap:15px;"
+    >
+      <div style="color:white;font-size:16px;font-weight:600;margin-bottom:10px;">
+        Flight Test
+      </div>
+      
+      <button
+        id="playFlight"
+        style="padding:10px 20px;background:#00ff00;color:#1a1a1a;border:none;border-radius:5px;cursor:pointer;font-size:14px;font-weight:600;"
+      >
+        Play Flight
+      </button>
+      <button
+        id="resetPositions"
+        style="padding:10px 20px;background:#ff6b6b;color:white;border:none;border-radius:5px;cursor:pointer;font-size:14px;font-weight:600;"
+      >
+        Reset Positions
+      </button>
+    </div>
+    
+    <script>
+      (async () => {
+        // Фиксированный размер сцены
+        const SCENE_WIDTH = 1920;
+        const SCENE_HEIGHT = 1080;
+        
+        const app = new PIXI.Application();
+        await app.init({
+          width: SCENE_WIDTH,
+          height: SCENE_HEIGHT,
+          backgroundColor: 0x1a1a1a,
+          resolution: 1,
+          antialias: true,
+        });
+        
+        // Настройка масштабирования через CSS
+        const updateScale = () => {
+          const windowWidth = window.innerWidth;
+          const windowHeight = window.innerHeight;
+          
+          // Вычисляем масштаб для сохранения пропорций
+          const scaleX = windowWidth / SCENE_WIDTH;
+          const scaleY = windowHeight / SCENE_HEIGHT;
+          const scale = Math.min(scaleX, scaleY);
+          
+          // Применяем масштаб к canvas
+          app.canvas.style.width = `${SCENE_WIDTH}px`;
+          app.canvas.style.height = `${SCENE_HEIGHT}px`;
+          app.canvas.style.transform = `scale(${scale})`;
+          app.canvas.style.transformOrigin = 'top left';
+          
+          // Центрируем canvas
+          const scaledWidth = SCENE_WIDTH * scale;
+          const scaledHeight = SCENE_HEIGHT * scale;
+          app.canvas.style.position = 'fixed';
+          app.canvas.style.left = `${(windowWidth - scaledWidth) / 2}px`;
+          app.canvas.style.top = `${(windowHeight - scaledHeight) / 2}px`;
+        };
+        
+        updateScale();
+        window.addEventListener('resize', updateScale);
+        
+        document.body.appendChild(app.canvas);
+        app.stage.sortableChildren = true;
+        app.stage.eventMode = "static";
+        app.stage.hitArea = app.screen;
+
+        // Загрузка фона
+        const bgTexture = await PIXI.Assets.load("./bg/1920х1080.jpg");
+        const bgSprite = new PIXI.Sprite(bgTexture);
+        bgSprite.x = SCENE_WIDTH / 2;
+        bgSprite.y = SCENE_HEIGHT / 2;
+        bgSprite.anchor.set(0.5);
+        bgSprite.zIndex = 0;
+        app.stage.addChild(bgSprite);
+
+        // Загрузка Spine ресурсов
+        await PIXI.Assets.load([
+          { alias: "collectEffectSkeleton", src: "./spine/collect_effect/collect_effect.json" },
+          { alias: "collectEffectAtlas", src: "./spine/collect_effect/collect_effect.atlas" },
+        ]);
+
+        // Создание экземпляра Spine для анимации flight
+        const createFlightInstance = async () => {
+          const instance = spine.Spine.from({
+            skeleton: "collectEffectSkeleton",
+            atlas: "collectEffectAtlas",
+            scale: 1,
+          });
+
+          // Устанавливаем физику
+          if (!instance.skeleton.physics) {
+            instance.skeleton.physics = {
+              update: () => {},
+              updateGlobal: () => {},
+            };
+          }
+
+          // Центрируем на сцене
+          instance.x = SCENE_WIDTH / 2;
+          instance.y = SCENE_HEIGHT / 2;
+          instance.zIndex = 10;
+          instance.visible = false; // Скрыт по умолчанию
+
+          app.stage.addChild(instance);
+
+          // Ждем один кадр
+          await new Promise((resolve) => requestAnimationFrame(resolve));
+
+          // Устанавливаем скин по умолчанию
+          instance.skeleton.setSlotsToSetupPose();
+          instance.skeleton.setBonesToSetupPose();
+          if (instance.skeleton.physics) {
+            instance.skeleton.updateWorldTransform(instance.skeleton.physics.update);
+          }
+
+          console.log("✅ Экземпляр flight создан");
+
+          return instance;
+        };
+
+        const spineFlight = await createFlightInstance();
+
+        // Создание второго экземпляра Spine для анимации box_flame
+        const spineBoxFlame = await createFlightInstance();
+        spineBoxFlame.visible = false;
+        spineBoxFlame.zIndex = 11;
+
+        // Настройка управления костями для spineFlight
+        const controlBoneNames = [
+          "control_point_1",
+          "control_point_2",
+          "control_point_3",
+          "control_point_4",
+        ];
+        const controlBones = [];
+        const dragState = { node: null, lastX: 0, lastY: 0 };
+
+        // Ждем один кадр для корректной работы bounds
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+
+        // Функция загрузки сохраненных позиций
+        const loadControlPositions = () => {
+          const saved = localStorage.getItem('flight_control_positions');
+          if (saved) {
+            try {
+              return JSON.parse(saved);
+            } catch (e) {
+              console.warn('⚠️ Ошибка при загрузке позиций:', e);
+              return null;
+            }
+          }
+          return null;
+        };
+
+        // Загружаем сохраненные позиции до создания точек управления
+        const savedPositions = loadControlPositions();
+
+        // Функция сохранения позиций точек управления
+        const saveControlPositions = () => {
+          const positions = {};
+          // Сохраняем позиции control_point костей
+          for (const { bone, handle } of controlBones) {
+            positions[bone.data.name] = { x: handle.x, y: handle.y };
+          }
+          localStorage.setItem('flight_control_positions', JSON.stringify(positions));
+        };
+
+        // Функция сброса позиций к значениям по умолчанию
+        const resetControlPositions = () => {
+          localStorage.removeItem('flight_control_positions');
+          // Перезагружаем страницу для применения значений по умолчанию
+          location.reload();
+        };
+
+        // Создаем визуальные точки управления для костей
+        const centerX = SCENE_WIDTH / 2;
+        const centerY = SCENE_HEIGHT / 2;
+        
+        for (const name of controlBoneNames) {
+          const bone = spineFlight.skeleton.findBone(name);
+          if (!bone) {
+            console.warn(`⚠️ Кость ${name} не найдена`);
+            continue;
+          }
+
+          const world = { x: bone.worldX, y: bone.worldY };
+          spineFlight.skeletonToPixiWorldCoordinates(world);
+
+          const handle = new PIXI.Graphics()
+            .lineStyle({ width: 1, color: 0xff00ff, alpha: 0.9 })
+            .beginFill(0xff00ff, 0.4)
+            .drawCircle(0, 0, 9)
+            .endFill();
+          
+          // Используем сохраненную позицию или позицию относительно центра сцены
+          if (savedPositions && savedPositions[name]) {
+            handle.x = savedPositions[name].x;
+            handle.y = savedPositions[name].y;
+            console.log(`✅ Загружена сохраненная позиция для ${name}:`, savedPositions[name]);
+          } else {
+            // Позиционируем относительно центра сцены
+            // Вычисляем смещение от центра Spine объекта до кости
+            const offsetX = world.x - spineFlight.x;
+            const offsetY = world.y - spineFlight.y;
+            // Применяем смещение к центру сцены
+            handle.x = centerX + offsetX;
+            handle.y = centerY + offsetY;
+          }
+          
+          handle.cursor = "pointer";
+          handle.eventMode = "static";
+          handle.zIndex = 100; // Поверх всего
+
+          handle.on("pointerdown", (e) => {
+            dragState.node = handle;
+            dragState.lastX = e.global.x;
+            dragState.lastY = e.global.y;
+          });
+
+          app.stage.addChild(handle);
+          controlBones.push({ bone, handle });
+          console.log(`✅ Точка управления создана для кости ${name}`);
+        }
+
+        // Настройка синхронизации позиций костей с визуальными точками
+        const convertPoint = { x: 0, y: 0 };
+        
+        // Функция синхронизации костей для экземпляра
+        const syncBonesForInstance = (spineInstance) => {
+          for (const { bone, handle } of controlBones) {
+            const instanceBone = spineInstance.skeleton.findBone(bone.data.name);
+            if (instanceBone) {
+              convertPoint.x = handle.x;
+              convertPoint.y = handle.y;
+              spineInstance.pixiWorldCoordinatesToBone(convertPoint, instanceBone);
+              instanceBone.x = convertPoint.x;
+              instanceBone.y = convertPoint.y;
+            }
+          }
+        };
+
+        // Синхронизируем кости перед обновлением мировых трансформаций
+        spineFlight.beforeUpdateWorldTransforms = () => {
+          syncBonesForInstance(spineFlight);
+        };
+
+        // Настройка drag & drop
+        const endDrag = () => {
+          dragState.node = null;
+        };
+
+        app.stage.on("pointerup", () => {
+          endDrag();
+          // Автоматически сохраняем позиции после перемещения
+          saveControlPositions();
+        });
+        app.stage.on("pointerupoutside", () => {
+          endDrag();
+          // Автоматически сохраняем позиции после перемещения
+          saveControlPositions();
+        });
+        app.stage.on("pointermove", (e) => {
+          if (dragState.node) {
+            dragState.node.x += e.global.x - dragState.lastX;
+            dragState.node.y += e.global.y - dragState.lastY;
+            dragState.lastX = e.global.x;
+            dragState.lastY = e.global.y;
+          }
+        });
+
+        // Настройка кнопки сброса позиций
+        document.getElementById("resetPositions").onclick = resetControlPositions;
+
+        // Настройка слушателей завершения анимаций для скрытия экземпляра
+        spineFlight.state.addListener({
+          complete: (entry) => {
+            if (entry.trackIndex === 0) {
+              spineFlight.visible = false;
+              console.log("✅ Анимация flight завершена, экземпляр скрыт");
+            }
+          },
+          event: (entry, event) => {
+            if (event.data && event.data.name === "hit") {
+              console.log("🔔 Событие 'hit' получено");
+              
+              // Используем requestAnimationFrame для отложенного запуска
+              requestAnimationFrame(() => {
+                // Позиционируем box_flame по последней точке (control_point_4)
+                const controlPoint4Bone = spineFlight.skeleton.findBone("control_point_4");
+                if (controlPoint4Bone) {
+                  const world = { x: controlPoint4Bone.worldX, y: controlPoint4Bone.worldY };
+                  spineFlight.skeletonToPixiWorldCoordinates(world);
+                  spineBoxFlame.x = world.x;
+                  spineBoxFlame.y = world.y;
+                }
+                
+                // Сбрасываем в setup pose
+                spineBoxFlame.skeleton.setSlotsToSetupPose();
+                spineBoxFlame.skeleton.setBonesToSetupPose();
+                if (spineBoxFlame.skeleton.physics && spineBoxFlame.skeleton.physics.update) {
+                  spineBoxFlame.skeleton.updateWorldTransform(spineBoxFlame.skeleton.physics.update);
+                }
+                
+                // Очищаем трек и запускаем анимацию
+                spineBoxFlame.state.clearTrack(0);
+                spineBoxFlame.state.setEmptyAnimation(0, 0);
+                spineBoxFlame.visible = true;
+                
+                const boxFlameEntry = spineBoxFlame.state.setAnimation(0, "box_flame", false);
+                if (boxFlameEntry) {
+                  boxFlameEntry.mixDuration = 0;
+                  console.log("✅ Анимация 'box_flame' запущена по событию 'hit'");
+                } else {
+                  console.warn("⚠️ Не удалось запустить анимацию 'box_flame'");
+                }
+              });
+            }
+          }
+        });
+
+        spineBoxFlame.state.addListener({
+          complete: (entry) => {
+            if (entry.trackIndex === 0) {
+              spineBoxFlame.visible = false;
+              console.log("✅ Анимация box_flame завершена, экземпляр скрыт");
+            }
+          }
+        });
+
+        // Функция для проигрывания анимации flight
+        const playFlight = () => {
+          // Показываем экземпляр перед запуском
+          spineFlight.visible = true;
+          
+          // Сбрасываем экземпляр в setup pose
+          spineFlight.skeleton.setSlotsToSetupPose();
+          spineFlight.skeleton.setBonesToSetupPose();
+          if (spineFlight.skeleton.physics && spineFlight.skeleton.physics.update) {
+            spineFlight.skeleton.updateWorldTransform(spineFlight.skeleton.physics.update);
+          }
+          
+          // Запускаем анимацию flight
+          const flightEntry = spineFlight.state.setAnimation(0, "flight", false);
+          if (flightEntry) {
+            flightEntry.mixDuration = 0;
+            console.log("✅ Анимация 'flight' запущена");
+          } else {
+            console.warn("⚠️ Не удалось запустить анимацию 'flight'");
+          }
+        };
+
+        // Настройка кнопок
+        document.getElementById("playFlight").onclick = playFlight;
+
+        // Обновление в ticker
+        app.ticker.add(() => {
+          // Обновляем экземпляр
+          if (spineFlight && spineFlight.skeleton && spineFlight.skeleton.physics) {
+            spineFlight.skeleton.updateWorldTransform(spineFlight.skeleton.physics.update);
+          }
+          if (spineBoxFlame && spineBoxFlame.skeleton && spineBoxFlame.skeleton.physics) {
+            spineBoxFlame.skeleton.updateWorldTransform(spineBoxFlame.skeleton.physics.update);
+          }
+        });
+
+        console.log("✅ Flight Test загружен");
+      })()
+        .catch((err) => {
+          console.error(err);
+          document.body.innerHTML =
+            '<div style="color:#fff;font-family:monospace;padding:24px;">Ошибка: ' +
+            err.message +
+            "</div>";
+        });
+    </script>
+  </body>
+</html>
+

@@ -42,155 +42,91 @@
         app.stage.eventMode = "static";
         app.stage.hitArea = app.screen;
 
+        // Загрузка фона для видимости аддитивных эффектов
+        const bgTexture = await PIXI.Assets.load("./slots/slot_2/bg_png/1920х1080.png");
+        const bgSprite = new PIXI.Sprite(bgTexture);
+        bgSprite.x = app.screen.width / 2;
+        bgSprite.y = app.screen.height / 2;
+        bgSprite.anchor.set(0.5);
+        bgSprite.zIndex = 0;
+        app.stage.addChild(bgSprite);
+
         // Загрузка ресурсов из пиньят
         await PIXI.Assets.load([
           { alias: "collectEffectSkeleton", src: "./assets/pinatas/skeleton.json" },
           { alias: "collectEffectAtlas", src: "./assets/pinatas/skeleton.atlas" },
         ]);
 
-        // Создание Spine объекта
-        const collectEffect = spine.Spine.from({
-          skeleton: "collectEffectSkeleton",
-          atlas: "collectEffectAtlas",
-          scale: 1,
-        });
-
-        // Устанавливаем физику (как в SpineEffectSystem - ensurePhysics)
-        if (!collectEffect.skeleton.physics) {
-          collectEffect.skeleton.physics = {
-            update: () => {},
-            updateGlobal: () => {},
-          };
-        }
-
-        // Устанавливаем defaultMix (как в SpineEffectSystem)
-        collectEffect.state.data.defaultMix = 0.1;
-
-        // Позиционируем в центре экрана
-        collectEffect.x = app.screen.width / 2;
-        collectEffect.y = app.screen.height / 2;
-        collectEffect.zIndex = 1;
-        
-        // Добавляем на stage (как в SpineEffectSystem)
-        app.stage.addChild(collectEffect);
-
-        // Ждем один кадр (как в SpineEffectSystem - await this.waitNextFrame())
-        await new Promise((resolve) => requestAnimationFrame(resolve));
-
-        // Устанавливаем скин "blue" (как в SpineEffectSystem)
-        const blueSkin = collectEffect.skeleton.data.findSkin("blue");
-        if (blueSkin) {
-          collectEffect.skeleton.setSkin(blueSkin);
-          collectEffect.skeleton.setSlotsToSetupPose();
-          // Используем physics.update как в SpineEffectSystem
-          if (collectEffect.skeleton.physics && collectEffect.skeleton.physics.update) {
-            collectEffect.skeleton.updateWorldTransform(collectEffect.skeleton.physics.update);
-          }
-          console.log("✅ Скин 'blue' установлен (как в пиньятах)");
-        } else {
-          console.warn("⚠️ Скин 'blue' не найден");
-        }
-
-        // Настройка управления костями (сразу после установки скина, как в SpineEffectSystem)
-        const controlBoneNames = [
-          "control_point_1",
-          "control_point_2",
-          "control_point_1_t",
-          "control_point_2_t",
-        ];
-        const controlBones = [];
-        const dragState = { node: null, lastX: 0, lastY: 0 };
-
-        // Создаем визуальные точки управления
-        for (const name of controlBoneNames) {
-          const bone = collectEffect.skeleton.findBone(name);
-          if (!bone) {
-            console.warn(`⚠️ Кость ${name} не найдена`);
-            continue;
-          }
-
-          const world = { x: bone.worldX, y: bone.worldY };
-          collectEffect.skeletonToPixiWorldCoordinates(world);
-
-          const handle = new PIXI.Graphics()
-            .lineStyle({ width: 1, color: 0xff00ff, alpha: 0.9 })
-            .beginFill(0xff00ff, 0.4)
-            .drawCircle(0, 0, 9)
-            .endFill();
-          handle.x = world.x;
-          handle.y = world.y;
-          handle.cursor = "pointer";
-          handle.eventMode = "static";
-          handle.zIndex = 10;
-
-          handle.on("pointerdown", ({ x, y }) => {
-            dragState.node = handle;
-            dragState.lastX = x;
-            dragState.lastY = y;
+        // Создание отдельных экземпляров Spine для каждой анимации
+        const createSpineInstance = (animName) => {
+          const instance = spine.Spine.from({
+            skeleton: "collectEffectSkeleton",
+            atlas: "collectEffectAtlas",
+            scale: 1,
           });
 
-          app.stage.addChild(handle);
-          controlBones.push({ bone, handle });
-        }
-
-        // Настройка синхронизации позиций костей
-        const convertPoint = { x: 0, y: 0 };
-        collectEffect.beforeUpdateWorldTransforms = () => {
-          for (const { bone, handle } of controlBones) {
-            convertPoint.x = handle.x;
-            convertPoint.y = handle.y;
-            collectEffect.pixiWorldCoordinatesToBone(convertPoint, bone);
-            bone.x = convertPoint.x;
-            bone.y = convertPoint.y;
+          // Устанавливаем физику
+          if (!instance.skeleton.physics) {
+            instance.skeleton.physics = {
+              update: () => {},
+              updateGlobal: () => {},
+            };
           }
+
+          // Позиционируем в центре экрана
+          instance.x = app.screen.width / 2;
+          instance.y = app.screen.height / 2;
+          instance.zIndex = 10;
+          
+          // Добавляем на stage
+          app.stage.addChild(instance);
+
+          // Ждем один кадр
+          return new Promise((resolve) => {
+            requestAnimationFrame(async () => {
+              // Устанавливаем скин "blue"
+              const blueSkin = instance.skeleton.data.findSkin("blue");
+              if (blueSkin) {
+                instance.skeleton.setSkin(blueSkin);
+                instance.skeleton.setSlotsToSetupPose();
+                if (instance.skeleton.physics && instance.skeleton.physics.update) {
+                  instance.skeleton.updateWorldTransform(instance.skeleton.physics.update);
+                }
+              }
+              resolve(instance);
+            });
+          });
         };
 
-        // Настройка drag & drop
-        const endDrag = () => {
-          dragState.node = null;
-        };
+        // Создаем все экземпляры
+        const spineHit = await createSpineInstance("hit");
+        const spineEndEffect = await createSpineInstance("end_effect");
+        const spineRoundStart = await createSpineInstance("round-effect-start");
+        const spineRoundEnd = await createSpineInstance("round-effect-end");
 
-        app.stage.on("pointerup", endDrag);
-        app.stage.on("pointerupoutside", endDrag);
-        app.stage.on("pointermove", ({ x, y }) => {
-          if (dragState.node) {
-            dragState.node.x += x - dragState.lastX;
-            dragState.node.y += y - dragState.lastY;
-            dragState.lastX = x;
-            dragState.lastY = y;
-          }
-        });
-
-        // Треки для анимаций
-        const TRACK_HIT = 1;
-        const TRACK_END_EFFECT = 2;
-        
         let isLooping = false;
-
 
         // Функция для запуска анимаций
         const playHit = (loop = false) => {
-          // Сбрасываем Spine в setup pose перед запуском анимации, чтобы attachment аддитивного слоя включился
-          collectEffect.skeleton.setSlotsToSetupPose();
-          collectEffect.skeleton.setBonesToSetupPose();
-          if (collectEffect.skeleton.physics && collectEffect.skeleton.physics.update) {
-            collectEffect.skeleton.updateWorldTransform(collectEffect.skeleton.physics.update);
-          }
+          // Сбрасываем все экземпляры в setup pose
+          [spineHit, spineEndEffect, spineRoundStart, spineRoundEnd].forEach(spine => {
+            spine.skeleton.setSlotsToSetupPose();
+            spine.skeleton.setBonesToSetupPose();
+            if (spine.skeleton.physics && spine.skeleton.physics.update) {
+              spine.skeleton.updateWorldTransform(spine.skeleton.physics.update);
+            }
+          });
           
-          const entry1 = collectEffect.state.setAnimation(TRACK_HIT, "hit", loop);
-          const entry2 = collectEffect.state.setAnimation(TRACK_END_EFFECT, "end_effect", loop);
+          // Запускаем анимации на каждом экземпляре отдельно
+          const entry1 = spineHit.state.setAnimation(0, "hit", loop);
+          const entry2 = spineEndEffect.state.setAnimation(0, "end_effect", loop);
+          const entry3 = spineRoundStart.state.setAnimation(0, "round-effect-start", loop);
+          const entry4 = spineRoundEnd.state.setAnimation(0, "round-effect-end", loop);
           
-          if (entry1) {
-            entry1.mixDuration = 0;
-          }
-          if (entry2) {
-            entry2.mixDuration = 0;
-          }
-          
-          if (entry1 && entry2) {
-            console.log(`✅ Анимации запущены (loop: ${loop})`);
+          if (entry1 && entry2 && entry3 && entry4) {
+            console.log(`✅ Анимации запущены на отдельных экземплярах (loop: ${loop})`);
           } else {
-            console.warn("⚠️ Не удалось запустить анимации");
+            console.warn("⚠️ Не удалось запустить все анимации");
           }
         };
 
@@ -208,24 +144,48 @@
           if (isLooping) {
             playHit(true);
           } else {
-            collectEffect.state.clearTrack(TRACK_HIT);
-            collectEffect.state.clearTrack(TRACK_END_EFFECT);
-            // Устанавливаем null только при выключении loop (как в рабочей версии)
-            collectEffect.state.setAnimation(0, "null", true);
-            // Восстанавливаем состояние слотов после установки null, чтобы blend mode не сбросился
-            collectEffect.skeleton.setSlotsToSetupPose();
-            if (collectEffect.skeleton.physics && collectEffect.skeleton.physics.update) {
-              collectEffect.skeleton.updateWorldTransform(collectEffect.skeleton.physics.update);
-            }
+            // Останавливаем все анимации
+            spineHit.state.clearTrack(0);
+            spineEndEffect.state.clearTrack(0);
+            spineRoundStart.state.clearTrack(0);
+            spineRoundEnd.state.clearTrack(0);
+            
+            // Устанавливаем null на всех экземплярах
+            spineHit.state.setAnimation(0, "null", true);
+            spineEndEffect.state.setAnimation(0, "null", true);
+            spineRoundStart.state.setAnimation(0, "null", true);
+            spineRoundEnd.state.setAnimation(0, "null", true);
+            
+            // Восстанавливаем состояние слотов
+            [spineHit, spineEndEffect, spineRoundStart, spineRoundEnd].forEach(spine => {
+              spine.skeleton.setSlotsToSetupPose();
+              if (spine.skeleton.physics && spine.skeleton.physics.update) {
+                spine.skeleton.updateWorldTransform(spine.skeleton.physics.update);
+              }
+            });
           }
         };
 
         // Обновление в ticker
         app.ticker.add(() => {
-          // Обновляем collect effect
-          if (collectEffect && collectEffect.skeleton && collectEffect.skeleton.physics) {
-            collectEffect.skeleton.updateWorldTransform(collectEffect.skeleton.physics.update);
-          }
+          // Обновляем все экземпляры
+          [spineHit, spineEndEffect, spineRoundStart, spineRoundEnd].forEach(spine => {
+            if (spine && spine.skeleton && spine.skeleton.physics) {
+              spine.skeleton.updateWorldTransform(spine.skeleton.physics.update);
+            }
+          });
+        });
+
+        // Обработчик изменения размера окна
+        window.addEventListener("resize", () => {
+          setTimeout(() => {
+            [spineHit, spineEndEffect, spineRoundStart, spineRoundEnd].forEach(spine => {
+              spine.x = app.screen.width / 2;
+              spine.y = app.screen.height / 2;
+            });
+            bgSprite.x = app.screen.width / 2;
+            bgSprite.y = app.screen.height / 2;
+          }, 100);
         });
 
         // Запускаем анимацию один раз после инициализации, чтобы она проигралась до конца

@@ -33,26 +33,96 @@ export class ScenarioGenerator {
   }
 
   /**
+   * Добавляет "жирные" символы (большие множители или большие числа) в список ожидающих символов
+   * через каждые 3-5 спинов
+   * @param {number} spinCount - Количество спинов
+   */
+  addBigSymbolsToWaitingList(spinCount) {
+    let nextBigSymbolSpin = Math.floor(Math.random() * 3) + 3; // 3-5 спинов
+    let spinCounter = 0;
+    
+    // Проходим по рядам ожидающих символов (начиная с STACK_ROWS, так как первые ряды - начальный стек)
+    for (let row = this.STACK_ROWS; row < this.allWaitingSymbols.length; row++) {
+      spinCounter++;
+      
+      // Если достигли нужного интервала, добавляем "жирный" символ
+      if (spinCounter >= nextBigSymbolSpin) {
+        // Выбираем случайную позицию в ряду для большого символа
+        const bigSymbolCol = Math.floor(Math.random() * this.STACK_COLS);
+        
+        // Случайно выбираем: большой множитель (70%) или большое число выигрыша (30%)
+        const useMultiplier = Math.random() < 0.7;
+        
+        if (useMultiplier) {
+          // Большой множитель: x10 или x11 (ID 19 или 20)
+          const bigMultiplierId = CONFIG.SYMBOL_TYPES.MULTIPLIER_MAX - 1 + Math.floor(Math.random() * 2); // 19 или 20
+          this.allWaitingSymbols[row][bigSymbolCol] = bigMultiplierId;
+        } else {
+          // Большое число выигрыша: 8, 9 или 10 (ID 8, 9 или 10)
+          const bigWinId = CONFIG.SYMBOL_TYPES.WIN_MAX - 2 + Math.floor(Math.random() * 3); // 8, 9 или 10
+          this.allWaitingSymbols[row][bigSymbolCol] = bigWinId;
+        }
+        
+        // Гарантируем, что в ряду все еще есть минимум 1 пустышка
+        this.ensureAtLeastOneBlank([this.allWaitingSymbols[row]]);
+        
+        // Устанавливаем следующий интервал для большого символа
+        nextBigSymbolSpin = Math.floor(Math.random() * 3) + 3; // 3-5 спинов
+        spinCounter = 0; // Сбрасываем счетчик
+      }
+    }
+  }
+
+  /**
    * Гарантирует наличие минимум 1 пустышки в массиве символов
    * @param {number[]|number[][]} symbols - Массив символов (одномерный или двумерный)
    * @param {number} blankId - ID пустышки (по умолчанию CONFIG.SYMBOL_TYPES.BLANK)
    */
   ensureAtLeastOneBlank(symbols, blankId = CONFIG.SYMBOL_TYPES.BLANK) {
-    const flatSymbols = Array.isArray(symbols[0]) && typeof symbols[0][0] !== 'undefined' ? symbols.flat() : symbols;
-    const hasBlank = flatSymbols.some(s => s === blankId);
+    if (!symbols || symbols.length === 0) return;
     
-    if (!hasBlank && flatSymbols.length > 0) {
-      // Случайно выбираем позицию для замены на пустышку
-      const randomIndex = Math.floor(Math.random() * flatSymbols.length);
-      if (Array.isArray(symbols[0]) && typeof symbols[0][0] !== 'undefined') {
-        // Для двумерного массива (стек)
-        const totalCols = symbols[0].length;
-        const row = Math.floor(randomIndex / totalCols);
-        const col = randomIndex % totalCols;
-        symbols[row][col] = blankId;
-      } else {
-        // Для одномерного массива (поле)
+    // Проверяем, является ли это двумерным массивом (стек)
+    const is2D = Array.isArray(symbols[0]) && typeof symbols[0][0] !== 'undefined' && !isNaN(symbols[0][0]);
+    
+    if (is2D) {
+      // Для двумерного массива (стек) - проверяем каждый ряд отдельно
+      for (let row = 0; row < symbols.length; row++) {
+        if (!symbols[row] || symbols[row].length === 0) continue;
+        const rowHasBlank = symbols[row].some(s => s === blankId);
+        if (!rowHasBlank) {
+          // Случайно выбираем позицию для замены на пустышку в этом ряду
+          const randomCol = Math.floor(Math.random() * symbols[row].length);
+          symbols[row][randomCol] = blankId;
+        }
+      }
+    } else {
+      // Для одномерного массива (поле)
+      const hasBlank = symbols.some(s => s === blankId);
+      if (!hasBlank && symbols.length > 0) {
+        const randomIndex = Math.floor(Math.random() * symbols.length);
         symbols[randomIndex] = blankId;
+      }
+    }
+  }
+
+  /**
+   * Гарантирует наличие минимум 1 не-пустышки в каждом ряду стека ожидания
+   * @param {number[][]} symbols - Двумерный массив символов (стек)
+   * @param {number} blankId - ID пустышки (по умолчанию CONFIG.SYMBOL_TYPES.BLANK)
+   */
+  ensureAtLeastOneNonBlank(symbols, blankId = CONFIG.SYMBOL_TYPES.BLANK) {
+    if (!symbols || symbols.length === 0) return;
+    
+    for (let row = 0; row < symbols.length; row++) {
+      if (!symbols[row] || symbols[row].length === 0) continue;
+      
+      // Проверяем, есть ли хотя бы один не-пустышка в ряду
+      const hasNonBlank = symbols[row].some(s => s !== blankId);
+      
+      if (!hasNonBlank) {
+        // Если весь ряд состоит из пустышек, заменяем одну на случайный символ
+        const randomCol = Math.floor(Math.random() * symbols[row].length);
+        symbols[row][randomCol] = generateRandomSymbol();
       }
     }
   }
@@ -69,8 +139,10 @@ export class ScenarioGenerator {
         stack[row][col] = generateRandomSymbol();
       }
     }
-    // Гарантируем минимум 1 пустышку в стеке
+    // Гарантируем минимум 1 пустышку в каждом ряду стека
     this.ensureAtLeastOneBlank(stack);
+    // Гарантируем минимум 1 не-пустышку в каждом ряду стека
+    this.ensureAtLeastOneNonBlank(stack);
     return stack;
   }
 
@@ -121,11 +193,14 @@ export class ScenarioGenerator {
       for (let col = 0; col < this.STACK_COLS; col++) {
         newStack[0][col] = generateRandomSymbol();
       }
-      this.ensureAtLeastOneBlank(newStack[0]);
+      // Гарантируем минимум 1 пустышку в новом ряду
+      this.ensureAtLeastOneBlank([newStack[0]]);
     }
     
     // Гарантируем минимум 1 пустышку во всем стеке после сдвига
     this.ensureAtLeastOneBlank(newStack);
+    // Гарантируем минимум 1 не-пустышку в каждом ряду стека после сдвига
+    this.ensureAtLeastOneNonBlank(newStack);
     
     return { stack: newStack, field: newField };
   }
@@ -262,8 +337,16 @@ export class ScenarioGenerator {
         this.allWaitingSymbols[row][col] = generateRandomSymbol();
       }
       // Гарантируем минимум 1 пустышку в каждом ряду
-      this.ensureAtLeastOneBlank(this.allWaitingSymbols[row]);
+      this.ensureAtLeastOneBlank([this.allWaitingSymbols[row]]);
+      // Гарантируем минимум 1 не-пустышку в каждом ряду (чтобы не было полностью пустых рядов)
+      this.ensureAtLeastOneNonBlank([this.allWaitingSymbols[row]]);
     }
+    
+    // Добавляем "жирные" символы (большие множители или большие числа) через каждые 3-5 спинов
+    this.addBigSymbolsToWaitingList(spinCount);
+    
+    // Финальная проверка: гарантируем минимум 1 не-пустышку во всех рядах после всех изменений
+    this.ensureAtLeastOneNonBlank(this.allWaitingSymbols);
     
     // Генерируем начальный стек из первых STACK_ROWS рядов предгенерированных символов
     let currentStack = [];

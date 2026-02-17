@@ -49,7 +49,7 @@ export const CONFIG = {
     WIN_MIN: 1,                  // Минимальный ID выигрышного символа
     WIN_MAX: 10,                 // Максимальный ID выигрышного символа
     MULTIPLIER_MIN: 11,          // Минимальный ID множителя
-    MULTIPLIER_MAX: 20           // Максимальный ID множителя (x2-x11)
+    MULTIPLIER_MAX: 20           // Максимальный ID множителя (x1-x10)
   },
   
   // Вероятности символов (сумма должна быть ~1.0)
@@ -114,7 +114,7 @@ export function getWinAmount(symbolId) {
  */
 export function getMultiplierValue(symbolId) {
   if (symbolId >= CONFIG.SYMBOL_TYPES.MULTIPLIER_MIN && symbolId <= CONFIG.SYMBOL_TYPES.MULTIPLIER_MAX) {
-    return symbolId - CONFIG.SYMBOL_TYPES.MULTIPLIER_MIN + 2; // 11 = x2, 12 = x3, ...
+    return symbolId - CONFIG.SYMBOL_TYPES.MULTIPLIER_MIN + 1; // 11 = x1, 12 = x2, ...
   }
   return 0;
 }

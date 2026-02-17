@@ -9,6 +9,7 @@
     <script src="./DebugPositionEditor.js"></script>
     <script src="./EggsAnimationController.js"></script>
     <script src="./StoryController.js"></script>
+    <script src="./ParticleSystem.js"></script>
   </head>
   <body style="margin:0;background:#1a1a1a;overflow:hidden;">
     <div
@@ -185,6 +186,18 @@
           Action
         </button>
       </div>
+      
+      <div style="color:white;font-size:14px;font-weight:600;margin-top:15px;margin-bottom:5px;">
+        Партиклы:
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button
+          id="particle_fly_btn"
+          style="padding:10px 20px;background:#e74c3c;color:white;border:none;border-radius:5px;cursor:pointer;font-size:14px;font-weight:600;"
+        >
+          Start Fly
+        </button>
+      </div>
     </div>
     
     <script>
@@ -259,9 +272,6 @@
 
         app.stage.addChild(eggs2);
 
-        // Инициализация дебаггера позиций (только для первого экземпляра)
-        const debugEditor = new DebugPositionEditor(app, eggs, bgSprite);
-
         // Инициализация контроллера анимаций для первого экземпляра
         const eggsController = new EggsAnimationController(eggs);
         eggsController.setupUIHandlers();
@@ -269,6 +279,73 @@
         // Инициализация контроллера сюжета для второго экземпляра
         const storyController = new StoryController(eggs2);
         storyController.setupUIHandlers();
+
+        // Инициализация системы частиц
+        let particleSystem = null;
+        (async () => {
+          try {
+            // Передаем storyController в ParticleSystem для синхронизации
+            particleSystem = new ParticleSystem(app, {
+              storyController: storyController
+            });
+            
+            // Ждем завершения инициализации ParticleSystem (чтобы точки были созданы)
+            await particleSystem.initPromise;
+            
+            // Устанавливаем позицию eggs2 по point2
+            if (particleSystem.point2) {
+              eggs2.x = particleSystem.point2.x;
+              eggs2.y = particleSystem.point2.y;
+            }
+            
+            // Передаем ссылку на particleSystem в storyController для запуска второго перелета
+            storyController.setParticleSystem(particleSystem);
+            
+            // Инициализация дебаггера позиций после создания particleSystem (чтобы можно было управлять точками)
+            // Создаем дебаггер после того, как particleSystem полностью инициализирован (точки уже созданы)
+            const debugEditor = new DebugPositionEditor(app, eggs, bgSprite, particleSystem);
+            
+            // Убеждаемся, что элементы (включая точки) перерегистрированы и загружены после создания particleSystem
+            // Это гарантирует, что точки зарегистрированы и их позиции загружены из сохраненных значений
+            setTimeout(async () => {
+              if (debugEditor) {
+                // Перерегистрируем элементы, чтобы убедиться, что точки зарегистрированы
+                debugEditor.registerElements();
+                // Обновляем список элементов в UI
+                debugEditor.updateElementList();
+                // Загружаем и применяем сохраненные значения (включая позиции точек)
+                await debugEditor.loadSavedValues();
+                
+                // После загрузки позиций точек обновляем позицию eggs2 по point2
+                if (particleSystem.point2) {
+                  eggs2.x = particleSystem.point2.x;
+                  eggs2.y = particleSystem.point2.y;
+                }
+              }
+            }, 100);
+            
+            // Обработчик кнопки перелета
+            document.getElementById("particle_fly_btn").onclick = () => {
+              if (!particleSystem) return;
+              
+              if (particleSystem.isFlying) {
+                particleSystem.stopFly();
+                const btn = document.getElementById("particle_fly_btn");
+                btn.textContent = "Start Fly";
+                btn.style.background = "#e74c3c";
+              } else {
+                particleSystem.startFly();
+                const btn = document.getElementById("particle_fly_btn");
+                btn.textContent = "Stop Fly";
+                btn.style.background = "#27ae60";
+              }
+            };
+            
+            console.log("✅ Система частиц инициализирована");
+          } catch (error) {
+            console.error("❌ Ошибка инициализации системы частиц:", error);
+          }
+        })();
 
         // Обновление в ticker
         app.ticker.add(() => {
@@ -278,6 +355,25 @@
           if (eggs2 && eggs2.skeleton && eggs2.skeleton.physics) {
             eggs2.skeleton.updateWorldTransform(eggs2.skeleton.physics.update);
           }
+          
+          // Обновление системы частиц
+          if (particleSystem) {
+            const deltaTime = app.ticker.deltaMS / 1000;
+            particleSystem.update(deltaTime);
+            
+            // Обновление physics для boom (первый перелет)
+            if (particleSystem.boomSpine && particleSystem.boomSpine.skeleton && particleSystem.boomSpine.skeleton.physics) {
+              particleSystem.boomSpine.skeleton.updateWorldTransform(particleSystem.boomSpine.skeleton.physics.update);
+            }
+            // Обновление physics для boom2 (второй перелет)
+            if (particleSystem.boomSpine2 && particleSystem.boomSpine2.skeleton && particleSystem.boomSpine2.skeleton.physics) {
+              particleSystem.boomSpine2.skeleton.updateWorldTransform(particleSystem.boomSpine2.skeleton.physics.update);
+            }
+            // Обновление physics для boom3 (третий перелет)
+            if (particleSystem.boomSpine3 && particleSystem.boomSpine3.skeleton && particleSystem.boomSpine3.skeleton.physics) {
+              particleSystem.boomSpine3.skeleton.updateWorldTransform(particleSystem.boomSpine3.skeleton.physics.update);
+            }
+          }
         });
 
         // Обработчик изменения размера окна
@@ -285,10 +381,18 @@
           setTimeout(() => {
             eggs.x = app.screen.width / 2 - 200;
             eggs.y = app.screen.height / 2;
-            eggs2.x = app.screen.width / 2 + 200;
-            eggs2.y = app.screen.height / 2;
+            // eggs2 позиционируется по point2, если particleSystem доступен
+            if (particleSystem && particleSystem.point2) {
+              eggs2.x = particleSystem.point2.x;
+              eggs2.y = particleSystem.point2.y;
+            } else {
+              eggs2.x = app.screen.width / 2 + 200;
+              eggs2.y = app.screen.height / 2;
+            }
             bgSprite.x = app.screen.width / 2;
             bgSprite.y = app.screen.height / 2;
+            
+            // Позиции точек теперь управляются через DebugPositionEditor
           }, 100);
         });
 

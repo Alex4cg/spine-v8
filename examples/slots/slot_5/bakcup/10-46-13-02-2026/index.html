@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cascade Slot Test - Slot 5</title>
+  
+  <script src="../../assets/libs/pixi.min.js"></script>
+  <script src="../../assets/libs/spine-pixi.js"></script>
+  
+  <style>
+    @font-face {
+      font-family: 'The Bomb Sound';
+      src: url('./Fonts/The Bomb Sound.ttf') format('truetype');
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'GAMERIA';
+      src: url('./Fonts/GAMERIA.ttf') format('truetype');
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #1a1a1a;
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    #main-wrapper {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 12px;
+    }
+    #left-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+    #font-debug-container {
+      width: 280px;
+      height: 200px;
+      background: #1a1a2e;
+      border: 2px solid #444;
+      border-radius: 8px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    #scenario-preview-container {
+      width: 260px;
+      height: 300px;
+      background: #1a1a2e;
+      border: 2px solid #444;
+      border-radius: 8px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    #game-container {
+      position: relative;
+      width: 722px;
+      height: 1283px;
+      background: #2a2a2a;
+      border: 2px solid #444;
+      box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+    }
+    
+    #spin-button {
+      position: absolute;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 20px 60px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 24px;
+      font-weight: bold;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+      transition: all 0.3s ease;
+      z-index: 1000;
+    }
+    
+    #spin-button:hover {
+      transform: translateX(-50%) scale(1.05);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+    }
+    
+    #spin-button:active {
+      transform: translateX(-50%) scale(0.95);
+    }
+    
+    #spin-button:disabled {
+      background: #555;
+      cursor: not-allowed;
+      opacity: 0.6;
+      pointer-events: none; /* Полностью отключаем взаимодействие */
+    }
+    
+    #spin-button:disabled:hover {
+      transform: translateX(-50%) !important;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4) !important;
+    }
+    
+    #spin-button:disabled:active {
+      transform: translateX(-50%) !important;
+    }
+    
+    /* Анимация для активной кнопки */
+    #spin-button:not(:disabled):hover {
+      transform: translateX(-50%) scale(1.05);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+    }
+    
+    #spin-button:not(:disabled):active {
+      transform: translateX(-50%) scale(0.95);
+    }
+    
+    #info {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      color: white;
+      font-size: 14px;
+      z-index: 1000;
+    }
+    
+    #controls-toggle-button {
+      position: fixed;
+      top: 50px;
+      left: calc(50vw + 361px + 20px);
+      z-index: 10001;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      border: 1px solid rgba(255,255,255,0.3);
+      padding: 8px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+      transition: all 0.3s ease;
+    }
+    
+    #controls-toggle-button:hover {
+      background: rgba(0,0,0,0.9);
+      border-color: rgba(255,255,255,0.5);
+    }
+    
+    #controls {
+      position: fixed;
+      top: 50px;
+      left: calc(50vw + 361px + 20px);
+      z-index: 10000;
+      background: rgba(0,0,0,0.7);
+      padding: 10px;
+      border-radius: 5px;
+      color: white;
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+      display: none;
+      margin-top: 35px;
+    }
+    
+    /* Overlay для блокировки всех взаимодействий во время спина */
+    #spin-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      z-index: 10000;
+      pointer-events: none; /* По умолчанию не блокирует */
+      display: none;
+    }
+    
+    #spin-overlay.active {
+      display: block;
+      pointer-events: all; /* Блокирует все взаимодействия */
+      cursor: not-allowed;
+    }
+    
+    /* Панель режима */
+    #mode-panel {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 10002;
+      background: rgba(0,0,0,0.8);
+      padding: 15px;
+      border-radius: 8px;
+      color: white;
+      font-family: Arial, sans-serif;
+      font-size: 13px;
+      min-width: 200px;
+    }
+    
+    #mode-panel h3 {
+      margin: 0 0 10px 0;
+      font-size: 14px;
+      color: #fff;
+    }
+    
+    .mode-option {
+      margin: 8px 0;
+      display: flex;
+      align-items: center;
+    }
+    
+    .mode-option input[type="radio"] {
+      margin-right: 8px;
+      cursor: pointer;
+    }
+    
+    .mode-option label {
+      cursor: pointer;
+      user-select: none;
+    }
+    
+    /* UI генератора */
+    #generator-ui {
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid rgba(255,255,255,0.2);
+      display: none;
+    }
+    
+    #generator-ui.active {
+      display: block;
+    }
+    
+    #generator-ui input[type="number"] {
+      width: 100%;
+      padding: 6px;
+      margin: 8px 0;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 4px;
+      color: white;
+      font-size: 12px;
+    }
+    
+    #generator-ui input[type="number"]:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    
+    #generator-ui button {
+      width: 100%;
+      padding: 8px;
+      margin: 5px 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    
+    #generator-ui button:hover {
+      opacity: 0.9;
+    }
+    
+    #generator-ui button:disabled {
+      background: #555;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+    
+    #scenario-output {
+      width: 100%;
+      height: 200px;
+      margin: 8px 0;
+      padding: 6px;
+      background: rgba(0,0,0,0.5);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 4px;
+      color: #0f0;
+      font-family: 'Courier New', monospace;
+      font-size: 9px;
+      resize: vertical;
+      overflow: auto;
+      line-height: 1.2;
+      white-space: pre;
+    }
+    
+    #visualization-controls {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255,255,255,0.2);
+    }
+    
+    #visualization-controls label {
+      display: block;
+      margin: 5px 0;
+      font-size: 11px;
+    }
+    
+    #speed-slider {
+      width: 100%;
+      margin: 5px 0;
+    }
+    
+    #visualization-progress {
+      margin: 8px 0;
+      font-size: 11px;
+      color: #aaa;
+    }
+    
+    #visualization-controls button {
+      width: 48%;
+      margin: 2px 1%;
+      padding: 6px;
+      font-size: 11px;
+    }
+  </style>
+</head>
+<body>
+  <div id="main-wrapper">
+    <div id="left-panel">
+      <div id="font-debug-container"></div>
+      <div id="scenario-preview-container"></div>
+    </div>
+    <div id="game-container">
+    <div id="info">Каскадное насыпание символов</div>
+    <div id="step-info" style="position: absolute; top: 50px; left: 20px; color: white; font-size: 14px; z-index: 1000; display: none;"></div>
+    <button id="spin-button">SPIN</button>
+    <div id="spin-overlay"></div>
+    </div>
+  </div>
+  
+  <!-- Панель режима -->
+  <div id="mode-panel">
+    <h3>Режим работы</h3>
+    <div class="mode-option">
+      <input type="radio" id="mode-game" name="mode" value="game" checked>
+      <label for="mode-game">Игра (с анимацией)</label>
+    </div>
+    <div class="mode-option">
+      <input type="radio" id="mode-generator" name="mode" value="generator">
+      <label for="mode-generator">Генератор сценариев</label>
+    </div>
+    
+    <!-- UI генератора -->
+    <div id="generator-ui">
+      <label for="spin-count-input">Количество спинов:</label>
+      <input type="number" id="spin-count-input" min="1" max="100" value="10">
+      <button id="generate-button">Генерировать сценарий</button>
+      
+      <!-- Управление визуализацией -->
+      <div id="visualization-controls">
+        <label for="speed-slider">Скорость (мс между шагами):</label>
+        <input type="range" id="speed-slider" min="0" max="1000" value="300" step="50">
+        <div id="visualization-progress"></div>
+        <button id="pause-button" disabled>Пауза</button>
+        <button id="stop-button" disabled>Стоп</button>
+      </div>
+      
+      <textarea id="scenario-output" readonly placeholder="Сценарий появится здесь..."></textarea>
+      <button id="download-button" disabled>Скачать JSON</button>
+    </div>
+  </div>
+
+  <script type="module">
+    // Убеждаемся, что PIXI загружен
+    if (typeof PIXI === 'undefined') {
+      console.error('❌ PIXI не загружен!');
+    }
+
+    import { ScenarioCascadeManager } from './ScenarioCascadeManager.js';
+    import { ScenarioGeneratorV3 as ScenarioGenerator } from './ScenarioGeneratorV3.js';
+    import { ScenarioVisualizer } from './ScenarioVisualizer.js';
+    import { CONFIG, loadDelays } from './config.js';
+    import { GridCalculator } from './GridCalculator.js';
+    import { AssetLoader } from './AssetLoader.js';
+    import { GridRenderer } from './GridRenderer.js';
+    import { UIController } from './UIController.js';
+    import { SoundManager } from './SoundManager.js';
+    import { createDebugMenu } from './DebugMenu.js';
+    import { ScenarioPreview } from './ScenarioPreview.js';
+    import { createAllChests, playJumpOnAll, onCoinArrival } from './ChestManager.js';
+    import { fontManager } from './FontManager.js';
+    import { ScatterFlySystem } from './ScatterFlySystem.js';
+    import { Symbol } from './Symbol.js';
+    import { TotalWinDisplay } from './TotalWinDisplay.js';
+
+    // Объявляем grid, scenarioGenerator и visualizer в области видимости модуля
+    let grid = null;
+    let scatterFlySystem = null;
+    let scenarioPreview = null;
+    let scenarioGenerator = null;
+    let scenarioVisualizer = null;
+    let currentMode = 'game'; // 'game' или 'generator'
+
+    (async () => {
+      const app = new PIXI.Application();
+      await app.init({
+        width: CONFIG.APP_WIDTH,
+        height: CONFIG.APP_HEIGHT,
+        backgroundColor: 0x1a1a1a,
+        resolution: window.devicePixelRatio || 1,
+        autoDensity: true,
+      });
+      
+      document.getElementById('game-container').appendChild(app.canvas);
+      app.stage.sortableChildren = true;
+
+      // Загрузка и добавление фоновой текстуры
+      const bgTexture = await PIXI.Assets.load('./png/bg_scale.png');
+      const bgSprite = new PIXI.Sprite(bgTexture);
+      bgSprite.width = CONFIG.APP_WIDTH;
+      bgSprite.height = CONFIG.APP_HEIGHT;
+      bgSprite.x = 0;
+      bgSprite.y = 0;
+      bgSprite.zIndex = 0; // Самый нижний слой
+      app.stage.addChild(bgSprite);
+      console.log('✅ Фоновая текстура загружена и добавлена');
+      
+      // Загрузка и добавление gid.png
+      const gidTexture = await PIXI.Assets.load('./png/gid.png');
+      const gidSprite = new PIXI.Sprite(gidTexture);
+      gidSprite.x = CONFIG.APP_WIDTH / 2;
+      gidSprite.y = CONFIG.APP_HEIGHT / 2;
+      gidSprite.anchor.set(0.5);
+      gidSprite.zIndex = 10;
+      app.stage.addChild(gidSprite);
+      console.log('✅ Gid текстура загружена и добавлена');
+
+      // Загрузка и добавление field_regular.png
+      const fieldRegularTexture = await PIXI.Assets.load('./png/field_regular.png');
+      const fieldRegularSprite = new PIXI.Sprite(fieldRegularTexture);
+      fieldRegularSprite.x = 0;
+      fieldRegularSprite.y = 0;
+      fieldRegularSprite.zIndex = 25;
+      // Добавляется в gameFieldContainer позже — чтобы тряска при взрыве бомбы двигала поле вместе с символами
+      console.log('✅ Field Regular текстура загружена');
+
+      // Загрузка и добавление logo_line_4x.png
+      const logoLineTexture = await PIXI.Assets.load('./png/logo_line_4x.png');
+      const logoLineSprite = new PIXI.Sprite(logoLineTexture);
+      logoLineSprite.anchor.set(0.5);
+      logoLineSprite.x = CONFIG.APP_WIDTH / 2;
+      logoLineSprite.y = 150;
+      logoLineSprite.zIndex = 200;
+      app.stage.addChild(logoLineSprite);
+      console.log('✅ Logo Line текстура загружена и добавлена');
+      
+      // Инициализация раскрывающегося меню настроек (создаем элементы меню ДО initDelayInputs)
+      // gameFieldContainer будет добавлен позже
+      const debugMenu = createDebugMenu(app, {
+        bgSprite: bgSprite,
+        gidSprite: gidSprite,
+        fieldRegularSprite: fieldRegularSprite
+      }, {
+        width: CONFIG.APP_WIDTH,
+        height: CONFIG.APP_HEIGHT
+      });
+      
+      // Конфигурация сетки символов из CONFIG
+      const GRID_COLS = CONFIG.GRID.COLS;
+      const GRID_ROWS = CONFIG.GRID.ROWS;
+      const SYMBOL_SIZE = CONFIG.GRID.SYMBOL_SIZE;
+      const SYMBOL_TEXTURE_SIZE = CONFIG.GRID.SYMBOL_TEXTURE_SIZE;
+      const GRID_START_X = GridCalculator.getGridStartX(CONFIG.APP_WIDTH, GRID_COLS, SYMBOL_SIZE);
+      const GRID_START_Y = CONFIG.GRID.START_Y;
+      
+      // Инициализация UI контроллера для задержек (после создания элементов меню)
+      const delays = UIController.initDelayInputs({
+        onRowDelayChange: (value) => {
+          if (grid) grid.ROW_DELAY = value;
+        },
+        onColumnDelayChange: (value) => {
+          if (grid) grid.COLUMN_DELAY = value;
+        },
+        onNewMatrixDelayChange: (value) => {
+          if (grid) grid.NEW_MATRIX_DELAY = value;
+        },
+        onOldRowDelayChange: (value) => {
+          if (grid) grid.OLD_ROW_DELAY = value;
+        },
+        onOldColumnDelayChange: (value) => {
+          if (grid) grid.OLD_COLUMN_DELAY = value;
+        },
+        onFallSpeedChange: (value) => {
+          if (grid) grid.setFallSpeed(value);
+        }
+      });
+      
+      // Используем значения из UIController
+      const ROW_DELAY = delays.rowDelay;
+      const COLUMN_DELAY = delays.columnDelay;
+      const NEW_MATRIX_DELAY = delays.newMatrixDelay;
+      const OLD_ROW_DELAY = delays.oldRowDelay;
+      const OLD_COLUMN_DELAY = delays.oldColumnDelay;
+      const FALL_SPEED = delays.fallSpeed;
+
+      // Статическая матрица позиций (центры ячеек) - используем GridCalculator
+      const gridPositions = GridCalculator.calculatePositions(
+        GRID_COLS,
+        GRID_ROWS,
+        SYMBOL_SIZE,
+        GRID_START_X,
+        GRID_START_Y
+      );
+      
+      console.log('✅ Статическая сетка позиций создана:', gridPositions);
+
+      // Загрузка текстур символов - используем AssetLoader
+      const symbolTextures = await AssetLoader.loadSymbolTextures(
+        CONFIG.ASSETS.SYMBOL_TEXTURE_FILES,
+        CONFIG.ASSETS.SYMBOL_TEXTURES_PATH
+      );
+
+      console.log(`✅ Загружено ${symbolTextures.length} текстур символов`);
+
+      // Загрузка конфигурации выплат
+      const payoutsConfig = await AssetLoader.loadPayouts(CONFIG.ASSETS.PAYOUTS_PATH);
+      console.log('✅ Конфигурация выплат загружена');
+
+      // Предзагрузка шрифтов для FontManager
+      await fontManager.loadFonts();
+      console.log('✅ Шрифты загружены (FontManager)');
+
+      // Загрузка Spine-ассетов для символов (bounce на приземлении)
+      const SPINE_SKELETON_ALIAS = 'symbolsSkeleton';
+      const SPINE_ATLAS_ALIAS = 'symbolsAtlas';
+      await PIXI.Assets.load([
+        { alias: SPINE_SKELETON_ALIAS, src: './spine/symbols/skeleton.json' },
+        { alias: SPINE_ATLAS_ALIAS, src: './spine/symbols/skeleton.atlas' }
+      ]);
+      console.log('✅ Spine-ассеты символов загружены');
+
+      // Загрузка Spine-ассетов для бомбы (idle, bounce, boom)
+      const BOMB_SPINE_SKELETON_ALIAS = 'bombSkeleton';
+      const BOMB_SPINE_ATLAS_ALIAS = 'bombAtlas';
+      await PIXI.Assets.load([
+        { alias: BOMB_SPINE_SKELETON_ALIAS, src: './spine/bomb/skeleton.json' },
+        { alias: BOMB_SPINE_ATLAS_ALIAS, src: './spine/bomb/skeleton.atlas' }
+      ]);
+      console.log('✅ Spine-ассеты бомбы загружены');
+
+      // Загрузка Spine-ассетов для скаттеров (idle, hit, idle_null, bounce, скины blue, gold, red)
+      const SCATTER_SPINE_SKELETON_ALIAS = 'scatterSkeleton';
+      const SCATTER_SPINE_ATLAS_ALIAS = 'scatterAtlas';
+      await PIXI.Assets.load([
+        { alias: SCATTER_SPINE_SKELETON_ALIAS, src: './spine/scatter/skeleton.json' },
+        { alias: SCATTER_SPINE_ATLAS_ALIAS, src: './spine/scatter/skeleton.atlas' }
+      ]);
+      console.log('✅ Spine-ассеты скаттеров загружены');
+
+      // Загрузка Spine-ассетов для сундуков (idle, скины red, blue, yellow) — всеми заведует ChestManager
+      const CHEST_SPINE_SKELETON_ALIAS = 'chestSkeleton';
+      const CHEST_SPINE_ATLAS_ALIAS = 'chestAtlas';
+      await PIXI.Assets.load([
+        { alias: CHEST_SPINE_SKELETON_ALIAS, src: './spine/chest/skeleton.json' },
+        { alias: CHEST_SPINE_ATLAS_ALIAS, src: './spine/chest/skeleton.atlas' }
+      ]);
+      console.log('✅ Spine-ассеты сундука загружены');
+
+      // Загрузка Spine-ассетов для лейблов сундуков (chest_label)
+      const CHEST_LABEL_SKELETON_ALIAS = 'chestLabelSkeleton';
+      const CHEST_LABEL_ATLAS_ALIAS = 'chestLabelAtlas';
+      await PIXI.Assets.load([
+        { alias: CHEST_LABEL_SKELETON_ALIAS, src: './spine/chest_label/skeleton.json' },
+        { alias: CHEST_LABEL_ATLAS_ALIAS, src: './spine/chest_label/skeleton.atlas' }
+      ]);
+      console.log('✅ Spine-ассеты chest_label загружены');
+
+      // Создание 3 экземпляров chest_label с разными скинами (добавляются в gameFieldContainer позже)
+      const chestLabelRed = spine.Spine.from({
+        skeleton: CHEST_LABEL_SKELETON_ALIAS,
+        atlas: CHEST_LABEL_ATLAS_ALIAS
+      });
+      chestLabelRed.skeleton.setSkinByName('red');
+      chestLabelRed.skeleton.setSlotsToSetupPose();
+      chestLabelRed.state.setAnimation(0, 'idle', true);
+      chestLabelRed.x = CONFIG.APP_WIDTH / 2;
+      chestLabelRed.y = 600;
+      chestLabelRed.zIndex = 210;
+
+      const chestLabelBlue = spine.Spine.from({
+        skeleton: CHEST_LABEL_SKELETON_ALIAS,
+        atlas: CHEST_LABEL_ATLAS_ALIAS
+      });
+      chestLabelBlue.skeleton.setSkinByName('blue');
+      chestLabelBlue.skeleton.setSlotsToSetupPose();
+      chestLabelBlue.state.setAnimation(0, 'idle', true);
+      chestLabelBlue.x = CONFIG.APP_WIDTH / 2 - 150;
+      chestLabelBlue.y = 600;
+      chestLabelBlue.zIndex = 210;
+
+      const chestLabelYellow = spine.Spine.from({
+        skeleton: CHEST_LABEL_SKELETON_ALIAS,
+        atlas: CHEST_LABEL_ATLAS_ALIAS
+      });
+      chestLabelYellow.skeleton.setSkinByName('yellow');
+      chestLabelYellow.skeleton.setSlotsToSetupPose();
+      chestLabelYellow.state.setAnimation(0, 'idle', true);
+      chestLabelYellow.x = CONFIG.APP_WIDTH / 2 + 150;
+      chestLabelYellow.y = 600;
+      chestLabelYellow.zIndex = 210;
+      console.log('✅ Chest Label спайны созданы (red, blue, yellow)');
+
+      // Объект для доступа к лейблам по цвету
+      const chestLabels = {
+        red: chestLabelRed,
+        blue: chestLabelBlue,
+        yellow: chestLabelYellow
+      };
+
+      // Функция для проигрывания active анимации на лейбле при прилёте монеты
+      function playLabelActive(chestColor) {
+        const label = chestLabels[chestColor];
+        if (!label || label.destroyed) return;
+        const entry = label.state.setAnimation(0, 'active', false);
+        if (entry) {
+          entry.listener = {
+            complete: () => {
+              label.state.setAnimation(0, 'idle', true);
+            }
+          };
+        }
+      }
+
+      const chests = createAllChests(CHEST_SPINE_SKELETON_ALIAS, CHEST_SPINE_ATLAS_ALIAS);
+      const chestOffsetX = 140;
+      const chestZIndex = 40;
+      if (chests.red) {
+        chests.red.x = CONFIG.APP_WIDTH / 2;
+        chests.red.y = CONFIG.APP_HEIGHT / 2;
+        chests.red.zIndex = chestZIndex;
+        app.stage.addChild(chests.red);
+      }
+      if (chests.blue) {
+        chests.blue.x = CONFIG.APP_WIDTH / 2 - chestOffsetX;
+        chests.blue.y = CONFIG.APP_HEIGHT / 2;
+        chests.blue.zIndex = chestZIndex;
+        app.stage.addChild(chests.blue);
+      }
+      if (chests.yellow) {
+        chests.yellow.x = CONFIG.APP_WIDTH / 2 + chestOffsetX;
+        chests.yellow.y = CONFIG.APP_HEIGHT / 2;
+        chests.yellow.zIndex = chestZIndex;
+        app.stage.addChild(chests.yellow);
+      }
+
+      // Система перелётов
+      scatterFlySystem = new ScatterFlySystem(app, {
+        onFlightComplete: (chestColor) => {
+          onCoinArrival(chests, chestColor);
+          playLabelActive(chestColor);
+        }
+      });
+      scatterFlySystem.setChests(chests);
+      scatterFlySystem.init();
+
+      // Колбэк для запуска перелётов при событии shot от скаттера
+      Symbol.onScatterShot = (symbol) => {
+        console.log('📢 Symbol.onScatterShot called');
+        if (scatterFlySystem) {
+          scatterFlySystem.startFlightFromScatter(symbol);
+        }
+      };
+
+      // ТЕСТ: Функция для ручного запуска перелёта из консоли
+      window.testFlight = () => {
+        console.log('🧪 testFlight called');
+        const fakeSymbol = {
+          isScatter: true,
+          scatterType: 'blue',
+          currentX: 300,
+          currentY: 400
+        };
+        scatterFlySystem.startFlightFromScatter(fakeSymbol);
+      };
+      console.log('💡 Для теста: testFlight()');
+
+      // Создаем родительский контейнер для игрового поля (поле, разметка, маска и символы — всё вместе)
+      const gameFieldContainer = new PIXI.Container();
+      gameFieldContainer.x = 0;
+      gameFieldContainer.y = 0;
+      gameFieldContainer.zIndex = 50;
+      app.stage.addChild(gameFieldContainer);
+
+      // Текстуру поля добавляем в контейнер поля, чтобы тряска при взрыве бомбы двигала поле вместе с символами
+      gameFieldContainer.addChildAt(fieldRegularSprite, 0);
+
+      // Создаем визуальные элементы сетки внутри контейнера поля (фон поля + разметка)
+      const gridVisuals = GridRenderer.renderGrid(gameFieldContainer, {
+        startX: GRID_START_X,
+        startY: GRID_START_Y,
+        cols: GRID_COLS,
+        rows: GRID_ROWS,
+        symbolSize: SYMBOL_SIZE
+      }, gridPositions, gameFieldContainer, GRID_START_X);
+      gridVisuals.gameFieldBg.visible = false; // тёмный квадрат поля скрыт
+      
+      // Создаем контейнер для символов
+      const symbolContainer = new PIXI.Container();
+      symbolContainer.sortableChildren = true;
+      symbolContainer.zIndex = 100;
+      gameFieldContainer.addChild(symbolContainer);
+
+      // Создаем прямоугольную маску для игрового поля
+      const gameFieldMask = new PIXI.Graphics();
+      const gameFieldWidth = GRID_COLS * SYMBOL_SIZE;
+      const gameFieldHeight = GRID_ROWS * SYMBOL_SIZE;
+      gameFieldMask.rect(0, 0, gameFieldWidth, gameFieldHeight);
+      gameFieldMask.fill(0xFFFFFF); // Белый цвет для маски
+      gameFieldMask.x = GRID_START_X;
+      gameFieldMask.y = GRID_START_Y;
+      gameFieldMask.zIndex = 50; // Маска должна быть ниже символов, но выше фона
+      
+      // Добавляем маску в контейнер игрового поля
+      gameFieldContainer.addChild(gameFieldMask);
+      
+      // Применяем маску к контейнеру символов
+      symbolContainer.mask = gameFieldMask;
+
+      // Оверлей для Spine бомбы при показе выигрыша (без маски, поверх всего)
+      const bombWinOverlayContainer = new PIXI.Container();
+      bombWinOverlayContainer.sortableChildren = true;
+      bombWinOverlayContainer.zIndex = 150;
+      bombWinOverlayContainer.visible = false;
+      gameFieldContainer.addChild(bombWinOverlayContainer);
+
+      // Добавляем лейблы сундуков в gameFieldContainer (чтобы наследовали тряску при взрыве)
+      gameFieldContainer.addChild(chestLabelRed);
+      gameFieldContainer.addChild(chestLabelBlue);
+      gameFieldContainer.addChild(chestLabelYellow);
+      
+      console.log('✅ Прямоугольная маска применена к контейнеру символов');
+      console.log(`📐 Размеры маски: ${gameFieldWidth}x${gameFieldHeight} (${GRID_COLS} колонок × ${GRID_ROWS} строк × ${SYMBOL_SIZE}px)`);
+      console.log(`📍 Позиция маски: x=${GRID_START_X}, y=${GRID_START_Y}`);
+      
+      // Добавляем gameFieldContainer и сундуки (red, blue, yellow) в дебаг-меню
+      if (debugMenu && debugMenu.addElement) {
+        debugMenu.addElement('gameField', 'Game Field', gameFieldContainer, {
+          x: 0,
+          y: 0,
+          scale: 1,
+          zIndex: 50
+        });
+        if (chests.red) {
+          debugMenu.addElement('chestRed', 'Chest Red', chests.red, {
+            x: CONFIG.APP_WIDTH / 2,
+            y: CONFIG.APP_HEIGHT / 2,
+            scale: 1,
+            zIndex: chestZIndex
+          });
+        }
+        if (chests.blue) {
+          debugMenu.addElement('chestBlue', 'Chest Blue', chests.blue, {
+            x: CONFIG.APP_WIDTH / 2 - chestOffsetX,
+            y: CONFIG.APP_HEIGHT / 2,
+            scale: 1,
+            zIndex: chestZIndex
+          });
+        }
+        if (chests.yellow) {
+          debugMenu.addElement('chestYellow', 'Chest Yellow', chests.yellow, {
+            x: CONFIG.APP_WIDTH / 2 + chestOffsetX,
+            y: CONFIG.APP_HEIGHT / 2,
+            scale: 1,
+            zIndex: chestZIndex
+          });
+        }
+        // Logo Line спрайт для дебага
+        debugMenu.addElement('logoLine', 'Logo Line', logoLineSprite, {
+          x: CONFIG.APP_WIDTH / 2,
+          y: 150,
+          scale: 1,
+          zIndex: 200
+        });
+        // Chest Label спайны для дебага
+        debugMenu.addElement('chestLabelRed', 'Label Red', chestLabelRed, {
+          x: CONFIG.APP_WIDTH / 2,
+          y: 600,
+          scale: 1,
+          zIndex: 210
+        });
+        debugMenu.addElement('chestLabelBlue', 'Label Blue', chestLabelBlue, {
+          x: CONFIG.APP_WIDTH / 2 - 150,
+          y: 600,
+          scale: 1,
+          zIndex: 210
+        });
+        debugMenu.addElement('chestLabelYellow', 'Label Yellow', chestLabelYellow, {
+          x: CONFIG.APP_WIDTH / 2 + 150,
+          y: 600,
+          scale: 1,
+          zIndex: 210
+        });
+      }
+      if (debugMenu && debugMenu.setDebugOverlay) {
+        debugMenu.setDebugOverlay([
+          gridVisuals.gameFrame,
+          gridVisuals.gridMarkers,
+          gridVisuals.indexContainer
+        ]);
+      }
+
+      // Создаем якорь для Total Win (позиция и масштаб настраиваются через Debug Menu)
+      const totalWinAnchor = new PIXI.Container();
+      // Вычисляем дефолтную позицию как центр сетки 6×5 (аналогично _getGridCenter() в MiniWinManager)
+      const midCol = Math.floor(GRID_COLS / 2);
+      const midRow = Math.floor(GRID_ROWS / 2);
+      const p1 = gridPositions[midCol]?.[midRow];
+      const p2 = gridPositions[midCol - 1]?.[midRow];
+      let defaultTotalWinX = 0;
+      let defaultTotalWinY = 0;
+      if (p1 && p2) {
+        defaultTotalWinX = (p1.x + p2.x) / 2;
+        defaultTotalWinY = p1.y;
+      } else if (p1) {
+        defaultTotalWinX = p1.x;
+        defaultTotalWinY = p1.y;
+      }
+      totalWinAnchor.x = defaultTotalWinX;
+      totalWinAnchor.y = defaultTotalWinY;
+      totalWinAnchor.scale.set(1);
+      totalWinAnchor.zIndex = 200;
+      gameFieldContainer.addChild(totalWinAnchor);
+
+      // Регистрируем якорь Total Win в Debug Menu
+      if (debugMenu && debugMenu.addElement) {
+        await debugMenu.addElement('totalWin', 'Total Win', totalWinAnchor, {
+          x: defaultTotalWinX,
+          y: defaultTotalWinY,
+          scale: 1,
+          zIndex: 200
+        });
+      }
+
+      // Создаем TotalWinDisplay (после регистрации якоря в Debug Menu)
+      const totalWinDisplay = new TotalWinDisplay({
+        container: gameFieldContainer,
+        anchor: totalWinAnchor,
+        fontManager: fontManager,
+        zIndex: 200
+      });
+
+      // Создаем каскадный менеджер (shakeContainer — контейнер для тряски при взрыве: поле + символы)
+      grid = new ScenarioCascadeManager({
+        container: symbolContainer,
+        bombWinOverlayContainer: bombWinOverlayContainer,
+        shakeContainer: gameFieldContainer,
+        fontManager: fontManager,
+        totalWinDisplay: totalWinDisplay,
+        symbolTextures: symbolTextures,
+        gridPositions: gridPositions,
+        gridCols: GRID_COLS,
+        gridRows: GRID_ROWS,
+        symbolSize: SYMBOL_SIZE,
+        symbolTextureSize: SYMBOL_TEXTURE_SIZE,
+        fallSpeed: FALL_SPEED,
+        rowDelay: ROW_DELAY,
+        columnDelay: COLUMN_DELAY,
+        newMatrixDelay: NEW_MATRIX_DELAY,
+        oldRowDelay: OLD_ROW_DELAY,
+        oldColumnDelay: OLD_COLUMN_DELAY,
+        gridStartY: GRID_START_Y,
+        payoutsConfig: payoutsConfig,
+        minSymbolsForWin: payoutsConfig.winRules.minSymbols,
+        spineSkeletonAlias: SPINE_SKELETON_ALIAS,
+        spineAtlasAlias: SPINE_ATLAS_ALIAS,
+        bombSpineSkeletonAlias: BOMB_SPINE_SKELETON_ALIAS,
+        bombSpineAtlasAlias: BOMB_SPINE_ATLAS_ALIAS,
+        scatterSpineSkeletonAlias: SCATTER_SPINE_SKELETON_ALIAS,
+        scatterSpineAtlasAlias: SCATTER_SPINE_ATLAS_ALIAS,
+        onBombBoom: () => playJumpOnAll(chests)
+      });
+      
+      // Первый экран — предопределённая раскладка без выигрыша; спин — рандом
+      grid.fillInitialNoWin();
+
+      if (debugMenu && debugMenu.setSymbolDebugOverlay) {
+        debugMenu.setSymbolDebugOverlay((visible) => grid.setSymbolDebugOverlayVisible(visible));
+      }
+
+      // Загружаем сохранённые настройки после добавления всех элементов
+      if (debugMenu && debugMenu.reloadAllSettings) {
+        await debugMenu.reloadAllSettings();
+        // Обновляем позицию TotalWinDisplay после загрузки сохранённых позиций якоря
+        if (totalWinDisplay) {
+          totalWinDisplay.updatePosition();
+        }
+      }
+
+      // Font debug — канвас слева с 3 образцами стилизованных шрифтов
+      const fontDebugEl = document.getElementById('font-debug-container');
+      if (fontDebugEl) {
+        const fontDebugApp = new PIXI.Application();
+        await fontDebugApp.init({
+          width: 280,
+          height: 200,
+          backgroundColor: 0x1a1a2e,
+          resolution: window.devicePixelRatio || 1,
+          autoDensity: true,
+        });
+        fontDebugEl.appendChild(fontDebugApp.canvas);
+        const s1 = fontManager.createText('win_amount', '13 526.00');
+        const s2 = fontManager.createText('x20', 'X20');
+        const s3 = fontManager.createText('x2000', 'X2000');
+        s1.anchor.set(0.5);
+        s2.anchor.set(0.5);
+        s3.anchor.set(0.5);
+        s1.x = 140;
+        s1.y = 45;
+        s2.x = 140;
+        s2.y = 100;
+        s3.x = 140;
+        s3.y = 155;
+        fontDebugApp.stage.addChild(s1);
+        fontDebugApp.stage.addChild(s2);
+        fontDebugApp.stage.addChild(s3);
+        console.log('✅ Font debug канвас создан');
+      }
+
+      // Превью сценария — отдельный контейнер слева от игры (ожидаемый экран по сценарию)
+      const previewContainerEl = document.getElementById('scenario-preview-container');
+      if (previewContainerEl) {
+        const previewApp = new PIXI.Application();
+        await previewApp.init({
+          width: 260,
+          height: 300,
+          backgroundColor: 0x1a1a2e,
+          resolution: window.devicePixelRatio || 1,
+          autoDensity: true,
+        });
+        previewContainerEl.appendChild(previewApp.canvas);
+        scenarioPreview = new ScenarioPreview({
+          app: previewApp,
+          symbolTextures: symbolTextures,
+          gridCols: GRID_COLS,
+          gridRows: GRID_ROWS,
+          cellSize: 36,
+          paddingX: 8,
+          paddingY: 28,
+        });
+        console.log('✅ Превью сценария создано (слева от игры)');
+      }
+
+      console.log('✅ Визуальные элементы сетки созданы через GridRenderer');
+      
+      // Инициализация кнопки спин через UIController
+      const spinButton = document.getElementById('spin-button');
+      UIController.initSpinButton(spinButton, grid);
+      
+      // Кнопка разблокируется автоматически через таймер в UIController
+
+      // Устанавливаем callback для загрузки сценариев из DebugMenu
+      window.loadScenarioCallback = (scenarioData) => {
+        if (grid && scenarioData) {
+          grid.loadScenario(scenarioData);
+          if (debugMenu && debugMenu.updateScenarioInfo) {
+            debugMenu.updateScenarioInfo(`Loaded: ${scenarioData.length} steps`);
+          }
+          if (scenarioPreview) {
+            scenarioPreview.update(grid.currentScenario, grid.currentScenarioStep);
+          }
+        }
+      };
+      
+      // Инициализируем список сценариев (без автоматической загрузки)
+      // Пользователь должен выбрать и загрузить сценарий вручную через DebugMenu
+      setTimeout(() => {
+        if (window.loadDefaultScenario) {
+          window.loadDefaultScenario();
+        } else {
+          console.log('ℹ️ Список сценариев будет загружен через DebugMenu');
+        }
+      }, 100);
+
+      // Инициализация генератора сценариев
+      scenarioGenerator = new ScenarioGenerator({
+        gridCols: GRID_COLS,
+        gridRows: GRID_ROWS,
+        minSymbolsForWin: payoutsConfig.winRules.minSymbols,
+        symbolCount: 8, // Обычные символы (0-7), бомба (8) и скаттеры (9-11) обрабатываются отдельно
+        payoutsConfig: payoutsConfig,
+        symbolNames: CONFIG.ASSETS.SYMBOL_TEXTURE_FILES.map(name => name.replace('.png', '')),
+        // Параметры скаттеров и бомб — как в ScenarioGeneratorV3 (дефолты), чтобы статистика совпадала с тестами
+        scatterActivationCount: 4     // Минимум скаттеров для активации (4+)
+      });
+
+      // Инициализация переключателя режима
+      const modeGameRadio = document.getElementById('mode-game');
+      const modeGeneratorRadio = document.getElementById('mode-generator');
+      const generatorUI = document.getElementById('generator-ui');
+      const spinCountInput = document.getElementById('spin-count-input');
+      const generateButton = document.getElementById('generate-button');
+      const scenarioOutput = document.getElementById('scenario-output');
+      const downloadButton = document.getElementById('download-button');
+      const speedSlider = document.getElementById('speed-slider');
+      const pauseButton = document.getElementById('pause-button');
+      const stopButton = document.getElementById('stop-button');
+      const visualizationProgress = document.getElementById('visualization-progress');
+      const stepInfo = document.getElementById('step-info');
+
+      // Функция переключения режима
+      function switchMode(mode) {
+        currentMode = mode;
+        
+        if (mode === 'game') {
+          // Режим игры: показываем кнопку SPIN, скрываем UI генератора
+          spinButton.style.display = 'block';
+          generatorUI.classList.remove('active');
+          stepInfo.style.display = 'none';
+          // Очищаем визуализатор если был создан
+          if (scenarioVisualizer) {
+            scenarioVisualizer.clear();
+          }
+          // Включаем обновление анимации
+          app.ticker.start();
+        } else {
+          // Режим генератора: скрываем кнопку SPIN, показываем UI генератора
+          spinButton.style.display = 'none';
+          generatorUI.classList.add('active');
+          stepInfo.style.display = 'block';
+          stepInfo.textContent = 'Готов к генерации';
+          
+          // Создаем визуализатор если еще не создан
+          if (!scenarioVisualizer) {
+            scenarioVisualizer = new ScenarioVisualizer({
+              container: symbolContainer,
+              symbolTextures: symbolTextures,
+              gridPositions: gridPositions,
+              gridCols: GRID_COLS,
+              gridRows: GRID_ROWS,
+              symbolSize: SYMBOL_SIZE,
+              symbolTextureSize: SYMBOL_TEXTURE_SIZE,
+              stepDelay: parseInt(speedSlider.value)
+            });
+          }
+        }
+      }
+
+      // Обработчики переключения режима
+      modeGameRadio.addEventListener('change', () => {
+        if (modeGameRadio.checked) switchMode('game');
+      });
+      
+      modeGeneratorRadio.addEventListener('change', () => {
+        if (modeGeneratorRadio.checked) switchMode('generator');
+      });
+
+      // Обработчик генерации сценария с визуализацией
+      generateButton.addEventListener('click', async () => {
+        const spinCount = parseInt(spinCountInput.value) || 10;
+        
+        if (spinCount < 1 || spinCount > 100) {
+          alert('Количество спинов должно быть от 1 до 100');
+          return;
+        }
+
+        // Блокируем UI
+        generateButton.disabled = true;
+        generateButton.textContent = 'Генерация...';
+        pauseButton.disabled = false;
+        stopButton.disabled = false;
+        scenarioOutput.value = 'Генерация сценария...';
+        visualizationProgress.textContent = '';
+        
+        // Сбрасываем визуализатор
+        if (scenarioVisualizer) {
+          scenarioVisualizer.reset();
+          scenarioVisualizer.setStepDelay(parseInt(speedSlider.value));
+        }
+        
+        try {
+          // Генерируем сценарий тем же методом, что и тесты (generateScenario), чтобы статистика совпадала
+          scenarioGenerator.generateScenario(spinCount);
+          const scenario = scenarioGenerator.scenario;
+          
+          // Визуализируем каждый шаг уже готового сценария
+          let spinIndex = 0;
+          let stepInSpin = 0;
+          for (let i = 0; i < scenario.length; i++) {
+            if (scenarioVisualizer && scenarioVisualizer.isStopped) {
+              break;
+            }
+            
+            const step = scenario[i];
+            if (step.event === 'spin' || step.event === 'spin-win' || step.event === 'spin-win-bomb' || step.event === 'bomb') {
+              spinIndex++;
+              stepInSpin = 0;
+            }
+            stepInSpin++;
+            
+            if (scenarioVisualizer) {
+              stepInfo.style.display = 'block';
+              
+              let eventLabel = '🔄 СПИН';
+              if (step.event === 'spin' || step.event === 'spin-win' || step.event === 'spin-win-bomb') {
+                eventLabel = step.event === 'spin-win-bomb' ? '💣 СПИН-ВИН-БОМБА' : 
+                            step.event === 'spin-win' ? '🔄 СПИН-ВИН' : '🔄 СПИН';
+              } else if (step.event === 'bomb') {
+                eventLabel = '💣 БОМБА';
+              } else if (step.event === 'cascade' || step.event === 'cascade-win' || step.event === 'cascade-win-bomb') {
+                eventLabel = step.event === 'cascade-win-bomb' ? '💣 КАСКАД-ВИН-БОМБА' : 
+                            step.event === 'cascade-win' ? '⚡ КАСКАД-ВИН' : '⚡ КАСКАД';
+              }
+              
+              const winningPositions = step.winningGroups && step.winningGroups.length > 0 
+                ? scenarioGenerator.findWinningPositions(step.grid)
+                : new Set();
+              
+              if (winningPositions.size > 0) {
+                const payoutText = step.totalPayout > 0 ? `, выплата: ${Number(step.totalPayout).toFixed(2)}` : '';
+                stepInfo.textContent = `${eventLabel} ${spinIndex}/${spinCount} (${winningPositions.size} выигрышных${payoutText})`;
+                await scenarioVisualizer.showStep(step.grid, step.event, winningPositions);
+              } else {
+                stepInfo.textContent = `${eventLabel} ${spinIndex}/${spinCount} (без выигрыша)`;
+                await scenarioVisualizer.showStep(step.grid, step.event);
+              }
+              
+              visualizationProgress.textContent = `Спин ${spinIndex}/${spinCount}, шаг ${i + 1}/${scenario.length}`;
+            }
+          }
+          
+          // Обновляем вывод в выбранном формате
+          updateScenarioOutput();
+          
+          downloadButton.disabled = false;
+          visualizationProgress.textContent = `✅ Готово: ${scenario.length} шагов (${spinCount} спинов)`;
+          stepInfo.textContent = `✅ Готово: ${scenario.length} шагов`;
+          
+          console.log(`✅ Сгенерирован сценарий: ${scenario.length} шагов (${spinCount} спинов)`);
+        } catch (error) {
+          console.error('Ошибка генерации сценария:', error);
+          scenarioOutput.value = `Ошибка: ${error.message}`;
+          visualizationProgress.textContent = `❌ Ошибка: ${error.message}`;
+        } finally {
+          generateButton.disabled = false;
+          generateButton.textContent = 'Генерировать сценарий';
+          pauseButton.disabled = true;
+          stopButton.disabled = true;
+        }
+      });
+      
+      // Обработчик слайдера скорости
+      speedSlider.addEventListener('input', (e) => {
+        const delay = parseInt(e.target.value);
+        if (scenarioVisualizer) {
+          scenarioVisualizer.setStepDelay(delay);
+        }
+      });
+      
+      // Обработчик паузы
+      pauseButton.addEventListener('click', () => {
+        if (scenarioVisualizer) {
+          const isPaused = scenarioVisualizer.togglePause();
+          pauseButton.textContent = isPaused ? 'Продолжить' : 'Пауза';
+        }
+      });
+      
+      // Обработчик стоп
+      stopButton.addEventListener('click', () => {
+        if (scenarioVisualizer) {
+          scenarioVisualizer.stop();
+          pauseButton.textContent = 'Пауза';
+          pauseButton.disabled = true;
+          stopButton.disabled = true;
+          generateButton.disabled = false;
+          generateButton.textContent = 'Генерировать сценарий';
+        }
+      });
+
+      // Функция обновления вывода сценария (только JSON формат)
+      function updateScenarioOutput() {
+        if (!scenarioGenerator || !scenarioGenerator.scenario || scenarioGenerator.scenario.length === 0) {
+          return;
+        }
+        
+        scenarioOutput.value = scenarioGenerator.exportToJSON();
+      }
+      
+      // Обработчик скачивания сценария
+      downloadButton.addEventListener('click', () => {
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+        const filename = `${timestamp}`;
+        scenarioGenerator.downloadScenario(filename);
+      });
+
+      // Обновление в ticker
+      app.ticker.add(() => {
+        if (currentMode === 'game' && grid) {
+          const deltaTime = app.ticker.deltaMS / 1000;
+          grid.update(deltaTime);
+          
+          // Обновляем систему перелётов скаттеров
+          if (scatterFlySystem) {
+            scatterFlySystem.update(deltaTime);
+          }
+          
+          // Обновляем позицию Total Win из якоря (если якорь изменён через Debug Menu)
+          if (totalWinDisplay) {
+            totalWinDisplay.updatePosition();
+          }
+          
+          // Обновляем информацию о текущем шаге сценария в DebugMenu
+          if (grid.scenarioMode && grid.currentScenario && debugMenu && debugMenu.updateScenarioInfo) {
+            if (grid.currentScenarioStep < 0) {
+              debugMenu.updateScenarioInfo(`Ready to start: ${grid.currentScenario.length} steps`);
+            } else {
+              const step = grid.getCurrentScenarioStep();
+              if (step) {
+                const stepNum = grid.currentScenarioStep + 1;
+                const totalSteps = grid.currentScenario.length;
+                let eventType = 'UNKNOWN';
+                if (step.event === 'spin' || step.event === 'spin-win') {
+                  eventType = step.event === 'spin-win' ? 'SPIN-WIN' : 'SPIN';
+                } else if (step.event === 'bomb' || step.event === 'bomb-win') {
+                  eventType = step.event === 'bomb-win' ? 'BOMB-WIN' : 'BOMB';
+                } else if (step.event === 'cascade' || step.event === 'cascade-win') {
+                  eventType = step.event === 'cascade-win' ? 'CASCADE-WIN' : 'CASCADE';
+                }
+                const payout = step.totalPayout || 0;
+                debugMenu.updateScenarioInfo(`Step ${stepNum}/${totalSteps}: ${eventType}${payout > 0 ? ` (Payout: ${Number(payout).toFixed(2)})` : ''}`);
+              }
+            }
+          }
+          // Превью сценария: показываем ожидаемый экран по текущему шагу
+          if (scenarioPreview && grid.scenarioMode && grid.currentScenario) {
+            scenarioPreview.update(grid.currentScenario, grid.currentScenarioStep);
+          }
+        }
+      });
+
+      console.log('✅ Каскадная слот-игра инициализирована');
+    })().catch((err) => {
+      console.error('Ошибка инициализации:', err);
+      document.body.innerHTML = 
+        '<div style="color:#fff;font-family:monospace;padding:24px;">Ошибка: ' + err.message + '</div>';
+    });
+  </script>
+</body>
+</html>

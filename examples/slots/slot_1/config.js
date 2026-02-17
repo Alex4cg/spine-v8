@@ -69,7 +69,7 @@ export const SLOT_CONFIG = {
   
   // Настройки анимации winframe
   winFrameAnimation: {
-    atlasPath: './atlas/winframe_60_fps/winframe_60_fps.json',
+    atlasPath: './atlas/winframe_60_fps_v2/winframe_60_fps_v2.json',
     frameCount: 60,
     animationSpeed: 1.0, // 60 fps (1.0 = 60 кадров в секунду)
     loop: false // проиграть 1 раз

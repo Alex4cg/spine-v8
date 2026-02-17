@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test ScenarioGeneratorV3</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #1a1a1a;
+      color: #fff;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 10px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background: #764ba2;
+    }
+    #output {
+      margin-top: 20px;
+      padding: 15px;
+      background: #2a2a2a;
+      border-radius: 5px;
+      white-space: pre-wrap;
+      font-family: monospace;
+      font-size: 12px;
+      max-height: 600px;
+      overflow-y: auto;
+    }
+    .step {
+      margin: 10px 0;
+      padding: 10px;
+      background: #333;
+      border-radius: 3px;
+      border-left: 3px solid #667eea;
+    }
+    .event-type {
+      font-weight: bold;
+      color: #667eea;
+      margin-bottom: 5px;
+    }
+    .grid {
+      font-size: 10px;
+      line-height: 1.2;
+      margin: 5px 0;
+    }
+    .error {
+      color: #ff6b6b;
+      font-weight: bold;
+    }
+    .success {
+      color: #51cf66;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>ScenarioGeneratorV3 Test</h1>
+    <button onclick="generateScenario()">Generate Scenario (5 spins)</button>
+    <button onclick="saveScenario()">Save Scenario to File</button>
+    <div id="output"></div>
+  </div>
+
+  <script type="module">
+    import { ScenarioGeneratorV3 } from './ScenarioGeneratorV3.js';
+    
+    let payoutsConfig = null;
+    let generator = null;
+    let currentScenario = null;
+
+    // Загружаем payouts.json
+    async function loadPayouts() {
+      try {
+        const response = await fetch('./payouts.json');
+        payoutsConfig = await response.json();
+        console.log('Payouts loaded:', payoutsConfig);
+      } catch (error) {
+        console.error('Error loading payouts:', error);
+        payoutsConfig = null;
+      }
+    }
+
+    // Инициализация генератора
+    function initGenerator() {
+      generator = new ScenarioGeneratorV3({
+        gridCols: 6,
+        gridRows: 5,
+        minSymbolsForWin: 7,
+        symbolCount: 8,
+        payoutsConfig: payoutsConfig,
+        symbolNames: [
+          'h1_lion', 'h2_bull', 'h3_bear', 'h4_wolf',
+          'l1_revolver', 'l2_bottle', 'l3_horseshoe', 'l4_cactus'
+        ],
+        bombSymbolType: 8,
+        bombMultiplier: 5,
+        bombSpinChance: 0.03,
+        bombRefillChance: 0.01
+      });
+    }
+
+    // Генерация сценария
+    window.generateScenario = function() {
+      if (!generator) {
+        initGenerator();
+      }
+      
+      const output = document.getElementById('output');
+      output.innerHTML = '<div class="success">Генерация сценария...</div>';
+      
+      try {
+        currentScenario = generator.generateScenario(5);
+        
+        let html = `<div class="success">✓ Сценарий сгенерирован успешно! Шагов: ${currentScenario.length}</div>\n\n`;
+        
+        currentScenario.forEach((step, index) => {
+          html += `<div class="step">`;
+          html += `<div class="event-type">Шаг ${index + 1}: ${step.event}</div>`;
+          
+          if (step.winningGroups && step.winningGroups.length > 0) {
+            html += `<div>Выигрышные группы: ${step.winningGroups.map(g => `${g.symbolName} (${g.count})`).join(', ')}</div>`;
+          }
+          
+          if (step.bombType) {
+            if (step.bombType === 'multiplier') {
+              html += `<div>💣 Бомба (multiplier x${step.multiplier}) в позиции [${step.bombPosition.row}][${step.bombPosition.col}]</div>`;
+            } else {
+              html += `<div>💣 Бомба (explode) в позиции [${step.bombPosition.row}][${step.bombPosition.col}]</div>`;
+              html += `<div>Взорвано позиций: ${step.explodedPositions.length}</div>`;
+            }
+          }
+          
+          if (step.totalPayout > 0) {
+            html += `<div>💰 Выплата: ${Number(step.totalPayout).toFixed(2)}</div>`;
+          }
+          
+          html += `<div class="grid">Сетка:<br>`;
+          step.grid.forEach((row, r) => {
+            html += `Row ${r}: [${row.map(s => s === 8 ? '💣' : s === -1 ? '·' : s).join(', ')}]<br>`;
+          });
+          html += `</div>`;
+          
+          html += `</div>`;
+        });
+        
+        // Проверка последовательности событий
+        html += `<div style="margin-top: 20px; padding: 10px; background: #2a2a2a; border-radius: 5px;">`;
+        html += `<h3>Проверка последовательности:</h3>`;
+        
+        let errors = [];
+        for (let i = 0; i < currentScenario.length - 1; i++) {
+          const current = currentScenario[i];
+          const next = currentScenario[i + 1];
+          
+          // Проверка: spin-win должен иметь следующий шаг cascade
+          if (current.event === 'spin-win' || current.event === 'spin-win-bomb') {
+            if (!next.event.startsWith('cascade')) {
+              errors.push(`Шаг ${i + 1}: ${current.event} должен иметь следующий шаг cascade, но получен ${next.event}`);
+            }
+          }
+          
+          // Проверка: spin-bomb должен иметь следующий шаг cascade
+          if (current.event === 'spin-bomb') {
+            if (!next.event.startsWith('cascade')) {
+              errors.push(`Шаг ${i + 1}: ${current.event} должен иметь следующий шаг cascade, но получен ${next.event}`);
+            }
+          }
+          
+          // Проверка: cascade-win должен иметь следующий шаг cascade
+          if (current.event === 'cascade-win' || current.event === 'cascade-win-bomb') {
+            if (!next.event.startsWith('cascade')) {
+              errors.push(`Шаг ${i + 1}: ${current.event} должен иметь следующий шаг cascade, но получен ${next.event}`);
+            }
+          }
+        }
+        
+        if (errors.length === 0) {
+          html += `<div class="success">✓ Последовательность событий корректна</div>`;
+        } else {
+          html += `<div class="error">✗ Найдены ошибки:</div>`;
+          errors.forEach(err => {
+            html += `<div class="error">- ${err}</div>`;
+          });
+        }
+        
+        html += `</div>`;
+        
+        output.innerHTML = html;
+        
+        console.log('Generated scenario:', currentScenario);
+      } catch (error) {
+        output.innerHTML = `<div class="error">Ошибка: ${error.message}</div><pre>${error.stack}</pre>`;
+        console.error('Error generating scenario:', error);
+      }
+    };
+
+    // Сохранение сценария в файл
+    window.saveScenario = function() {
+      if (!currentScenario) {
+        alert('Сначала сгенерируйте сценарий!');
+        return;
+      }
+      
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+      const filename = `scenario_${timestamp}.json`;
+      // Компактное форматирование: каждое событие на одной строке
+      const lines = ['['];
+      for (let i = 0; i < currentScenario.length; i++) {
+        const eventJson = JSON.stringify(currentScenario[i]);
+        lines.push(`  ${eventJson}${i < currentScenario.length - 1 ? ',' : ''}`);
+      }
+      lines.push(']');
+      const json = lines.join('\n');
+      
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+      
+      alert(`Сценарий сохранен: ${filename}`);
+    };
+
+    // Инициализация при загрузке
+    loadPayouts().then(() => {
+      initGenerator();
+      console.log('Generator initialized');
+    });
+  </script>
+</body>
+</html>

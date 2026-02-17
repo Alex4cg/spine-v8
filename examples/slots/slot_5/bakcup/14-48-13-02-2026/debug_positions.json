@@ -1,0 +1,78 @@
+{
+  "bg": {
+    "x": 0,
+    "y": 0,
+    "scale": 1,
+    "zIndex": 0
+  },
+  "gid": {
+    "x": 361,
+    "y": 641,
+    "scale": 1,
+    "zIndex": 10
+  },
+  "fieldRegular": {
+    "x": -94,
+    "y": 207,
+    "scale": 1,
+    "zIndex": 25
+  },
+  "gameField": {
+    "x": 0,
+    "y": 75,
+    "scale": 1,
+    "zIndex": 50
+  },
+  "chestRed": {
+    "x": 337,
+    "y": 159,
+    "scale": 1,
+    "zIndex": 40
+  },
+  "chestBlue": {
+    "x": 113,
+    "y": 161,
+    "scale": 1,
+    "zIndex": 40
+  },
+  "chestYellow": {
+    "x": 561,
+    "y": 161,
+    "scale": 1,
+    "zIndex": 40
+  },
+  "logoLine": {
+    "x": 361,
+    "y": 38,
+    "scale": 0.21,
+    "zIndex": 200
+  },
+  "chestLabelRed": {
+    "x": 363,
+    "y": 176,
+    "scale": 0.85,
+    "zIndex": 210
+  },
+  "chestLabelBlue": {
+    "x": 126,
+    "y": 175,
+    "scale": 0.85,
+    "zIndex": 210
+  },
+  "chestLabelYellow": {
+    "x": 582,
+    "y": 176,
+    "scale": 0.83,
+    "zIndex": 210
+  },
+  "totalWin": {
+    "x": 361,
+    "y": 798,
+    "scale": 1,
+    "zIndex": 200
+  },
+  "checkboxes": {
+    "debugOverlay": false,
+    "gidVisible": true
+  }
+}

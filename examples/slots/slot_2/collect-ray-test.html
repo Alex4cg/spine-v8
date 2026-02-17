@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Collect Ray Test - Spine Animation</title>
+    <script src="../../assets/libs/pixi.min.js"></script>
+    <script src="../../assets/libs/spine-pixi.js"></script>
+  </head>
+  <body style="margin:0;background:#1a1a1a;overflow:hidden;">
+    <div
+      id="controls"
+      style="position:absolute;top:20px;left:20px;z-index:1000;display:flex;flex-direction:column;gap:15px;"
+    >
+      <div style="color:white;font-size:16px;font-weight:600;margin-bottom:10px;">
+        Collect Ray Test
+      </div>
+      
+      <button
+        id="playRay"
+        style="padding:10px 20px;background:#00ff00;color:#1a1a1a;border:none;border-radius:5px;cursor:pointer;font-size:14px;font-weight:600;"
+      >
+        Play Ray
+      </button>
+      <button
+        id="playDouble"
+        style="padding:10px 20px;background:#4CAF50;color:white;border:none;border-radius:5px;cursor:pointer;font-size:14px;font-weight:600;"
+      >
+        Дабл
+      </button>
+      <button
+        id="playClaw"
+        style="padding:10px 20px;background:#FF9800;color:white;border:none;border-radius:5px;cursor:pointer;font-size:14px;font-weight:600;"
+      >
+        Claw
+      </button>
+      <button
+        id="resetPositions"
+        style="padding:10px 20px;background:#ff6b6b;color:white;border:none;border-radius:5px;cursor:pointer;font-size:14px;font-weight:600;"
+      >
+        Reset Positions
+      </button>
+    </div>
+    
+    <script>
+      (async () => {
+        // Фиксированный размер сцены
+        const SCENE_WIDTH = 1920;
+        const SCENE_HEIGHT = 1080;
+        
+        const app = new PIXI.Application();
+        await app.init({
+          width: SCENE_WIDTH,
+          height: SCENE_HEIGHT,
+          backgroundColor: 0x1a1a1a,
+          resolution: 1,
+          antialias: true,
+        });
+        
+        // Настройка масштабирования через CSS
+        const updateScale = () => {
+          const windowWidth = window.innerWidth;
+          const windowHeight = window.innerHeight;
+          
+          // Вычисляем масштаб для сохранения пропорций
+          const scaleX = windowWidth / SCENE_WIDTH;
+          const scaleY = windowHeight / SCENE_HEIGHT;
+          const scale = Math.min(scaleX, scaleY);
+          
+          // Применяем масштаб к canvas
+          app.canvas.style.width = `${SCENE_WIDTH}px`;
+          app.canvas.style.height = `${SCENE_HEIGHT}px`;
+          app.canvas.style.transform = `scale(${scale})`;
+          app.canvas.style.transformOrigin = 'top left';
+          
+          // Центрируем canvas
+          const scaledWidth = SCENE_WIDTH * scale;
+          const scaledHeight = SCENE_HEIGHT * scale;
+          app.canvas.style.position = 'fixed';
+          app.canvas.style.left = `${(windowWidth - scaledWidth) / 2}px`;
+          app.canvas.style.top = `${(windowHeight - scaledHeight) / 2}px`;
+        };
+        
+        updateScale();
+        window.addEventListener('resize', updateScale);
+        
+        document.body.appendChild(app.canvas);
+        app.stage.sortableChildren = true;
+        app.stage.eventMode = "static";
+        app.stage.hitArea = app.screen;
+
+        // Загрузка фона
+        const bgTexture = await PIXI.Assets.load("../slot_2/bg_png/1920х1080.png");
+        const bgSprite = new PIXI.Sprite(bgTexture);
+        bgSprite.x = SCENE_WIDTH / 2;
+        bgSprite.y = SCENE_HEIGHT / 2;
+        bgSprite.anchor.set(0.5);
+        bgSprite.zIndex = 0;
+        app.stage.addChild(bgSprite);
+
+        // Загрузка Spine ресурсов
+        await PIXI.Assets.load([
+          { alias: "collectEffectSkeleton", src: "./spine/collect_effect/skeleton.json" },
+          { alias: "collectEffectAtlas", src: "./spine/collect_effect/skeleton.atlas" },
+          { alias: "gemSkeleton", src: "./spine/gem/skeleton.json" },
+          { alias: "gemAtlas", src: "./spine/gem/skeleton.atlas" },
+          { alias: "coinsSkeleton", src: "./spine/coins/skeleton.json" },
+          { alias: "coinsAtlas", src: "./spine/coins/skeleton.atlas" },
+          { alias: "coinsFontainSkeleton", src: "./spine/coins_fontain/skeleton.json" },
+          { alias: "coinsFontainAtlas", src: "./spine/coins_fontain/skeleton.atlas" },
+        ]);
+
+        // Создание отдельных экземпляров Spine для каждой анимации
+        const createSpineInstance = async (animName, skinName = "collect") => {
+          const instance = spine.Spine.from({
+            skeleton: "collectEffectSkeleton",
+            atlas: "collectEffectAtlas",
+            scale: 1,
+          });
+
+          // Устанавливаем физику
+          if (!instance.skeleton.physics) {
+            instance.skeleton.physics = {
+              update: () => {},
+              updateGlobal: () => {},
+            };
+          }
+
+          // Центрируем на сцене
+          instance.x = SCENE_WIDTH / 2;
+          instance.y = SCENE_HEIGHT / 2;
+          instance.zIndex = 10;
+
+          app.stage.addChild(instance);
+
+          // Ждем один кадр
+          await new Promise((resolve) => requestAnimationFrame(resolve));
+
+          // Устанавливаем указанный скин
+          const skin = instance.skeleton.data.findSkin(skinName);
+          if (skin) {
+            instance.skeleton.setSkin(skin);
+            instance.skeleton.setSlotsToSetupPose();
+            if (instance.skeleton.physics) {
+              instance.skeleton.updateWorldTransform(instance.skeleton.physics.update);
+            }
+            console.log(`✅ Скин '${skinName}' установлен для ${animName}`);
+          } else {
+            console.warn(`⚠️ Скин '${skinName}' не найден для ${animName}`);
+          }
+
+          return instance;
+        };
+
+        // Создаем все экземпляры collect_effect
+        const spineRay = await createSpineInstance("ray", "double");
+        const spineRoundStart = await createSpineInstance("round-effect-start", "collect");
+        const spineRoundEnd = await createSpineInstance("round-effect-end", "collect");
+
+        // Создание экземпляра gem с скином double
+        const createGemInstance = async () => {
+          const instance = spine.Spine.from({
+            skeleton: "gemSkeleton",
+            atlas: "gemAtlas",
+            scale: 1,
+          });
+
+          if (!instance.skeleton.physics) {
+            instance.skeleton.physics = {
+              update: () => {},
+              updateGlobal: () => {},
+            };
+          }
+
+          instance.x = SCENE_WIDTH / 2;
+          instance.y = SCENE_HEIGHT / 2;
+          instance.zIndex = 5; // Между фоном (0) и collect_effect (10)
+
+          app.stage.addChild(instance);
+
+          await new Promise((resolve) => requestAnimationFrame(resolve));
+
+          const doubleSkin = instance.skeleton.data.findSkin("double");
+          if (doubleSkin) {
+            instance.skeleton.setSkin(doubleSkin);
+            instance.skeleton.setSlotsToSetupPose();
+            if (instance.skeleton.physics) {
+              instance.skeleton.updateWorldTransform(instance.skeleton.physics.update);
+            }
+            console.log("✅ Скин 'double' установлен для gem");
+          } else {
+            console.warn("⚠️ Скин 'double' не найден для gem");
+          }
+
+          return instance;
+        };
+
+        // Создание экземпляра coins с скином mult
+        const createCoinsInstance = async () => {
+          const instance = spine.Spine.from({
+            skeleton: "coinsSkeleton",
+            atlas: "coinsAtlas",
+            scale: 1,
+          });
+
+          if (!instance.skeleton.physics) {
+            instance.skeleton.physics = {
+              update: () => {},
+              updateGlobal: () => {},
+            };
+          }
+
+          instance.x = SCENE_WIDTH / 2;
+          instance.y = SCENE_HEIGHT / 2;
+          instance.zIndex = 5; // Между фоном (0) и collect_effect (10)
+
+          app.stage.addChild(instance);
+
+          await new Promise((resolve) => requestAnimationFrame(resolve));
+
+          const multSkin = instance.skeleton.data.findSkin("mult");
+          if (multSkin) {
+            instance.skeleton.setSkin(multSkin);
+            instance.skeleton.setSlotsToSetupPose();
+            if (instance.skeleton.physics) {
+              instance.skeleton.updateWorldTransform(instance.skeleton.physics.update);
+            }
+            console.log("✅ Скин 'mult' установлен для coins");
+          } else {
+            console.warn("⚠️ Скин 'mult' не найден для coins");
+          }
+
+          return instance;
+        };
+
+        // Создаем gem и coins экземпляры
+        const spineGem = await createGemInstance();
+        const spineCoins = await createCoinsInstance();
+
+        // Запускаем анимацию idle для gem
+        const gemIdleEntry = spineGem.state.setAnimation(0, "idle", true);
+        if (gemIdleEntry) {
+          console.log("✅ Анимация 'idle' запущена для gem");
+        }
+
+        // Запускаем анимацию idle для coins
+        const coinsIdleEntry = spineCoins.state.setAnimation(0, "idle", true);
+        if (coinsIdleEntry) {
+          console.log("✅ Анимация 'idle' запущена для coins");
+        }
+
+        // Переменная для отслеживания текущего сценария
+        let currentScenario = "double"; // "double" или "claw"
+
+        // Создание экземпляра coins_fontain (просто для теста)
+        const createCoinsFontainInstance = async () => {
+          const instance = spine.Spine.from({
+            skeleton: "coinsFontainSkeleton",
+            atlas: "coinsFontainAtlas",
+            scale: 1,
+          });
+
+          if (!instance.skeleton.physics) {
+            instance.skeleton.physics = {
+              update: () => {},
+              updateGlobal: () => {},
+            };
+          }
+
+          instance.x = SCENE_WIDTH / 2;
+          instance.y = SCENE_HEIGHT / 2;
+          instance.zIndex = 5;
+          instance.visible = false; // Скрыт по умолчанию
+
+          app.stage.addChild(instance);
+
+          await new Promise((resolve) => requestAnimationFrame(resolve));
+
+          instance.skeleton.setSlotsToSetupPose();
+          instance.skeleton.setBonesToSetupPose();
+          if (instance.skeleton.physics && instance.skeleton.physics.update) {
+            instance.skeleton.updateWorldTransform(instance.skeleton.physics.update);
+          }
+
+          instance.state.setEmptyAnimation(0, 0);
+
+          console.log("✅ Экземпляр coins_fontain создан");
+
+          return instance;
+        };
+
+        const spineCoinsFontain = await createCoinsFontainInstance();
+
+        // Настройка слушателей завершения анимаций для gem и coins
+        spineGem.state.addListener({
+          complete: (entry) => {
+            if (entry.trackIndex === 0 && entry.animation && entry.animation.name === "collect") {
+              console.log("✅ Анимация 'collect' завершена в gem, возвращаемся к 'idle'");
+              const gemIdleEntry = spineGem.state.setAnimation(0, "idle", true);
+              if (gemIdleEntry) {
+                gemIdleEntry.mixDuration = 0.1;
+                console.log("✅ Анимация 'idle' запущена для gem");
+              }
+            }
+          }
+        });
+
+        spineCoins.state.addListener({
+          complete: (entry) => {
+            if (entry.trackIndex === 0 && entry.animation && entry.animation.name === "collect") {
+              console.log("✅ Анимация 'collect' завершена в coins, возвращаемся к 'idle'");
+              const coinsIdleEntry = spineCoins.state.setAnimation(0, "idle", true);
+              if (coinsIdleEntry) {
+                coinsIdleEntry.mixDuration = 0.1;
+                console.log("✅ Анимация 'idle' запущена для coins");
+              }
+            }
+          }
+        });
+
+        // Настройка управления для gem и coins через root кости
+        const gemDragState = { node: null, lastX: 0, lastY: 0 };
+        const coinsDragState = { node: null, lastX: 0, lastY: 0 };
+
+        // Функция загрузки сохраненных позиций (нужна до создания точек управления)
+        const loadControlPositions = () => {
+          const saved = localStorage.getItem('collect_ray_control_positions');
+          if (saved) {
+            try {
+              const positions = JSON.parse(saved);
+              return positions;
+            } catch (e) {
+              console.warn('⚠️ Ошибка при загрузке позиций:', e);
+              return null;
+            }
+          }
+          return null;
+        };
+
+        // Загружаем сохраненные позиции до создания точек управления
+        const savedPositions = loadControlPositions();
+
+        // Ждем один кадр для корректной работы bounds
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+
+        // Создаем точку управления для gem (root кость)
+        let gemHandle = null;
+        const gemRootBone = spineGem.skeleton.findBone("root");
+        if (gemRootBone) {
+          // Получаем начальную позицию root кости в мировых координатах
+          const gemWorld = { x: gemRootBone.worldX, y: gemRootBone.worldY };
+          spineGem.skeletonToPixiWorldCoordinates(gemWorld);
+
+          gemHandle = new PIXI.Graphics()
+            .lineStyle({ width: 1, color: 0x00ff00, alpha: 0.9 })
+            .beginFill(0x00ff00, 0.4)
+            .drawCircle(0, 0, 9)
+            .endFill();
+          
+          // Используем сохраненную позицию или позицию по умолчанию
+          if (savedPositions && savedPositions['gem_root']) {
+            gemHandle.x = savedPositions['gem_root'].x;
+            gemHandle.y = savedPositions['gem_root'].y;
+            spineGem.x = gemHandle.x;
+            spineGem.y = gemHandle.y;
+            console.log("✅ Загружена сохраненная позиция для gem:", savedPositions['gem_root']);
+          } else {
+            gemHandle.x = spineGem.x;
+            gemHandle.y = spineGem.y;
+          }
+          
+          gemHandle.cursor = "pointer";
+          gemHandle.eventMode = "static";
+          gemHandle.zIndex = 100;
+
+          gemHandle.on("pointerdown", (e) => {
+            gemDragState.node = gemHandle;
+            gemDragState.lastX = e.global.x;
+            gemDragState.lastY = e.global.y;
+          });
+
+          app.stage.addChild(gemHandle);
+          console.log("✅ Точка управления создана для gem (root)");
+        }
+
+        // Создаем точку управления для coins (root кость)
+        let coinsHandle = null;
+        const coinsRootBone = spineCoins.skeleton.findBone("root");
+        if (coinsRootBone) {
+          // Получаем начальную позицию root кости в мировых координатах
+          const coinsWorld = { x: coinsRootBone.worldX, y: coinsRootBone.worldY };
+          spineCoins.skeletonToPixiWorldCoordinates(coinsWorld);
+
+          coinsHandle = new PIXI.Graphics()
+            .lineStyle({ width: 1, color: 0xffff00, alpha: 0.9 })
+            .beginFill(0xffff00, 0.4)
+            .drawCircle(0, 0, 9)
+            .endFill();
+          
+          // Используем сохраненную позицию или позицию по умолчанию
+          if (savedPositions && savedPositions['coins_root']) {
+            coinsHandle.x = savedPositions['coins_root'].x;
+            coinsHandle.y = savedPositions['coins_root'].y;
+            spineCoins.x = coinsHandle.x;
+            spineCoins.y = coinsHandle.y;
+            console.log("✅ Загружена сохраненная позиция для coins:", savedPositions['coins_root']);
+          } else {
+            coinsHandle.x = spineCoins.x;
+            coinsHandle.y = spineCoins.y;
+          }
+          
+          coinsHandle.cursor = "pointer";
+          coinsHandle.eventMode = "static";
+          coinsHandle.zIndex = 100;
+
+          coinsHandle.on("pointerdown", (e) => {
+            coinsDragState.node = coinsHandle;
+            coinsDragState.lastX = e.global.x;
+            coinsDragState.lastY = e.global.y;
+          });
+
+          app.stage.addChild(coinsHandle);
+          console.log("✅ Точка управления создана для coins (root)");
+        }
+
+        // Настройка синхронизации позиций экземпляров с визуальными точками
+        // Обновляем позицию экземпляра напрямую при перемещении точки управления
+        const updateGemPosition = () => {
+          if (gemHandle) {
+            spineGem.x = gemHandle.x;
+            spineGem.y = gemHandle.y;
+          }
+        };
+
+        const updateCoinsPosition = () => {
+          if (coinsHandle) {
+            spineCoins.x = coinsHandle.x;
+            spineCoins.y = coinsHandle.y;
+          }
+        };
+
+        // Настройка управления костями для spineRay (основной экземпляр)
+        const controlBoneNames = [
+          "control_point_1",
+          "control_point_2",
+          "control_point_1_t",
+          "control_point_2_t",
+        ];
+        const controlBones = [];
+        const dragState = { node: null, lastX: 0, lastY: 0 };
+
+        // Ждем один кадр для корректной работы bounds
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+
+        // Функция сохранения позиций точек управления (тихая, без уведомлений)
+        const saveControlPositions = () => {
+          const positions = {};
+          // Сохраняем позиции control_point костей
+          for (const { bone, handle } of controlBones) {
+            positions[bone.data.name] = { x: handle.x, y: handle.y };
+          }
+          // Сохраняем позиции gem и coins
+          if (gemHandle) {
+            positions['gem_root'] = { x: gemHandle.x, y: gemHandle.y };
+          }
+          if (coinsHandle) {
+            positions['coins_root'] = { x: coinsHandle.x, y: coinsHandle.y };
+          }
+          localStorage.setItem('collect_ray_control_positions', JSON.stringify(positions));
+        };
+
+        // Функция сброса позиций к значениям по умолчанию
+        const resetControlPositions = () => {
+          localStorage.removeItem('collect_ray_control_positions');
+          // Перезагружаем страницу для применения значений по умолчанию
+          location.reload();
+        };
+
+        // Создаем визуальные точки управления для костей
+        const centerX = SCENE_WIDTH / 2;
+        const centerY = SCENE_HEIGHT / 2;
+        
+        for (const name of controlBoneNames) {
+          const bone = spineRay.skeleton.findBone(name);
+          if (!bone) {
+            console.warn(`⚠️ Кость ${name} не найдена`);
+            continue;
+          }
+
+          const world = { x: bone.worldX, y: bone.worldY };
+          spineRay.skeletonToPixiWorldCoordinates(world);
+
+          const handle = new PIXI.Graphics()
+            .lineStyle({ width: 1, color: 0xff00ff, alpha: 0.9 })
+            .beginFill(0xff00ff, 0.4)
+            .drawCircle(0, 0, 9)
+            .endFill();
+          
+          // Используем сохраненную позицию или позицию относительно центра сцены
+          if (savedPositions && savedPositions[name]) {
+            handle.x = savedPositions[name].x;
+            handle.y = savedPositions[name].y;
+            console.log(`✅ Загружена сохраненная позиция для ${name}:`, savedPositions[name]);
+          } else {
+            // Позиционируем относительно центра сцены
+            // Вычисляем смещение от центра Spine объекта до кости
+            const offsetX = world.x - spineRay.x;
+            const offsetY = world.y - spineRay.y;
+            // Применяем смещение к центру сцены
+            handle.x = centerX + offsetX;
+            handle.y = centerY + offsetY;
+          }
+          
+          handle.cursor = "pointer";
+          handle.eventMode = "static";
+          handle.zIndex = 100; // Поверх всего
+
+          handle.on("pointerdown", (e) => {
+            dragState.node = handle;
+            dragState.lastX = e.global.x;
+            dragState.lastY = e.global.y;
+          });
+
+          app.stage.addChild(handle);
+          controlBones.push({ bone, handle });
+          console.log(`✅ Точка управления создана для кости ${name}`);
+        }
+
+        // Настройка синхронизации позиций костей с визуальными точками для всех экземпляров
+        const convertPoint = { x: 0, y: 0 };
+        
+        // Функция синхронизации костей для одного экземпляра
+        const syncBonesForInstance = (spineInstance) => {
+          for (const { bone, handle } of controlBones) {
+            const instanceBone = spineInstance.skeleton.findBone(bone.data.name);
+            if (instanceBone) {
+              convertPoint.x = handle.x;
+              convertPoint.y = handle.y;
+              spineInstance.pixiWorldCoordinatesToBone(convertPoint, instanceBone);
+              instanceBone.x = convertPoint.x;
+              instanceBone.y = convertPoint.y;
+            }
+          }
+        };
+        
+        // Устанавливаем синхронизацию для всех экземпляров
+        spineRay.beforeUpdateWorldTransforms = () => {
+          syncBonesForInstance(spineRay);
+        };
+        
+        spineRoundStart.beforeUpdateWorldTransforms = () => {
+          syncBonesForInstance(spineRoundStart);
+        };
+        
+        spineRoundEnd.beforeUpdateWorldTransforms = () => {
+          syncBonesForInstance(spineRoundEnd);
+        };
+
+        // Настройка drag & drop
+        const endDrag = () => {
+          dragState.node = null;
+        };
+
+        app.stage.on("pointerup", () => {
+          endDrag();
+          gemDragState.node = null;
+          coinsDragState.node = null;
+          // Автоматически сохраняем позиции после перемещения
+          saveControlPositions();
+        });
+        app.stage.on("pointerupoutside", () => {
+          endDrag();
+          gemDragState.node = null;
+          coinsDragState.node = null;
+          // Автоматически сохраняем позиции после перемещения
+          saveControlPositions();
+        });
+        app.stage.on("pointermove", (e) => {
+          if (dragState.node) {
+            dragState.node.x += e.global.x - dragState.lastX;
+            dragState.node.y += e.global.y - dragState.lastY;
+            dragState.lastX = e.global.x;
+            dragState.lastY = e.global.y;
+          }
+          if (gemDragState.node) {
+            gemDragState.node.x += e.global.x - gemDragState.lastX;
+            gemDragState.node.y += e.global.y - gemDragState.lastY;
+            gemDragState.lastX = e.global.x;
+            gemDragState.lastY = e.global.y;
+            updateGemPosition();
+          }
+          if (coinsDragState.node) {
+            coinsDragState.node.x += e.global.x - coinsDragState.lastX;
+            coinsDragState.node.y += e.global.y - coinsDragState.lastY;
+            coinsDragState.lastX = e.global.x;
+            coinsDragState.lastY = e.global.y;
+            updateCoinsPosition();
+          }
+        });
+
+        // Настройка кнопки сброса позиций
+        document.getElementById("resetPositions").onclick = resetControlPositions;
+
+        // Настройка слушателей завершения анимаций для скрытия экземпляров
+        spineRay.state.addListener({
+          complete: (entry) => {
+            if (entry.trackIndex === 0) {
+              spineRay.visible = false;
+              console.log("✅ Анимация ray завершена, экземпляр скрыт");
+            }
+          },
+          event: (entry, event) => {
+            console.log("🔔 Событие получено:", event.data ? event.data.name : "unknown", "от анимации:", entry.animation ? entry.animation.name : "unknown");
+            if (event.data && event.data.name === "hit") {
+              if (currentScenario === "double") {
+                // Сценарий "Double" - запускаем анимацию collect в coins
+                console.log("✅ Событие 'hit' получено, запускаем анимацию collect в coins");
+                
+                const animations = spineCoins.state.data.skeletonData.animations;
+                const collectAnim = animations.find(anim => anim.name === "collect");
+                if (!collectAnim) {
+                  console.error("❌ Анимация 'collect' не найдена в coins. Доступные анимации:", animations.map(a => a.name));
+                  return;
+                }
+                
+                spineCoins.visible = true;
+                spineCoins.state.clearTrack(0);
+                spineCoins.state.setEmptyAnimation(0, 0);
+                const coinsCollectEntry = spineCoins.state.setAnimation(0, "collect", false);
+                if (coinsCollectEntry) {
+                  coinsCollectEntry.mixDuration = 0;
+                  console.log("✅ Анимация 'collect' запущена в coins");
+                } else {
+                  console.error("❌ Не удалось запустить анимацию 'collect' в coins");
+                }
+              } else if (currentScenario === "claw") {
+                // Сценарий "Claw" - запускаем coins_fontain
+                console.log("✅ Событие 'hit' получено, запускаем coins_fontain");
+                
+                // Используем requestAnimationFrame для отложенного запуска
+                requestAnimationFrame(() => {
+                  const controlPoint2Handle = controlBones.find(cb => cb.bone.data.name === "control_point_2")?.handle;
+                  if (controlPoint2Handle) {
+                    spineCoinsFontain.x = controlPoint2Handle.x;
+                    spineCoinsFontain.y = controlPoint2Handle.y;
+                  }
+                  
+                  spineCoinsFontain.skeleton.setSlotsToSetupPose();
+                  spineCoinsFontain.skeleton.setBonesToSetupPose();
+                  if (spineCoinsFontain.skeleton.physics && spineCoinsFontain.skeleton.physics.update) {
+                    spineCoinsFontain.skeleton.updateWorldTransform(spineCoinsFontain.skeleton.physics.update);
+                  }
+                  
+                  spineCoinsFontain.state.clearTrack(0);
+                  spineCoinsFontain.state.setEmptyAnimation(0, 0);
+                  spineCoinsFontain.visible = true;
+                  
+                  const fontainEntry = spineCoinsFontain.state.setAnimation(0, "animation", false);
+                  if (fontainEntry) {
+                    fontainEntry.mixDuration = 0;
+                    console.log("✅ Анимация 'animation' запущена в coins_fontain");
+                  } else {
+                    console.error("❌ Не удалось запустить анимацию 'animation' в coins_fontain");
+                  }
+                });
+              }
+            }
+          }
+        });
+        
+        spineRoundStart.state.addListener({
+          complete: (entry) => {
+            if (entry.trackIndex === 0) {
+              spineRoundStart.visible = false;
+              console.log("✅ Анимация round-effect-start завершена, экземпляр скрыт");
+            }
+          }
+        });
+        
+        spineRoundEnd.state.addListener({
+          complete: (entry) => {
+            if (entry.trackIndex === 0) {
+              spineRoundEnd.visible = false;
+              console.log("✅ Анимация round-effect-end завершена, экземпляр скрыт");
+            }
+          }
+        });
+
+        // Слушатель завершения анимации для coins_fontain
+        spineCoinsFontain.state.addListener({
+          complete: (entry) => {
+            if (entry.trackIndex === 0) {
+              spineCoinsFontain.visible = false;
+              console.log("✅ Анимация coins_fontain завершена, экземпляр скрыт");
+            }
+          }
+        });
+
+        // Функция для проигрывания анимаций
+        const playRay = () => {
+          // Показываем все экземпляры перед запуском
+          spineRay.visible = true;
+          spineRoundStart.visible = true;
+          spineRoundEnd.visible = true;
+          
+          // Сбрасываем все экземпляры в setup pose
+          [spineRay, spineRoundStart, spineRoundEnd].forEach(spine => {
+            spine.skeleton.setSlotsToSetupPose();
+            spine.skeleton.setBonesToSetupPose();
+            if (spine.skeleton.physics && spine.skeleton.physics.update) {
+              spine.skeleton.updateWorldTransform(spine.skeleton.physics.update);
+            }
+          });
+          
+          // Запускаем анимации на каждом экземпляре отдельно
+          const entry1 = spineRay.state.setAnimation(0, "ray", false);
+          const entry2 = spineRoundStart.state.setAnimation(0, "round-effect-start", false);
+          const entry3 = spineRoundEnd.state.setAnimation(0, "round-effect-end", false);
+          
+          if (entry1 && entry2 && entry3) {
+            console.log("✅ Анимации запущены на отдельных экземплярах");
+          } else {
+            console.warn("⚠️ Не удалось запустить все анимации");
+          }
+        };
+
+        // Функция для проигрывания сценария "дабл"
+        const playDouble = () => {
+          currentScenario = "double";
+          
+          // 1. Запускаем анимацию collect в gem
+          spineGem.state.clearTrack(0);
+          spineGem.state.setEmptyAnimation(0, 0);
+          const gemCollectEntry = spineGem.state.setAnimation(0, "collect", false);
+          if (gemCollectEntry) {
+            gemCollectEntry.mixDuration = 0;
+            console.log("✅ Анимация 'collect' запущена в gem");
+          }
+
+          // 2. Показываем все экземпляры collect_effect перед запуском
+          spineRay.visible = true;
+          spineRoundStart.visible = true;
+          spineRoundEnd.visible = true;
+
+          // 3. Сбрасываем все экземпляры collect_effect в setup pose
+          [spineRay, spineRoundStart, spineRoundEnd].forEach(spine => {
+            spine.skeleton.setSlotsToSetupPose();
+            spine.skeleton.setBonesToSetupPose();
+            if (spine.skeleton.physics && spine.skeleton.physics.update) {
+              spine.skeleton.updateWorldTransform(spine.skeleton.physics.update);
+            }
+          });
+
+          // 4. Запускаем анимации на каждом экземпляре collect_effect одновременно
+          const rayEntry = spineRay.state.setAnimation(0, "ray", false);
+          const roundStartEntry = spineRoundStart.state.setAnimation(0, "round-effect-start", false);
+          const roundEndEntry = spineRoundEnd.state.setAnimation(0, "round-effect-end", false);
+
+          if (rayEntry) {
+            rayEntry.mixDuration = 0;
+          }
+          if (roundStartEntry) {
+            roundStartEntry.mixDuration = 0;
+          }
+          if (roundEndEntry) {
+            roundEndEntry.mixDuration = 0;
+          }
+
+          if (rayEntry && roundStartEntry && roundEndEntry) {
+            console.log("✅ Анимации collect_effect запущены: ray, round-effect-start, round-effect-end");
+          } else {
+            console.warn("⚠️ Не удалось запустить все анимации collect_effect");
+          }
+        };
+
+        // Функция для проигрывания сценария "claw"
+        const playClaw = () => {
+          currentScenario = "claw";
+          
+          // 1. Запускаем анимацию collect в gem
+          spineGem.state.clearTrack(0);
+          spineGem.state.setEmptyAnimation(0, 0);
+          const gemCollectEntry = spineGem.state.setAnimation(0, "collect", false);
+          if (gemCollectEntry) {
+            gemCollectEntry.mixDuration = 0;
+            console.log("✅ Анимация 'collect' запущена в gem");
+          }
+
+          // 2. Показываем все экземпляры collect_effect перед запуском
+          spineRay.visible = true;
+          spineRoundStart.visible = true;
+          spineRoundEnd.visible = true;
+
+          // 3. Сбрасываем все экземпляры collect_effect в setup pose
+          [spineRay, spineRoundStart, spineRoundEnd].forEach(spine => {
+            spine.skeleton.setSlotsToSetupPose();
+            spine.skeleton.setBonesToSetupPose();
+            if (spine.skeleton.physics && spine.skeleton.physics.update) {
+              spine.skeleton.updateWorldTransform(spine.skeleton.physics.update);
+            }
+          });
+
+          // 4. Запускаем анимации на каждом экземпляре collect_effect одновременно
+          const rayEntry = spineRay.state.setAnimation(0, "ray", false);
+          const roundStartEntry = spineRoundStart.state.setAnimation(0, "round-effect-start", false);
+          const roundEndEntry = spineRoundEnd.state.setAnimation(0, "round-effect-end", false);
+
+          if (rayEntry) {
+            rayEntry.mixDuration = 0;
+          }
+          if (roundStartEntry) {
+            roundStartEntry.mixDuration = 0;
+          }
+          if (roundEndEntry) {
+            roundEndEntry.mixDuration = 0;
+          }
+
+          if (rayEntry && roundStartEntry && roundEndEntry) {
+            console.log("✅ Анимации collect_effect запущены: ray, round-effect-start, round-effect-end");
+          } else {
+            console.warn("⚠️ Не удалось запустить все анимации collect_effect");
+          }
+        };
+
+        // Настройка кнопок
+        document.getElementById("playRay").onclick = playRay;
+        document.getElementById("playDouble").onclick = playDouble;
+        document.getElementById("playClaw").onclick = playClaw;
+
+        // Обновление в ticker
+        app.ticker.add(() => {
+          // Обновляем все экземпляры
+          [spineRay, spineRoundStart, spineRoundEnd, spineGem, spineCoins, spineCoinsFontain].forEach(spine => {
+            if (spine && spine.skeleton && spine.skeleton.physics) {
+              spine.skeleton.updateWorldTransform(spine.skeleton.physics.update);
+            }
+          });
+        });
+
+        // Масштабирование обрабатывается через CSS в updateScale()
+
+        console.log("✅ Collect Ray Test загружен");
+      })()
+        .catch((err) => {
+          console.error(err);
+          document.body.innerHTML =
+            '<div style="color:#fff;font-family:monospace;padding:24px;">Ошибка: ' +
+            err.message +
+            "</div>";
+        });
+    </script>
+  </body>
+</html>
+

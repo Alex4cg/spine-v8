@@ -1,0 +1,301 @@
+{
+  "version": "1.0",
+  "description": "Конфигурация выигрышных комбинаций для каскадной слот-игры 6x5",
+  "gameType": "cascade",
+  "grid": {
+    "cols": 6,
+    "rows": 5
+  },
+  "winRules": {
+    "minSymbols": 7,
+    "description": "Минимальное количество одинаковых символов на поле для выигрыша"
+  },
+  "payouts": {
+    "5": {
+      "description": "5 одинаковых символов на поле",
+      "h1_lion": 0.5,
+      "h2_bull": 0.5,
+      "h3_bear": 0.5,
+      "h4_wolf": 0.5,
+      "l1_revolver": 0.5,
+      "l2_bottle": 0.5,
+      "l3_horseshoe": 0.5,
+      "l4_cactus": 0.5
+    },
+    "6": {
+      "description": "6 одинаковых символов на поле",
+      "h1_lion": 0.5,
+      "h2_bull": 0.5,
+      "h3_bear": 0.5,
+      "h4_wolf": 0.5,
+      "l1_revolver": 0.5,
+      "l2_bottle": 0.5,
+      "l3_horseshoe": 0.5,
+      "l4_cactus": 0.5
+    },
+    "7": {
+      "description": "7 одинаковых символов на поле",
+      "h1_lion": 0.5,
+      "h2_bull": 0.5,
+      "h3_bear": 0.5,
+      "h4_wolf": 0.5,
+      "l1_revolver": 0.5,
+      "l2_bottle": 0.5,
+      "l3_horseshoe": 0.5,
+      "l4_cactus": 0.5
+    },
+    "8": {
+      "description": "8 одинаковых символов на поле",
+      "h1_lion": 0.75,
+      "h2_bull": 0.75,
+      "h3_bear": 0.5,
+      "h4_wolf": 0.5,
+      "l1_revolver": 0.5,
+      "l2_bottle": 0.5,
+      "l3_horseshoe": 0.5,
+      "l4_cactus": 0.5
+    },
+    "9": {
+      "description": "9 одинаковых символов на поле",
+      "h1_lion": 0.75,
+      "h2_bull": 0.75,
+      "h3_bear": 0.5,
+      "h4_wolf": 0.5,
+      "l1_revolver": 0.5,
+      "l2_bottle": 0.5,
+      "l3_horseshoe": 0.5,
+      "l4_cactus": 0.5
+    },
+    "10": {
+      "description": "10 одинаковых символов на поле",
+      "h1_lion": 0.75,
+      "h2_bull": 0.75,
+      "h3_bear": 0.75,
+      "h4_wolf": 0.5,
+      "l1_revolver": 0.5,
+      "l2_bottle": 0.5,
+      "l3_horseshoe": 0.5,
+      "l4_cactus": 0.5
+    },
+    "11": {
+      "description": "11 одинаковых символов на поле",
+      "h1_lion": 1,
+      "h2_bull": 0.75,
+      "h3_bear": 0.75,
+      "h4_wolf": 0.5,
+      "l1_revolver": 0.5,
+      "l2_bottle": 0.5,
+      "l3_horseshoe": 0.5,
+      "l4_cactus": 0.5
+    },
+    "12": {
+      "description": "12 одинаковых символов на поле",
+      "h1_lion": 1,
+      "h2_bull": 0.75,
+      "h3_bear": 0.75,
+      "h4_wolf": 0.75,
+      "l1_revolver": 0.5,
+      "l2_bottle": 0.5,
+      "l3_horseshoe": 0.5,
+      "l4_cactus": 0.5
+    },
+    "13": {
+      "description": "13 одинаковых символов на поле",
+      "h1_lion": 1,
+      "h2_bull": 1,
+      "h3_bear": 0.75,
+      "h4_wolf": 0.75,
+      "l1_revolver": 0.5,
+      "l2_bottle": 0.5,
+      "l3_horseshoe": 0.5,
+      "l4_cactus": 0.5
+    },
+    "14": {
+      "description": "14 одинаковых символов на поле",
+      "h1_lion": 1.25,
+      "h2_bull": 1,
+      "h3_bear": 0.75,
+      "h4_wolf": 0.75,
+      "l1_revolver": 0.5,
+      "l2_bottle": 0.5,
+      "l3_horseshoe": 0.5,
+      "l4_cactus": 0.5
+    },
+    "15": {
+      "description": "15 одинаковых символов на поле",
+      "h1_lion": 1.25,
+      "h2_bull": 1.25,
+      "h3_bear": 1,
+      "h4_wolf": 0.75,
+      "l1_revolver": 0.5,
+      "l2_bottle": 0.5,
+      "l3_horseshoe": 0.5,
+      "l4_cactus": 0.5
+    },
+    "16": {
+      "description": "16 одинаковых символов на поле",
+      "h1_lion": 1.5,
+      "h2_bull": 1.25,
+      "h3_bear": 1,
+      "h4_wolf": 0.75,
+      "l1_revolver": 0.5,
+      "l2_bottle": 0.5,
+      "l3_horseshoe": 0.5,
+      "l4_cactus": 0.5
+    },
+    "17": {
+      "description": "17+ одинаковых символов на поле (редкий случай)",
+      "h1_lion": 1.75,
+      "h2_bull": 1.5,
+      "h3_bear": 1.25,
+      "h4_wolf": 1,
+      "l1_revolver": 0.5,
+      "l2_bottle": 0.5,
+      "l3_horseshoe": 0.5,
+      "l4_cactus": 0.5
+    },
+    "18": {
+      "description": "18+ одинаковых символов на поле",
+      "h1_lion": 2,
+      "h2_bull": 1.75,
+      "h3_bear": 1.25,
+      "h4_wolf": 1,
+      "l1_revolver": 0.75,
+      "l2_bottle": 0.75,
+      "l3_horseshoe": 0.75,
+      "l4_cactus": 0.75
+    },
+    "19": {
+      "description": "19+ одинаковых символов на поле",
+      "h1_lion": 2.5,
+      "h2_bull": 2,
+      "h3_bear": 1.5,
+      "h4_wolf": 1,
+      "l1_revolver": 0.75,
+      "l2_bottle": 0.75,
+      "l3_horseshoe": 0.75,
+      "l4_cactus": 0.75
+    },
+    "20": {
+      "description": "20 одинаковых символов на поле",
+      "h1_lion": 3.75,
+      "h2_bull": 3,
+      "h3_bear": 2,
+      "h4_wolf": 1.5,
+      "l1_revolver": 0.75,
+      "l2_bottle": 0.75,
+      "l3_horseshoe": 0.75,
+      "l4_cactus": 0.75
+    },
+    "21": {
+      "description": "21+ одинаковых символов на поле (максимум для сетки 6x5)",
+      "h1_lion": 4.5,
+      "h2_bull": 3.5,
+      "h3_bear": 2.5,
+      "h4_wolf": 1.75,
+      "l1_revolver": 1,
+      "l2_bottle": 1,
+      "l3_horseshoe": 1,
+      "l4_cactus": 1
+    },
+    "22": {
+      "description": "22+ одинаковых символов на поле",
+      "h1_lion": 5,
+      "h2_bull": 4,
+      "h3_bear": 2.75,
+      "h4_wolf": 1.75,
+      "l1_revolver": 1,
+      "l2_bottle": 1,
+      "l3_horseshoe": 1,
+      "l4_cactus": 1
+    },
+    "23": {
+      "description": "23+ одинаковых символов на поле",
+      "h1_lion": 5.75,
+      "h2_bull": 4.5,
+      "h3_bear": 3,
+      "h4_wolf": 2,
+      "l1_revolver": 1,
+      "l2_bottle": 1,
+      "l3_horseshoe": 1,
+      "l4_cactus": 1
+    },
+    "24": {
+      "description": "24+ одинаковых символов на поле",
+      "h1_lion": 6.25,
+      "h2_bull": 5,
+      "h3_bear": 3.5,
+      "h4_wolf": 2.25,
+      "l1_revolver": 1,
+      "l2_bottle": 1,
+      "l3_horseshoe": 1,
+      "l4_cactus": 1
+    },
+    "25": {
+      "description": "25+ одинаковых символов на поле",
+      "h1_lion": 7,
+      "h2_bull": 5.25,
+      "h3_bear": 3.75,
+      "h4_wolf": 2.5,
+      "l1_revolver": 1.25,
+      "l2_bottle": 1.25,
+      "l3_horseshoe": 1.25,
+      "l4_cactus": 1.25
+    },
+    "26": {
+      "description": "26+ одинаковых символов на поле",
+      "h1_lion": 8.25,
+      "h2_bull": 6.25,
+      "h3_bear": 4.5,
+      "h4_wolf": 2.75,
+      "l1_revolver": 1.25,
+      "l2_bottle": 1.25,
+      "l3_horseshoe": 1.25,
+      "l4_cactus": 1.25
+    },
+    "27": {
+      "description": "27+ одинаковых символов на поле",
+      "h1_lion": 10.25,
+      "h2_bull": 7.75,
+      "h3_bear": 5.25,
+      "h4_wolf": 3.5,
+      "l1_revolver": 1.5,
+      "l2_bottle": 1.5,
+      "l3_horseshoe": 1.5,
+      "l4_cactus": 1.5
+    },
+    "28": {
+      "description": "28+ одинаковых символов на поле",
+      "h1_lion": 12.25,
+      "h2_bull": 9.25,
+      "h3_bear": 6.25,
+      "h4_wolf": 4,
+      "l1_revolver": 1.75,
+      "l2_bottle": 1.75,
+      "l3_horseshoe": 1.75,
+      "l4_cactus": 1.75
+    },
+    "29": {
+      "description": "29+ одинаковых символов на поле",
+      "h1_lion": 14.75,
+      "h2_bull": 11.25,
+      "h3_bear": 7.75,
+      "h4_wolf": 4.75,
+      "l1_revolver": 2,
+      "l2_bottle": 2,
+      "l3_horseshoe": 2,
+      "l4_cactus": 2
+    },
+    "30": {
+      "description": "30 одинаковых символов на поле (весь экран для сетки 6x5)",
+      "h1_lion": 20,
+      "h2_bull": 15,
+      "h3_bear": 10.25,
+      "h4_wolf": 6.25,
+      "l1_revolver": 2.5,
+      "l2_bottle": 2.5,
+      "l3_horseshoe": 2.5,
+      "l4_cactus": 2.5
+    }
+  }
+}
