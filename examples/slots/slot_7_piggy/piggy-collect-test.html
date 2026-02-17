@@ -51,10 +51,16 @@
         const log = (msg) => console.log(`[pinata] ${msg}`);
         const waitNextFrame = () => new Promise((resolve) => requestAnimationFrame(resolve));
 
+        // Загружаем фон первым, чтобы получить его размеры для установки размера сцены
+        await PIXI.Assets.load([
+          { alias: "background", src: "./png/bg.png?v=" + Date.now() },
+        ]);
+        const bgTexture = PIXI.Assets.get("background");
+
         const app = new PIXI.Application();
         await app.init({
-          width: window.innerWidth,
-          height: window.innerHeight,
+          width: bgTexture.width,
+          height: bgTexture.height,
           backgroundColor: 0x000000,
           resolution: window.devicePixelRatio || 1,
           autoDensity: true,
@@ -67,6 +73,23 @@
         app.stage.hitArea = app.screen;
 
         const endDrag = () => {
+          // Сохраняем позиции всех костей системы при завершении drag
+          if (dragState.system && dragState.node) {
+            const convertPoint = { x: 0, y: 0 };
+            for (const { bone, handle, name } of dragState.system.controlBones) {
+              if (handle === dragState.node) {
+                // Обновляем позицию кости из handle перед сохранением
+                convertPoint.x = handle.x;
+                convertPoint.y = handle.y;
+                dragState.system.spine.pixiWorldCoordinatesToBone(convertPoint, bone);
+                bone.x = convertPoint.x;
+                bone.y = convertPoint.y;
+                // Сохраняем позицию
+                dragState.system.saveBonePosition(name, bone);
+                break;
+              }
+            }
+          }
           dragState.node = null;
           dragState.system = null;
         };
@@ -96,38 +119,28 @@
         }
 
         await PIXI.Assets.load([
-          { alias: "pinataSkeleton", src: "./spine/pinatas/skeleton.json" },
-          { alias: "pinataAtlas", src: "./spine/pinatas/skeleton.atlas" },
-          { alias: "pinataEmitter", src: "./particles/emitter.json" },
-          { alias: "particleBlue", src: "../../assets/pinatas/conf_blue.png" },
-          { alias: "particleGreen", src: "../../assets/pinatas/conf_green.png" },
-          { alias: "particleRed", src: "../../assets/pinatas/conf_red.png" },
-          { alias: "background", src: "../../assets/pinatas/bg.png?v=" + Date.now() },
+          { alias: "collectEffectSkeleton", src: "./spine/collect_effect/skeleton.json" },
+          { alias: "collectEffectAtlas", src: "./spine/collect_effect/skeleton.atlas" },
+          { alias: "collectEffectEmitter", src: "./spine/collect_effect/particles/emitter.json" },
+          { alias: "particleStar", src: "./particles/star.png" },
           { alias: "clawSkeleton", src: "./spine/pinatas/skeleton.json" },
           { alias: "clawAtlas", src: "./spine/pinatas/skeleton.atlas" },
         ]);
 
-        const rawEmitterConfig = PIXI.Assets.get("pinataEmitter");
+        const rawEmitterConfig = PIXI.Assets.get("collectEffectEmitter");
+        const starTexture = PIXI.Assets.get("particleStar");
+        // Используем одну белую звездочку для всех скинов
         const particleTextures = {
-          blue: PIXI.Assets.get("particleBlue"),
-          green: PIXI.Assets.get("particleGreen"),
-          red: PIXI.Assets.get("particleRed"),
+          blue: starTexture,
+          green: starTexture,
+          red: starTexture,
         };
 
-        // Создаём фоновое изображение
-        const bgTexture = PIXI.Assets.get("background");
+        // Создаём фоновое изображение (размер сцены уже соответствует размеру фона)
         const bgSprite = new PIXI.Sprite(bgTexture);
         bgSprite.zIndex = 0;
-        
-        // Масштабируем фон под размер экрана (cover mode - заполняет весь экран)
-        const scaleX = app.screen.width / bgTexture.width;
-        const scaleY = app.screen.height / bgTexture.height;
-        const scale = Math.max(scaleX, scaleY);
-        bgSprite.scale.set(scale);
-        
-        // Центрируем фон
-        bgSprite.x = (app.screen.width - bgTexture.width * scale) / 2;
-        bgSprite.y = (app.screen.height - bgTexture.height * scale) / 2;
+        bgSprite.x = 0;
+        bgSprite.y = 0;
         
         app.stage.addChild(bgSprite);
 
@@ -137,6 +150,51 @@
           atlas: "clawAtlas",
           scale: 1,
         });
+
+        // Функция для получения имени анимации по типу и уровню
+        // Эта функция будет автоматически определять правильные имена анимаций из skeleton
+        const getClawAnimation = (type, level) => {
+          // Сначала пробуем стандартные имена
+          const standardNames = {
+            idle: { 1: "00_idle_1", 2: "05_idle_2", 3: "10_idle_3" },
+            hit: { 1: "01_hit_1", 2: "06_hit_2", 3: "11_hit_3" },
+            hitup: { 1: "03_hitup_1", 2: "08_hitup_2" },
+            boom: { 1: "04_boom_1", 2: "09_boom_2", 3: "14_boom_3" }
+          };
+          
+          const standardName = standardNames[type]?.[level];
+          if (!standardName || !claw.skeleton.data.findAnimation(standardName)) {
+            // Если стандартное имя не найдено, ищем по паттерну
+            const availableAnimations = claw.skeleton.data.animations.map(a => a.name);
+            const pattern = new RegExp(`${type}.*${level}|${level}.*${type}`, 'i');
+            const found = availableAnimations.find(name => pattern.test(name));
+            if (found) {
+              return found;
+            }
+            // Если не найдено по паттерну, возвращаем стандартное имя (для отладки)
+            return standardName;
+          }
+          return standardName;
+        };
+        
+        // Функция для выбора типа анимации при попадании
+        const chooseHitAnimation = (level) => {
+          const rand = Math.random();
+          
+          if (level === 3) {
+            // На 3-м уровне только boom
+            return "boom";
+          }
+          
+          // Вероятности: hit (70%), hitup (20%), boom (10%)
+          if (rand < 0.7) {
+            return "hit";
+          } else if (rand < 0.9) {
+            return "hitup";
+          } else {
+            return "boom";
+          }
+        };
 
         // Устанавливаем физику, если нужно
         if (!claw.skeleton.physics) {
@@ -151,8 +209,8 @@
         claw.y = app.screen.height / 2 - 440; // Поднят на 440 пикселей
         claw.zIndex = 0.5; // Ниже систем, но выше фона
         
-        // Устанавливаем скин pinatas/blue по умолчанию
-        const blueSkin = claw.skeleton.data.findSkin("pinatas/blue");
+        // Устанавливаем скин blue по умолчанию (без префикса pinatas/)
+        const blueSkin = claw.skeleton.data.findSkin("blue");
         if (blueSkin) {
           claw.skeleton.setSkin(blueSkin);
           claw.skeleton.setSlotsToSetupPose();
@@ -161,12 +219,52 @@
             claw.skeleton.updateWorldTransform(claw.skeleton.physics.update);
           }
         } else {
-          log("Skin 'pinatas/blue' not found, available skins: " + 
-              claw.skeleton.data.skins.map(s => s.name).join(", "));
+          // Пробуем дефолтный скин
+          const defaultSkin = claw.skeleton.data.findSkin("default");
+          if (defaultSkin) {
+            claw.skeleton.setSkin(defaultSkin);
+            claw.skeleton.setSlotsToSetupPose();
+            if (claw.skeleton.physics && claw.skeleton.physics.update) {
+              claw.skeleton.updateWorldTransform(claw.skeleton.physics.update);
+            }
+            log("Skin 'blue' not found, using 'default' skin. Available skins: " + 
+                claw.skeleton.data.skins.map(s => s.name).join(", "));
+          } else {
+            log("ERROR: No skins found! Available skins: " + 
+                claw.skeleton.data.skins.map(s => s.name).join(", "));
+          }
         }
         
-        // Запускаем idle анимацию в цикле
-        claw.state.setAnimation(0, "00_idle_1", true);
+        // Выводим список доступных анимаций для отладки
+        const availableAnimations = claw.skeleton.data.animations.map(a => a.name);
+        log("Available pinatas animations: " + availableAnimations.join(", "));
+        
+        // Запускаем idle анимацию в цикле (если она существует)
+        const idleAnim = getClawAnimation("idle", 1);
+        if (idleAnim) {
+          // Проверяем, существует ли анимация перед попыткой запуска
+          const animExists = availableAnimations.includes(idleAnim);
+          if (animExists) {
+            const idleEntry = claw.state.setAnimation(0, idleAnim, true);
+            if (!idleEntry) {
+              log(`ERROR: Failed to set animation '${idleAnim}'`);
+            }
+          } else {
+            // Пробуем найти первую доступную idle анимацию
+            const foundIdle = availableAnimations.find(name => name.toLowerCase().includes("idle"));
+            if (foundIdle) {
+              log(`Animation '${idleAnim}' not found, using '${foundIdle}' instead`);
+              const idleEntry = claw.state.setAnimation(0, foundIdle, true);
+              if (!idleEntry) {
+                log(`ERROR: Failed to set animation '${foundIdle}'`);
+              }
+            } else {
+              log(`ERROR: Animation '${idleAnim}' not found and no idle animation available. Available: ${availableAnimations.join(", ")}`);
+            }
+          }
+        } else {
+          log("ERROR: Could not determine idle animation name");
+        }
         
         app.stage.addChild(claw);
         
@@ -201,51 +299,42 @@
             }
           }
           
-          // Запускаем idle анимацию в цикле
-          sidePinata.state.setAnimation(0, "00_idle_1", true);
+          // Запускаем idle анимацию в цикле (если она существует)
+          const availableAnimations = sidePinata.skeleton.data.animations.map(a => a.name);
+          const idleAnim = getClawAnimation("idle", 1);
+          if (idleAnim) {
+            const animExists = availableAnimations.includes(idleAnim);
+            if (animExists) {
+              const idleEntry = sidePinata.state.setAnimation(0, idleAnim, true);
+              if (!idleEntry) {
+                log(`ERROR: Failed to set animation '${idleAnim}' for side pinata`);
+              }
+            } else {
+              // Пробуем найти первую доступную idle анимацию
+              const foundIdle = availableAnimations.find(name => name.toLowerCase().includes("idle"));
+              if (foundIdle) {
+                const idleEntry = sidePinata.state.setAnimation(0, foundIdle, true);
+                if (!idleEntry) {
+                  log(`ERROR: Failed to set animation '${foundIdle}' for side pinata`);
+                }
+              } else {
+                log(`ERROR: Animation '${idleAnim}' not found for side pinata. Available: ${availableAnimations.join(", ")}`);
+              }
+            }
+          }
           
           app.stage.addChild(sidePinata);
           return sidePinata;
         };
         
-        // Создаем боковые пиньяты
+        // Создаем боковые пиньяты (скины без префикса pinatas/)
         const centerX = app.screen.width / 2;
-        const clawLeft = createSidePinata(centerX - 250, "pinatas/red");   // Красная слева
-        const clawRight = createSidePinata(centerX + 250, "pinatas/green"); // Зеленая справа
+        const clawLeft = createSidePinata(centerX - 250, "red");   // Красная слева
+        const clawRight = createSidePinata(centerX + 250, "green"); // Зеленая справа
         
         // Флаг для отслеживания состояния claw и текущий уровень
         let clawIsIdle = true;
         let clawLevel = 1; // Текущий уровень пиньяты (1, 2, 3)
-        
-        // Функция для получения имени анимации по типу и уровню
-        const getClawAnimation = (type, level) => {
-          const animations = {
-            idle: { 1: "00_idle_1", 2: "05_idle_2", 3: "10_idle_3" },
-            hit: { 1: "01_hit_1", 2: "06_hit_2", 3: "11_hit_3" },
-            hitup: { 1: "03_hitup_1", 2: "08_hitup_2" },
-            boom: { 1: "04_boom_1", 2: "09_boom_2", 3: "14_boom_3" }
-          };
-          return animations[type]?.[level];
-        };
-        
-        // Функция для выбора типа анимации при попадании
-        const chooseHitAnimation = (level) => {
-          const rand = Math.random();
-          
-          if (level === 3) {
-            // На 3-м уровне только boom
-            return "boom";
-          }
-          
-          // Вероятности: hit (70%), hitup (20%), boom (10%)
-          if (rand < 0.7) {
-            return "hit";
-          } else if (rand < 0.9) {
-            return "hitup";
-          } else {
-            return "boom";
-          }
-        };
 
         const controlBoneNames = [
           "control_point_1",
@@ -287,8 +376,8 @@
 
           async init() {
             this.spine = spine.Spine.from({
-              skeleton: "pinataSkeleton",
-              atlas: "pinataAtlas",
+              skeleton: "collectEffectSkeleton",
+              atlas: "collectEffectAtlas",
               scale: 1,
             });
 
@@ -307,27 +396,101 @@
             if (initialSkin) {
               this.spine.skeleton.setSkin(initialSkin);
               this.currentSkin = this.initialSkin;
+            } else {
+              // Если скин не найден, используем дефолтный скин
+              const defaultSkin = this.spine.skeleton.data.findSkin("default");
+              if (defaultSkin) {
+                this.spine.skeleton.setSkin(defaultSkin);
+                this.currentSkin = "default";
+                this.log(`[${this.id}] Initial skin '${this.initialSkin}' not found, using 'default' skin`);
+              } else {
+                // Если дефолтного нет, используем первый доступный
+                const availableSkins = this.spine.skeleton.data.skins;
+                if (availableSkins && availableSkins.length > 0) {
+                  const firstSkin = availableSkins[0];
+                  this.spine.skeleton.setSkin(firstSkin);
+                  this.currentSkin = firstSkin.name;
+                  this.log(`[${this.id}] Initial skin '${this.initialSkin}' not found, using first available skin: '${firstSkin.name}'`);
+                } else {
+                  this.log(`[${this.id}] ERROR: No skins available in skeleton`);
+                  this.currentSkin = null;
+                }
+              }
             }
 
-            this.setupControlBones();
-            this.setupEmitter(this.initialSkin);
+            await this.setupControlBones();
+            // Используем фактически установленный скин для эмиттера
+            const skinForEmitter = this.currentSkin || this.initialSkin;
+            this.setupEmitter(skinForEmitter);
             this.setupEvents();
           }
 
           ensurePhysics() {
+            if (!this.spine || !this.spine.skeleton) return;
             if (!this.spine.skeleton.physics) {
               this.spine.skeleton.physics = {
                 update: () => {},
                 updateGlobal: () => {},
               };
             }
+            // Дополнительная проверка - убеждаемся, что physics действительно установлен
+            if (!this.spine.skeleton.physics) {
+              console.warn(`[${this.id}] Failed to initialize physics`);
+            }
           }
 
-          setupControlBones() {
+          // Сохранение позиции кости в localStorage
+          saveBonePosition(boneName, bone) {
+            const key = `collectEffect_${this.id}_${boneName}`;
+            const position = { x: bone.x, y: bone.y };
+            try {
+              localStorage.setItem(key, JSON.stringify(position));
+              this.log(`[${this.id}] Saved position for ${boneName}: (${position.x.toFixed(2)}, ${position.y.toFixed(2)})`);
+            } catch (e) {
+              console.warn(`[${this.id}] Failed to save bone position for ${boneName}:`, e);
+            }
+          }
+
+          // Загрузка сохраненной позиции кости из localStorage
+          loadBonePosition(boneName) {
+            const key = `collectEffect_${this.id}_${boneName}`;
+            try {
+              const saved = localStorage.getItem(key);
+              if (saved) {
+                return JSON.parse(saved);
+              }
+            } catch (e) {
+              console.warn(`[${this.id}] Failed to load bone position for ${boneName}:`, e);
+            }
+            return null;
+          }
+
+          async setupControlBones() {
+            // Загружаем сохраненные позиции и устанавливаем их в кости
+            const savedPositions = new Map();
             for (const name of this.controlBoneNames) {
               const bone = this.spine.skeleton.findBone(name);
               if (!bone) continue;
 
+              const savedPos = this.loadBonePosition(name);
+              if (savedPos) {
+                savedPositions.set(name, savedPos);
+                // Устанавливаем позицию кости сразу
+                bone.x = savedPos.x;
+                bone.y = savedPos.y;
+                this.log(`[${this.id}] Loaded saved position for ${name}: (${savedPos.x.toFixed(2)}, ${savedPos.y.toFixed(2)})`);
+              }
+            }
+
+            // Ждем один кадр, чтобы Spine обновил world трансформации после установки позиций костей
+            await this.waitNextFrame();
+
+            // Теперь создаем handles с правильными world позициями
+            for (const name of this.controlBoneNames) {
+              const bone = this.spine.skeleton.findBone(name);
+              if (!bone) continue;
+
+              // Используем обновленные world координаты кости
               const world = { x: bone.worldX, y: bone.worldY };
               this.spine.skeletonToPixiWorldCoordinates(world);
 
@@ -350,7 +513,7 @@
               });
 
               this.stage.addChild(handle);
-              this.controlBones.push({ bone, handle });
+              this.controlBones.push({ bone, handle, name });
             }
 
             const convertPoint = { x: 0, y: 0 };
@@ -371,6 +534,9 @@
             this.stage.addChild(this.particleLayer);
 
             const texture = this.particleTextures[skinName] ?? null;
+            if (!texture) {
+              this.log(`[${this.id}] WARNING: Particle texture for skin '${skinName}' not found. Available textures: ${Object.keys(this.particleTextures).join(', ')}`);
+            }
             const emitterConfig = this.createEmitterConfig(texture);
             this.emitter = new this.particleNamespace.Emitter(
               this.particleLayer,
