@@ -1,0 +1,14 @@
+{
+  "stackContainer": {
+    "x": 320,
+    "y": 200,
+    "scale": 1,
+    "zIndex": 10
+  },
+  "fieldContainer": {
+    "x": 320,
+    "y": 400,
+    "scale": 1,
+    "zIndex": 20
+  }
+}
