@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Spine Pinata Dual Animations - Slot 7 Piggy</title>
+    <script src="../../assets/libs/pixi.min.js"></script>
+    <script src="../../assets/libs/spine-pixi.js"></script>
+    <script src="../../assets/libs/particle-emitter.min.js"></script>
+  </head>
+  <body style="margin:0;background:#1a1a1a;">
+    <div
+      id="controls"
+      style="position:absolute;top:20px;left:20px;z-index:1000;display:flex;flex-direction:column;gap:15px;"
+    >
+      <button
+        id="playAnimations"
+        style="padding:10px 20px;background:#ffaa00;color:#1a1a1a;border:none;border-radius:5px;cursor:pointer;font-size:14px;font-weight:600;"
+      >
+        Play Anim (All)
+      </button>
+      
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="color:white;font-size:12px;font-weight:600;">System A (Red):</div>
+        <div style="display:flex;gap:5px;">
+          <button id="skinA_Blue" style="padding:8px 15px;background:#0066ff;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;">Blue</button>
+          <button id="skinA_Green" style="padding:8px 15px;background:#00cc00;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;">Green</button>
+          <button id="skinA_Red" style="padding:8px 15px;background:#ff3333;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;">Red</button>
+        </div>
+      </div>
+      
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="color:white;font-size:12px;font-weight:600;">System B (Green):</div>
+        <div style="display:flex;gap:5px;">
+          <button id="skinB_Blue" style="padding:8px 15px;background:#0066ff;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;">Blue</button>
+          <button id="skinB_Green" style="padding:8px 15px;background:#00cc00;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;">Green</button>
+          <button id="skinB_Red" style="padding:8px 15px;background:#ff3333;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;">Red</button>
+        </div>
+      </div>
+      
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="color:white;font-size:12px;font-weight:600;">System C (Blue):</div>
+        <div style="display:flex;gap:5px;">
+          <button id="skinC_Blue" style="padding:8px 15px;background:#0066ff;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;">Blue</button>
+          <button id="skinC_Green" style="padding:8px 15px;background:#00cc00;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;">Green</button>
+          <button id="skinC_Red" style="padding:8px 15px;background:#ff3333;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;">Red</button>
+        </div>
+      </div>
+    </div>
+    <script>
+      (async () => {
+        const log = (msg) => console.log(`[pinata] ${msg}`);
+        const waitNextFrame = () => new Promise((resolve) => requestAnimationFrame(resolve));
+
+        const app = new PIXI.Application();
+        await app.init({
+          width: window.innerWidth,
+          height: window.innerHeight,
+          backgroundColor: 0x000000,
+          resolution: window.devicePixelRatio || 1,
+          autoDensity: true,
+        });
+        document.body.appendChild(app.canvas);
+        app.stage.sortableChildren = true;
+
+        const dragState = { node: null, system: null, lastX: 0, lastY: 0 };
+        app.stage.eventMode = "static";
+        app.stage.hitArea = app.screen;
+
+        const endDrag = () => {
+          dragState.node = null;
+          dragState.system = null;
+        };
+
+        app.stage
+          .on("pointerup", endDrag)
+          .on("pointerupoutside", endDrag)
+          .on("pointermove", ({ x, y }) => {
+            if (!dragState.node) return;
+            dragState.node.x += x - dragState.lastX;
+            dragState.node.y += y - dragState.lastY;
+            dragState.lastX = x;
+            dragState.lastY = y;
+          });
+
+        const particleNamespace =
+          (PIXI.particleEmitter && PIXI.particleEmitter.Emitter
+            ? PIXI.particleEmitter
+            : null) ??
+          (PIXI.particles && PIXI.particles.Emitter ? PIXI.particles : null) ??
+          (window.particleEmitter && window.particleEmitter.Emitter
+            ? window.particleEmitter
+            : null);
+
+        if (!particleNamespace || !particleNamespace.Emitter) {
+          throw new Error("particle-emitter plugin не найден");
+        }
+
+        await PIXI.Assets.load([
+          { alias: "pinataSkeleton", src: "./spine/pinatas/skeleton.json" },
+          { alias: "pinataAtlas", src: "./spine/pinatas/skeleton.atlas" },
+          { alias: "pinataEmitter", src: "./particles/emitter.json" },
+          { alias: "particleBlue", src: "../../assets/pinatas/conf_blue.png" },
+          { alias: "particleGreen", src: "../../assets/pinatas/conf_green.png" },
+          { alias: "particleRed", src: "../../assets/pinatas/conf_red.png" },
+          { alias: "background", src: "../../assets/pinatas/bg.png?v=" + Date.now() },
+          { alias: "clawSkeleton", src: "./spine/pinatas/skeleton.json" },
+          { alias: "clawAtlas", src: "./spine/pinatas/skeleton.atlas" },
+        ]);
+
+        const rawEmitterConfig = PIXI.Assets.get("pinataEmitter");
+        const particleTextures = {
+          blue: PIXI.Assets.get("particleBlue"),
+          green: PIXI.Assets.get("particleGreen"),
+          red: PIXI.Assets.get("particleRed"),
+        };
+
+        // Создаём фоновое изображение
+        const bgTexture = PIXI.Assets.get("background");
+        const bgSprite = new PIXI.Sprite(bgTexture);
+        bgSprite.zIndex = 0;
+        
+        // Масштабируем фон под размер экрана (cover mode - заполняет весь экран)
+        const scaleX = app.screen.width / bgTexture.width;
+        const scaleY = app.screen.height / bgTexture.height;
+        const scale = Math.max(scaleX, scaleY);
+        bgSprite.scale.set(scale);
+        
+        // Центрируем фон
+        bgSprite.x = (app.screen.width - bgTexture.width * scale) / 2;
+        bgSprite.y = (app.screen.height - bgTexture.height * scale) / 2;
+        
+        app.stage.addChild(bgSprite);
+
+        // Создаём Spine объект claw
+        const claw = spine.Spine.from({
+          skeleton: "clawSkeleton",
+          atlas: "clawAtlas",
+          scale: 1,
+        });
+
+        // Устанавливаем физику, если нужно
+        if (!claw.skeleton.physics) {
+          claw.skeleton.physics = {
+            update: () => {},
+            updateGlobal: () => {},
+          };
+        }
+
+        // Позиционируем claw (можно настроить позицию)
+        claw.x = app.screen.width / 2;
+        claw.y = app.screen.height / 2 - 440; // Поднят на 440 пикселей
+        claw.zIndex = 0.5; // Ниже систем, но выше фона
+        
+        // Устанавливаем скин pinatas/blue по умолчанию
+        const blueSkin = claw.skeleton.data.findSkin("pinatas/blue");
+        if (blueSkin) {
+          claw.skeleton.setSkin(blueSkin);
+          claw.skeleton.setSlotsToSetupPose();
+          // Используем заглушку physics
+          if (claw.skeleton.physics && claw.skeleton.physics.update) {
+            claw.skeleton.updateWorldTransform(claw.skeleton.physics.update);
+          }
+        } else {
+          log("Skin 'pinatas/blue' not found, available skins: " + 
+              claw.skeleton.data.skins.map(s => s.name).join(", "));
+        }
+        
+        // Запускаем idle анимацию в цикле
+        claw.state.setAnimation(0, "00_idle_1", true);
+        
+        app.stage.addChild(claw);
+        
+        // Функция для создания боковой пиньяты
+        const createSidePinata = (x, skinName) => {
+          const sidePinata = spine.Spine.from({
+            skeleton: "clawSkeleton",
+            atlas: "clawAtlas",
+            scale: 1,
+          });
+          
+          // Устанавливаем физику
+          if (!sidePinata.skeleton.physics) {
+            sidePinata.skeleton.physics = {
+              update: () => {},
+              updateGlobal: () => {},
+            };
+          }
+          
+          // Позиционируем
+          sidePinata.x = x;
+          sidePinata.y = app.screen.height / 2 - 440; // Та же высота, что и центральная
+          sidePinata.zIndex = 0.4; // Ниже центральной пиньяты
+          
+          // Устанавливаем скин
+          const skin = sidePinata.skeleton.data.findSkin(skinName);
+          if (skin) {
+            sidePinata.skeleton.setSkin(skin);
+            sidePinata.skeleton.setSlotsToSetupPose();
+            if (sidePinata.skeleton.physics && sidePinata.skeleton.physics.update) {
+              sidePinata.skeleton.updateWorldTransform(sidePinata.skeleton.physics.update);
+            }
+          }
+          
+          // Запускаем idle анимацию в цикле
+          sidePinata.state.setAnimation(0, "00_idle_1", true);
+          
+          app.stage.addChild(sidePinata);
+          return sidePinata;
+        };
+        
+        // Создаем боковые пиньяты
+        const centerX = app.screen.width / 2;
+        const clawLeft = createSidePinata(centerX - 250, "pinatas/red");   // Красная слева
+        const clawRight = createSidePinata(centerX + 250, "pinatas/green"); // Зеленая справа
+        
+        // Флаг для отслеживания состояния claw и текущий уровень
+        let clawIsIdle = true;
+        let clawLevel = 1; // Текущий уровень пиньяты (1, 2, 3)
+        
+        // Функция для получения имени анимации по типу и уровню
+        const getClawAnimation = (type, level) => {
+          const animations = {
+            idle: { 1: "00_idle_1", 2: "05_idle_2", 3: "10_idle_3" },
+            hit: { 1: "01_hit_1", 2: "06_hit_2", 3: "11_hit_3" },
+            hitup: { 1: "03_hitup_1", 2: "08_hitup_2" },
+            boom: { 1: "04_boom_1", 2: "09_boom_2", 3: "14_boom_3" }
+          };
+          return animations[type]?.[level];
+        };
+        
+        // Функция для выбора типа анимации при попадании
+        const chooseHitAnimation = (level) => {
+          const rand = Math.random();
+          
+          if (level === 3) {
+            // На 3-м уровне только boom
+            return "boom";
+          }
+          
+          // Вероятности: hit (70%), hitup (20%), boom (10%)
+          if (rand < 0.7) {
+            return "hit";
+          } else if (rand < 0.9) {
+            return "hitup";
+          } else {
+            return "boom";
+          }
+        };
+
+        const controlBoneNames = [
+          "control_point_1",
+          "control_point_1_t",
+          "control_point_2",
+          "control_point_2_t",
+        ];
+        const emitterBoneName = "trail_gradient1";
+        const animations = ["hit", "end_effect"];
+        const idleAnimationName = "null";
+        const initialSkin = "green";
+
+        class SpineEffectSystem {
+          constructor(options) {
+            this.id = options.id;
+            this.app = options.app;
+            this.stage = options.stage;
+            this.x = options.x;
+            this.y = options.y;
+            this.zIndexBase = options.zIndex ?? 1;
+            this.controlBoneNames = options.controlBoneNames;
+            this.emitterBoneName = options.emitterBoneName;
+            this.animations = options.animations;
+            this.idleAnimationName = options.idleAnimationName;
+            this.initialSkin = options.initialSkin;
+            this.rawEmitterConfig = options.rawEmitterConfig;
+            this.particleNamespace = options.particleNamespace;
+            this.particleTextures = options.particleTextures;
+            this.dragState = options.dragState;
+            this.waitNextFrame = options.waitNextFrame;
+            this.log = options.log;
+            this.controlPointColor = options.controlPointColor ?? 0xffffff;
+
+            this.controlBones = [];
+            this.activeTracks = new Set();
+            this.controlledTracks = [0, 1];
+            this.bonePoint = { x: 0, y: 0 };
+          }
+
+          async init() {
+            this.spine = spine.Spine.from({
+              skeleton: "pinataSkeleton",
+              atlas: "pinataAtlas",
+              scale: 1,
+            });
+
+            this.ensurePhysics();
+
+            this.spine.state.data.defaultMix = 0.1;
+            this.spine.x = this.x;
+            this.spine.y = this.y;
+            this.spine.zIndex = this.zIndexBase;
+            this.stage.addChild(this.spine);
+
+            await this.waitNextFrame();
+
+            // Устанавливаем начальный скин
+            const initialSkin = this.spine.skeleton.data.findSkin(this.initialSkin);
+            if (initialSkin) {
+              this.spine.skeleton.setSkin(initialSkin);
+              this.currentSkin = this.initialSkin;
+            }
+
+            this.setupControlBones();
+            this.setupEmitter(this.initialSkin);
+            this.setupEvents();
+          }
+
+          ensurePhysics() {
+            if (!this.spine.skeleton.physics) {
+              this.spine.skeleton.physics = {
+                update: () => {},
+                updateGlobal: () => {},
+              };
+            }
+          }
+
+          setupControlBones() {
+            for (const name of this.controlBoneNames) {
+              const bone = this.spine.skeleton.findBone(name);
+              if (!bone) continue;
+
+              const world = { x: bone.worldX, y: bone.worldY };
+              this.spine.skeletonToPixiWorldCoordinates(world);
+
+              const handle = new PIXI.Graphics()
+                .lineStyle({ width: 1, color: this.controlPointColor, alpha: 0.9 })
+                .beginFill(this.controlPointColor, 0.4)
+                .drawCircle(0, 0, 9)
+                .endFill();
+              handle.x = world.x;
+              handle.y = world.y;
+              handle.cursor = "pointer";
+              handle.eventMode = "static";
+              handle.zIndex = this.zIndexBase + 2;
+
+              handle.on("pointerdown", ({ x, y }) => {
+                this.dragState.node = handle;
+                this.dragState.system = this;
+                this.dragState.lastX = x;
+                this.dragState.lastY = y;
+              });
+
+              this.stage.addChild(handle);
+              this.controlBones.push({ bone, handle });
+            }
+
+            const convertPoint = { x: 0, y: 0 };
+            this.spine.beforeUpdateWorldTransforms = () => {
+              for (const { bone, handle } of this.controlBones) {
+                convertPoint.x = handle.x;
+                convertPoint.y = handle.y;
+                this.spine.pixiWorldCoordinatesToBone(convertPoint, bone);
+                bone.x = convertPoint.x;
+                bone.y = convertPoint.y;
+              }
+            };
+          }
+
+          setupEmitter(skinName) {
+            this.particleLayer = new PIXI.Container();
+            this.particleLayer.zIndex = this.zIndexBase + 1;
+            this.stage.addChild(this.particleLayer);
+
+            const texture = this.particleTextures[skinName] ?? null;
+            const emitterConfig = this.createEmitterConfig(texture);
+            this.emitter = new this.particleNamespace.Emitter(
+              this.particleLayer,
+              emitterConfig
+            );
+            this.emitter.autoUpdate = true;
+            this.emitter.emit = false;
+
+            this.targetBone = this.spine.skeleton.findBone(this.emitterBoneName);
+          }
+
+          createEmitterConfig(texture) {
+            const clone = JSON.parse(JSON.stringify(this.rawEmitterConfig));
+            if (this.particleNamespace.upgradeConfig) {
+              return this.particleNamespace.upgradeConfig(clone, texture ? [texture] : []);
+            }
+            if (texture) {
+              clone.texture = texture;
+            }
+            return clone;
+          }
+
+          updateEmitterTexture(skinName) {
+            const texture = this.particleTextures[skinName];
+            if (!texture || !this.emitter) return;
+
+            let updated = false;
+            
+            // Пробуем найти behavior через разные пути
+            const behaviorPaths = [
+              this.emitter.behaviors,
+              this.emitter.initBehaviors,
+              this.emitter._behaviors,
+              this.emitter.config?.behaviors
+            ];
+
+            for (const behaviors of behaviorPaths) {
+              if (!behaviors || !Array.isArray(behaviors)) continue;
+              
+              for (const behavior of behaviors) {
+                if (!behavior) continue;
+                
+                // Проверяем разные возможные типы
+                const behaviorType = behavior.type || behavior.constructor?.name || '';
+                if (behaviorType.includes('texture') || behaviorType.includes('Texture')) {
+                  if (behavior.texture !== undefined) {
+                    behavior.texture = texture;
+                    updated = true;
+                    this.log(`[${this.id}] Texture updated via behavior type: ${behaviorType}`);
+                    break;
+                  }
+                }
+              }
+              if (updated) break;
+            }
+
+            if (updated) {
+              this.log(`[${this.id}] Skin and particles switched to: ${skinName}`);
+              return;
+            }
+
+            // Если не удалось обновить напрямую, пересоздаем эмиттер
+            this.log(`[${this.id}] Could not update texture directly, recreating emitter for ${skinName}`);
+            this.recreateEmitter(texture);
+          }
+
+          recreateEmitter(texture) {
+            if (!this.emitter) return;
+
+            const wasEmitting = this.emitter.emit;
+            const position = { x: 0, y: 0 };
+            if (this.targetBone) {
+              position.x = this.targetBone.worldX;
+              position.y = this.targetBone.worldY;
+              this.spine.skeletonToPixiWorldCoordinates(position);
+            }
+
+            this.emitter.emit = false;
+            this.emitter.autoUpdate = false;
+
+            try {
+              this.emitter.destroy();
+            } catch (error) {
+              this.log(`Error destroying emitter: ${error.message}`);
+            }
+
+            this.particleLayer.removeChildren();
+
+            const newConfig = this.createEmitterConfig(texture);
+            this.emitter = new this.particleNamespace.Emitter(
+              this.particleLayer,
+              newConfig
+            );
+            this.emitter.autoUpdate = true;
+            this.emitter.emit = wasEmitting;
+            this.emitter.updateOwnerPos(position.x, position.y);
+          }
+
+          setupEvents() {
+            this.spine.state.addListener({
+              start: (entry) => {
+                if (!this.isControlledTrack(entry.trackIndex)) return;
+                if (entry.animation && entry.animation.name !== this.idleAnimationName) {
+                  this.activeTracks.add(entry.trackIndex);
+                }
+              },
+              event: (entry, event) => {
+                if (!this.isControlledTrack(entry.trackIndex)) return;
+                if (!event?.data?.name) return;
+                const name = event.data.name;
+                this.log(`[${this.id}] Event received: "${name}"`);
+                if (name === "p_on") {
+                  this.emitter.emit = true;
+                  this.log(`[${this.id}] Particles ON`);
+                } else if (name === "p_off") {
+                  this.emitter.emit = false;
+                  this.log(`[${this.id}] Particles OFF`);
+                }
+              },
+              complete: (entry) => this.handleTrackStop(entry.trackIndex),
+              end: (entry) => this.handleTrackStop(entry.trackIndex),
+              interrupt: (entry) => this.handleTrackStop(entry.trackIndex),
+              dispose: (entry) => this.handleTrackStop(entry.trackIndex),
+            });
+          }
+
+          isControlledTrack(trackIndex) {
+            return this.controlledTracks.includes(trackIndex);
+          }
+
+          handleTrackStop(trackIndex) {
+            if (!this.isControlledTrack(trackIndex)) return;
+            this.activeTracks.delete(trackIndex);
+            this.emitter.emit = false;
+            // Не переключаем на idle здесь - это будет сделано в play() при следующем запуске
+          }
+
+          setTrackToIdle(trackIndex) {
+            const current = this.spine.state.getCurrent(trackIndex);
+            if (
+              current &&
+              current.animation &&
+              current.animation.name === this.idleAnimationName
+            ) {
+              return;
+            }
+            const idleEntry = this.spine.state.setAnimation(
+              trackIndex,
+              this.idleAnimationName,
+              true
+            );
+            if (idleEntry) {
+              idleEntry.mixDuration = 0;
+              idleEntry.mixTime = idleEntry.mixDuration;
+            }
+          }
+
+          setSkin(skinName) {
+            const skin = this.spine.skeleton.data.findSkin(skinName);
+            if (!skin) {
+              this.log(`[${this.id}] Skin '${skinName}' not found`);
+              return;
+            }
+
+            requestAnimationFrame(() => {
+              this.spine.skeleton.setSkin(skin);
+              this.spine.skeleton.setSlotsToSetupPose();
+              this.spine.skeleton.updateWorldTransform(spine.Physics.update);
+              this.currentSkin = skinName;
+              this.updateEmitterTexture(skinName);
+            });
+          }
+
+          play() {
+            // Выключаем эмиттер перед запуском
+            this.emitter.emit = false;
+            this.activeTracks.clear();
+            
+            // Очищаем только контролируемые треки
+            this.controlledTracks.forEach((track) => {
+              this.spine.state.clearTrack(track);
+            });
+
+            // Небольшая задержка для гарантии, что треки очищены
+            requestAnimationFrame(() => {
+              const firstAnimation = this.animations[0];
+              const secondAnimation = this.animations[1];
+
+              // Запускаем анимации заново
+              const entryA = this.spine.state.setAnimation(
+                this.controlledTracks[0],
+                firstAnimation,
+                false
+              );
+              if (entryA) {
+                entryA.mixDuration = 0.1;
+                this.log(`[${this.id}] Track ${this.controlledTracks[0]} set to ${firstAnimation}`);
+              } else {
+                this.log(`[${this.id}] Failed to set animation on track ${this.controlledTracks[0]}`);
+              }
+
+              const entryB = this.spine.state.setAnimation(
+                this.controlledTracks[1],
+                secondAnimation,
+                false
+              );
+              if (entryB) {
+                entryB.mixDuration = 0.1;
+                this.log(`[${this.id}] Track ${this.controlledTracks[1]} set to ${secondAnimation}`);
+              } else {
+                this.log(`[${this.id}] Failed to set animation on track ${this.controlledTracks[1]}`);
+              }
+
+              if (typeof this.emitter.resetPositionTracking === "function") {
+                this.emitter.resetPositionTracking();
+              }
+
+              this.log(`[${this.id}] Animations restarted`);
+            });
+          }
+
+          update() {
+            if (this.spine && this.spine.skeleton && this.spine.skeleton.physics) {
+              this.spine.skeleton.updateWorldTransform(spine.Physics.update);
+            }
+
+            if (!this.targetBone || !this.emitter) return;
+            this.bonePoint.x = this.targetBone.worldX;
+            this.bonePoint.y = this.targetBone.worldY;
+            this.spine.skeletonToPixiWorldCoordinates(this.bonePoint);
+            this.emitter.updateOwnerPos(this.bonePoint.x, this.bonePoint.y);
+          }
+        }
+
+        const systems = [];
+
+        const createSystem = async (config) => {
+          const system = new SpineEffectSystem({
+            ...config,
+            app,
+            stage: app.stage,
+            controlBoneNames,
+            emitterBoneName,
+            animations,
+            idleAnimationName,
+            initialSkin,
+            rawEmitterConfig,
+            particleNamespace,
+            particleTextures,
+            dragState,
+            waitNextFrame,
+            log,
+          });
+          await system.init();
+          systems.push(system);
+          return system;
+        };
+
+        // Создаём 3 системы, расположенные вертикально одна над другой
+        const systemSpacing = 250; // Расстояние между системами
+        const startY = app.screen.height - 200; // Начальная позиция снизу
+        
+        const systemA = await createSystem({ 
+          id: "a", 
+          x: app.screen.width / 2, 
+          y: startY - systemSpacing * 2,
+          controlPointColor: 0xff0000 // Красный
+        });
+        await createSystem({ 
+          id: "b", 
+          x: app.screen.width / 2, 
+          y: startY - systemSpacing,
+          controlPointColor: 0x00ff00 // Зелёный
+        });
+        await createSystem({ 
+          id: "c", 
+          x: app.screen.width / 2, 
+          y: startY,
+          controlPointColor: 0x0000ff // Синий
+        });
+        
+        // Слушаем события от системы "a" для управления claw
+        systemA.spine.state.addListener({
+          event: (entry, event) => {
+            if (!event?.data?.name) return;
+            const eventName = event.data.name;
+            
+            // Обрабатываем только событие collect_effect_hit
+            if (eventName === "collect_effect_hit" && clawIsIdle) {
+              clawIsIdle = false;
+              
+              // Останавливаем текущую анимацию (idle) и очищаем трек
+              claw.state.clearTrack(0);
+              
+              // Выбираем тип анимации на основе уровня
+              const animType = chooseHitAnimation(clawLevel);
+              const animName = getClawAnimation(animType, clawLevel);
+              
+              if (animName) {
+                // Небольшая задержка для гарантии, что трек очищен
+                requestAnimationFrame(() => {
+                  const entry = claw.state.setAnimation(0, animName, false);
+                  if (entry) {
+                    entry.mixDuration = 0.3; // Плавный переход
+                    log(`Claw: Level ${clawLevel}, playing ${animName} (${animType})`);
+                  } else {
+                    log(`Claw: Failed to set animation ${animName}`);
+                    clawIsIdle = true;
+                  }
+                });
+              } else {
+                log(`Claw: Animation not found for ${animType} at level ${clawLevel}`);
+                clawIsIdle = true;
+              }
+            }
+          }
+        });
+        
+        // Слушаем завершение анимаций claw для обработки переходов между уровнями
+        claw.state.addListener({
+          complete: (entry) => {
+            if (!entry.animation) return;
+            const animName = entry.animation.name;
+            log(`Claw: animation complete - ${animName}, clawIsIdle: ${clawIsIdle}, track: ${entry.trackIndex}`);
+            
+            // Обрабатываем только трек 0 и только если не idle
+            if (entry.trackIndex !== 0 || clawIsIdle) return;
+            
+            // Игнорируем idle анимации (они играют в цикле)
+            if (animName.includes("idle")) return;
+            
+            handleClawAnimationComplete(animName);
+          }
+        });
+        
+        // Функция для обработки завершения анимации
+        const handleClawAnimationComplete = (animName) => {
+          if (!animName) return;
+          
+          // Определяем тип анимации по имени
+          let animType = null;
+          if (animName.includes("hit_") && !animName.includes("hitup") && !animName.includes("boom")) {
+            animType = "hit";
+          } else if (animName.includes("hitup")) {
+            animType = "hitup";
+          } else if (animName.includes("boom")) {
+            animType = "boom";
+          }
+          
+          // Функция для установки idle анимации
+          const setIdleAnimation = (level, resetPose = false) => {
+            const idleAnim = getClawAnimation("idle", level);
+            if (idleAnim) {
+              // Устанавливаем clawIsIdle в false перед установкой анимации
+              clawIsIdle = false;
+              
+              // Очищаем все треки
+              claw.state.clearTracks();
+              
+              // Если нужно сбросить в начальное состояние (после boom)
+              if (resetPose) {
+                claw.skeleton.setToSetupPose();
+                // Используем заглушку physics, если она есть
+                if (claw.skeleton.physics && claw.skeleton.physics.update) {
+                  claw.skeleton.updateWorldTransform(claw.skeleton.physics.update);
+                } else {
+                  // Если physics нет, создаем заглушку
+                  if (!claw.skeleton.physics) {
+                    claw.skeleton.physics = {
+                      update: () => {},
+                      updateGlobal: () => {},
+                    };
+                  }
+                  claw.skeleton.updateWorldTransform(claw.skeleton.physics.update);
+                }
+                log(`Claw: skeleton reset to setup pose`);
+              }
+              
+              requestAnimationFrame(() => {
+                const entry = claw.state.setAnimation(0, idleAnim, true);
+                if (entry) {
+                  entry.mixDuration = 0.3; // Плавный переход
+                  clawIsIdle = true;
+                  log(`Claw: returned to ${idleAnim} (level ${level})`);
+                } else {
+                  log(`Claw: Failed to set idle animation ${idleAnim}`);
+                  clawIsIdle = true;
+                }
+              });
+            } else {
+              log(`Claw: Idle animation not found for level ${level}`);
+              clawIsIdle = true;
+            }
+          };
+          
+          if (animType === "hit") {
+            // После hit остаемся на том же уровне
+            setIdleAnimation(clawLevel);
+          } else if (animType === "hitup") {
+            // После hitup переходим на следующий уровень
+            if (clawLevel < 3) {
+              clawLevel++;
+              setIdleAnimation(clawLevel);
+              log(`Claw: level up to ${clawLevel}`);
+            } else {
+              // Уже на 3-м уровне, возвращаемся к idle
+              setIdleAnimation(clawLevel);
+            }
+          } else if (animType === "boom") {
+            // После boom сбрасываемся на первый уровень и в начальное состояние
+            clawLevel = 1;
+            log(`Claw: reset to level ${clawLevel} with pose reset`);
+            setIdleAnimation(clawLevel, true); // true = сброс в setup pose
+          } else {
+            // Неизвестная анимация, возвращаемся к idle текущего уровня
+            log(`Claw: unknown animation type: ${animName}, returned to idle`);
+            setIdleAnimation(clawLevel);
+          }
+        };
+
+        const playAll = () => systems.forEach((system) => system.play());
+        
+        // Функция для получения системы по ID
+        const getSystemById = (id) => systems.find((s) => s.id === id);
+
+        // Общая кнопка Play для всех систем
+        document.getElementById("playAnimations").onclick = playAll;
+        
+        // Отдельные кнопки скинов для системы A
+        document.getElementById("skinA_Blue").onclick = () => getSystemById("a")?.setSkin("blue");
+        document.getElementById("skinA_Green").onclick = () => getSystemById("a")?.setSkin("green");
+        document.getElementById("skinA_Red").onclick = () => getSystemById("a")?.setSkin("red");
+        
+        // Отдельные кнопки скинов для системы B
+        document.getElementById("skinB_Blue").onclick = () => getSystemById("b")?.setSkin("blue");
+        document.getElementById("skinB_Green").onclick = () => getSystemById("b")?.setSkin("green");
+        document.getElementById("skinB_Red").onclick = () => getSystemById("b")?.setSkin("red");
+        
+        // Отдельные кнопки скинов для системы C
+        document.getElementById("skinC_Blue").onclick = () => getSystemById("c")?.setSkin("blue");
+        document.getElementById("skinC_Green").onclick = () => getSystemById("c")?.setSkin("green");
+        document.getElementById("skinC_Red").onclick = () => getSystemById("c")?.setSkin("red");
+
+        // Не вызываем setSkinAll при инициализации, так как эмиттеры уже созданы с правильной текстурой
+        // setSkinAll(initialSkin);
+
+        app.ticker.add(() => {
+          systems.forEach((system) => system.update());
+          
+          // Обновляем claw
+          if (claw && claw.skeleton && claw.skeleton.physics) {
+            claw.skeleton.updateWorldTransform(claw.skeleton.physics.update);
+          }
+          
+          // Обновляем боковые пиньяты
+          if (clawLeft && clawLeft.skeleton && clawLeft.skeleton.physics) {
+            clawLeft.skeleton.updateWorldTransform(clawLeft.skeleton.physics.update);
+          }
+          if (clawRight && clawRight.skeleton && clawRight.skeleton.physics) {
+            clawRight.skeleton.updateWorldTransform(clawRight.skeleton.physics.update);
+          }
+        });
+      })()
+        .catch((err) => {
+          console.error(err);
+          document.body.innerHTML =
+            '<div style="color:#fff;font-family:monospace;padding:24px;">Ошибка: ' +
+            err.message +
+            "</div>";
+        });
+    </script>
+  </body>
+</html>
