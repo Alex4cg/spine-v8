@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>8 March - Duck Hunt Prototype</title>
+  <style>
+    @font-face {
+      font-family: 'Press Start 2P';
+      src: url('./font/PressStart2P-Regular.ttf') format('truetype');
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #101820;
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+      position: relative;
+      color: #fff;
+    }
+
+    #game-container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      background: #182430;
+      border: 2px solid #2b3b4c;
+      box-shadow: 0 0 24px rgba(0, 0, 0, 0.6);
+      transform-origin: center center;
+    }
+
+    #ui-overlay {
+      position: absolute;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    /* Элементы отладки — скрыты */
+    #hint {
+      display: none;
+      padding: 6px 12px;
+      background: rgba(0, 0, 0, 0.5);
+      border-radius: 4px;
+      font-size: 14px;
+      pointer-events: auto;
+    }
+
+    #wave-info {
+      display: none;
+      padding: 4px 10px;
+      background: rgba(0, 0, 0, 0.35);
+      border-radius: 4px;
+      font-size: 13px;
+      pointer-events: auto;
+    }
+
+    #controls-toggle-button {
+      display: none;
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 10001;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      padding: 8px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    #controls-toggle-button:hover {
+      background: rgba(0, 0, 0, 0.9);
+    }
+    #controls {
+      display: none !important;
+      position: fixed;
+      top: 50px;
+      right: 20px;
+      z-index: 10000;
+    }
+
+    #start-screen {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 20000;
+    }
+
+    #start-screen-inner {
+      width: 1024px;
+      height: 1024px;
+      background: #000 url('./png/load_page_V2.png') center center / contain no-repeat;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transform-origin: center center;
+    }
+
+    @keyframes start-btn-flicker {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    #start-button {
+      width: 600px;
+      height: 240px;
+      padding: 0;
+      font-size: 0;
+      border: none;
+      cursor: pointer;
+      background: url('./png/START_BTN.png') center center / contain no-repeat;
+      background-color: transparent;
+      text-indent: -9999px;
+      animation: start-btn-flicker 1.2s ease-in-out infinite;
+    }
+
+    #start-button:hover {
+      animation: none;
+      opacity: 1;
+    }
+
+    #result-screen {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 21000;
+    }
+
+    #result-box {
+      background-color: transparent;
+      background-image: url('./png/banner_plate.png');
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: contain;
+      padding: 24px 40px;
+      text-align: center;
+      min-width: 320px;
+      min-height: 180px;
+      max-width: 420px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #result-title {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+
+    #result-subtitle {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 12px;
+      opacity: 0.9;
+    }
+  </style>
+</head>
+<body>
+  <div id="start-screen">
+    <div id="start-screen-inner">
+      <button id="start-button">СТАРТ</button>
+    </div>
+  </div>
+  <div id="game-container">
+    <div id="ui-overlay">
+      <div id="hint">3 патрона на волну · кликайте, чтобы стрелять</div>
+      <div id="wave-info">Волна скоро начнётся…</div>
+    </div>
+  </div>
+
+  <div id="result-screen">
+    <div id="result-box">
+      <div id="result-title"></div>
+      <div id="result-subtitle"></div>
+    </div>
+  </div>
+
+  <!-- Локальные библиотеки PIXI и Spine -->
+  <script src="../../assets/libs/pixi.min.js"></script>
+  <script src="../../assets/libs/spine-pixi.js"></script>
+
+  <script type="module">
+    import './game.js';
+
+    // Масштабируем контейнер как в slot_1 под окно
+    const container = document.getElementById('game-container');
+    const startScreenInner = document.getElementById('start-screen-inner');
+    const GAME_SIZE = 1024;
+
+    const updateScale = () => {
+      const windowWidth = Math.min(window.innerWidth, document.documentElement.clientWidth || window.innerWidth);
+      const windowHeight = Math.min(window.innerHeight, document.documentElement.clientHeight || window.innerHeight);
+
+      const scaleX = windowWidth / GAME_SIZE;
+      const scaleY = windowHeight / GAME_SIZE;
+      let scale = Math.min(scaleX, scaleY);
+      scale = Math.max(0.4, Math.min(scale, 1.5));
+
+      container.style.width = GAME_SIZE + 'px';
+      container.style.height = GAME_SIZE + 'px';
+      container.style.transform = `translate(-50%, -50%) scale(${scale})`;
+
+      if (startScreenInner) {
+        startScreenInner.style.transform = `scale(${scale})`;
+      }
+    };
+
+    updateScale();
+    window.addEventListener('resize', updateScale);
+    window.addEventListener('orientationchange', () => {
+      setTimeout(updateScale, 150);
+    });
+
+    const startButton = document.getElementById('start-button');
+    if (startButton) {
+      startButton.addEventListener('click', () => {
+        const startFn = window.startDuckHuntGame;
+        if (typeof startFn === 'function') {
+          startFn();
+        }
+      });
+    }
+  </script>
+</body>
+</html>
+
