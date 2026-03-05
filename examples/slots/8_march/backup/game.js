@@ -102,7 +102,7 @@ function playDogBarkSequence(repeats, intervalMs = 400) {
 const DUCK_FLIGHT_BOTTOM_Y = 670; // нижняя граница, здесь появляются утки
 
 class Duck {
-  constructor(app, startX, startY, heartIndex = null, skinName = '1') {
+  constructor(app, startX, startY, heartIndex = null) {
     this.app = app;
     this.heartIndex = heartIndex;
     this.graphics = new PIXI.Graphics();
@@ -141,7 +141,8 @@ class Duck {
         if (!duckSpine.skeleton.physics) {
           duckSpine.skeleton.physics = { update: () => {}, updateGlobal: () => {} };
         }
-        duckSpine.skeleton.setSkinByName(skinName);
+        // Skin "1" содержит девочку для утки
+        duckSpine.skeleton.setSkinByName('1');
         duckSpine.skeleton.setSlotsToSetupPose();
         duckSpine.state.setAnimation(0, 'fly', true);
         duckSpine.scale.set(0.7);
@@ -756,13 +757,6 @@ function rectsOverlap(a, b) {
     targetLayer.addChild(spineInstance);
     targetLayer.sortChildren();
 
-    if (animName === 'win' || animName === 'loss') {
-      const useAltSkins = state.ducksHit >= 8;
-      if (animName === 'win') spineInstance.skeleton.setSkinByName(useAltSkins ? 'tim' : 'orig');
-      else spineInstance.skeleton.setSkinByName(useAltSkins ? 'pavel' : 'orig');
-    }
-    spineInstance.skeleton.setSlotsToSetupPose();
-
     const entry = spineInstance.state.setAnimation(0, animName, false);
     if (!entry) return;
 
@@ -821,22 +815,12 @@ function rectsOverlap(a, b) {
       state.ducksHit = 0;
       state.gameEnded = false;
       state.nextHeartIndex = 0;
-      const duckSkinNames = Array.from({ length: 16 }, (_, i) => String(i + 1));
-      for (let i = duckSkinNames.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [duckSkinNames[i], duckSkinNames[j]] = [duckSkinNames[j], duckSkinNames[i]];
-      }
-      state.shuffledDuckSkins = duckSkinNames;
       if (app.setHeartState) {
         for (let i = 0; i < NUM_HEARTS; i++) app.setHeartState(i, 'idle');
       }
       if (app.heartEndContainer) {
         app.heartEndContainer.removeChildren();
         app.heartEndContainer.visible = false;
-      }
-      if (app.heartPulseTicker) {
-        app.ticker.remove(app.heartPulseTicker);
-        app.heartPulseTicker = null;
       }
     }, 2000);
   }
@@ -864,10 +848,9 @@ function rectsOverlap(a, b) {
     for (let i = 0; i < NUM_DUCKS_PER_WAVE; i++) {
       const heartIndex = state.nextHeartIndex;
       state.nextHeartIndex = Math.min(state.nextHeartIndex + 1, NUM_HEARTS);
-      const skinName = state.shuffledDuckSkins[heartIndex];
       const startX = Math.random() * GAME_SIZE;
       const startY = DUCK_FLIGHT_BOTTOM_Y; // появляются от нижней границы области полёта
-      const duck = new Duck(app, startX, startY, heartIndex, skinName);
+      const duck = new Duck(app, startX, startY, heartIndex);
       state.ducks.push(duck);
       app.setHeartState(heartIndex, 'loop');
     }
@@ -1048,29 +1031,7 @@ function rectsOverlap(a, b) {
       }
       if (allDone) {
         app.ticker.remove(tickReveal);
-        container.children.forEach(c => {
-          delete c.revealAt;
-          c.pulsePhase = Math.random() * Math.PI * 2;
-          c.pulseFreq = 0.4 + Math.random() * 0.8;
-          c.baseScale = 1;
-        });
-        const pulseStartMs = performance.now();
-        const tickPulse = () => {
-          if (container.children.length === 0) {
-            app.ticker.remove(tickPulse);
-            if (app.heartPulseTicker === tickPulse) app.heartPulseTicker = null;
-            return;
-          }
-          const tSec = (performance.now() - pulseStartMs) / 1000;
-          for (let i = 0; i < container.children.length; i++) {
-            const c = container.children[i];
-            if (c.pulsePhase == null) continue;
-            const s = c.baseScale * (1 + 0.12 * Math.sin(tSec * 2 * Math.PI * c.pulseFreq + c.pulsePhase));
-            c.scale.set(s);
-          }
-        };
-        app.heartPulseTicker = tickPulse;
-        app.ticker.add(tickPulse);
+        container.children.forEach(c => { delete c.revealAt; });
       }
     };
     app.ticker.add(tickReveal);

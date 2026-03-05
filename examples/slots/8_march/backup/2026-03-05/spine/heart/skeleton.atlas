@@ -1,0 +1,7 @@
+skeleton.png
+size:128,64
+filter:Linear,Linear
+images/heart
+bounds:43,2,39,33
+images/heart_red
+bounds:2,2,39,33

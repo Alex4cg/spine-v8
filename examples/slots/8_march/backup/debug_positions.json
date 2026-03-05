@@ -1,0 +1,29 @@
+{
+  "dogStart": {
+    "x": 435,
+    "y": 706,
+    "scale": 1,
+    "zIndex": 500
+  },
+  "dogWin": {
+    "x": 619,
+    "y": 648,
+    "scale": 1,
+    "zIndex": 1
+  },
+  "dogLose": {
+    "x": 393,
+    "y": 658,
+    "scale": 1,
+    "zIndex": 2
+  },
+  "barr": {
+    "x": 65,
+    "y": 851,
+    "scale": 1,
+    "zIndex": 30
+  },
+  "checkboxes": {
+    "debugContainersVisible": false
+  }
+}

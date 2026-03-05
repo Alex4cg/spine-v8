@@ -1,0 +1,6 @@
+rose.png
+size:128,64
+filter:Linear,Linear
+images/rose
+bounds:2,2,43,73
+rotate:90
