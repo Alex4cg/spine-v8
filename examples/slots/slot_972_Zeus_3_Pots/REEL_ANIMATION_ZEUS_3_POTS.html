@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+body {
+  background-color: white;
+  color: #333;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  line-height: 1.6;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 20px;
+}
+h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; }
+h2 { color: #34495e; margin-top: 28px; border-bottom: 2px solid #ecf0f1; padding-bottom: 6px; }
+h3 { color: #555; margin-top: 20px; }
+code { background-color: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-family: 'Courier New', monospace; }
+pre { background-color: #f4f4f4; padding: 12px; border-radius: 5px; overflow-x: auto; }
+ul, ol { margin: 8px 0 8px 22px; }
+li { margin: 4px 0; }
+blockquote { border-left: 4px solid #3498db; padding-left: 12px; margin-left: 0; color: #666; }
+</style>
+</head>
+<body>
+
+<h1>Zeus 3 Pots – логика вращения лент и подключение анимации Timing Tool</h1>
+
+Документ описывает, как в слоте <code>slot_972_Zeus_3_Pots</code> реализовано вращение рилов по экспортам из Timing Tool (<code>hw_normal_speed.json</code>) и как эти анимации связаны со сценариями игры.
+
+Основные файлы:
+
+- <code>reel_animation/hw_normal_speed.json</code> – экспорт Timing Tool для режима Hold &amp; Win.
+- <code>ReelAnimationCurve.js</code> – интерпретация профиля анимации.
+- <code>ZeusReel.js</code> – логика одной ленты (одной ячейки 3×3).
+- <code>ZeusSlotManager.js</code> – менеджер сетки 3×3 и связи со сценарием.
+- <code>zeusMain.js</code> – создание приложения, загрузка профиля, отладочный рил слева.
+
+<h2>1. Профиль Timing Tool – <code>hw_normal_speed.json</code></h2>
+
+Профиль соответствует спецификации из <code>slots/timing_tool/export/REEL_ANIMATION_README.md</code>. Для нас важны поля:
+
+<ul>
+  <li><code>step</code> – высота одного символа на ленте (px). Вся вертикальная логика рила опирается только на это значение.</li>
+  <li><code>tapeLength</code>, <code>extraLength</code> – код рассчитывает эффективную длину линейного участка в шагах для каждой колонки:
+    <pre>n = tapeLength + col * extraLength</pre>
+  </li>
+  <li><code>containers.start.durationMs</code>, <code>containers.start.rangePx</code></li>
+  <li><code>containers.linear.durationMs</code>, <code>containers.linear.distancePx</code></li>
+  <li><code>containers.end.durationMs</code>, <code>containers.end.rangePx</code></li>
+  <li><code>startCurve</code>, <code>endCurve</code> – Bezier кейфреймы для фаз старта и финиша (overshoot/возврат).</li>
+</ul>
+
+Профиль не знает ничего о сценарии (матрице символов). Он описывает только <em>геометрию движения</em> ленты: сколько времени длится каждая фаза и на сколько пикселей смещается лента.
+
+<h2>2. Интерпретация профиля – <code>ReelAnimationCurve</code></h2>
+
+Файл: <code>ReelAnimationCurve.js</code>
+
+<h3>2.1. Основные поля и конструктор</h3>
+
+При создании:
+
+<ul>
+  <li>Сохраняется <code>step</code> из профиля (высота символа).</li>
+  <li>Для заданной колонки <code>col</code> вычисляется:
+    <pre>n = tapeLength + col * extraLength</pre>
+    и на его основе:
+    <ul>
+      <li><code>startDuration</code>, <code>linearDuration = linear.durationMs * n</code>, <code>endDuration</code></li>
+      <li><code>linearDistance = (linear.distancePx || step) * n</code></li>
+    </ul>
+  </li>
+  <li>Сохраняются массивы ключей <code>startCurve</code> и <code>endCurve</code>.</li>
+  <li>Вычисляются реальные смещения от Bezier-кривых (учитывая overshoot):
+    <ul>
+      <li><code>startOffset = evaluateStartBezier(1)</code> – сколько лента реально проходит за фазу Start.</li>
+      <li><code>endDelta = evaluateEndBezier(1) - evaluateEndBezier(0)</code> – чистый вклад фазы End.</li>
+    </ul>
+  </li>
+  <li>Общее смещение за спин:
+    <pre>totalDistance = startOffset + linearDistance + endDelta</pre>
+  </li>
+</ul>
+
+<h3>2.2. Функция смещения по времени</h3>
+
+Метод <code>getOffsetAt(t)</code> реализует кусочную анимацию Start → Linear → End по той же схеме, что и <code>getCubeProgressNoWrap</code> в <code>timing_preview_hold_win.js</code>:
+
+<ul>
+  <li>Для <code>t</code> раньше старта – возвращает начальное значение (обычно 0).</li>
+  <li>Для фазы Start – интерполирует <code>t</code> по <code>startCurve</code>.</li>
+  <li>Для Linear – даёт линейный рост от конца Start до конца Linear на <code>linearDistance</code>.</li>
+  <li>Для End – добавляет приращение по <code>endCurve</code> относительно начального значения End.</li>
+</ul>
+
+Именно <code>getOffsetAt(t)</code> используется в <code>ZeusReel</code> для вычисления текущего положения ленты.
+
+<h2>3. Связь с матрицей сценария – <code>ZeusSlotManager</code></h2>
+
+Файл: <code>ZeusSlotManager.js</code>
+
+<h3>3.1. Структура сетки</h3>
+
+<ul>
+  <li>Размер поля: <code>ROWS = 3</code>, <code>COLS = 3</code>.</li>
+  <li>Каждая ячейка сетки 3×3 представлена отдельным объектом <code>ZeusReel</code> (по факту – отдельный маленький рил).</li>
+  <li>Для каждой колонки создаётся свой экземпляр <code>ReelAnimationCurve</code> с учётом <code>tapeLength/extraLength</code>.</li>
+</ul>
+
+Создание рилов:
+
+<ul>
+  <li>Позиции считаны от <code>originX / originY</code>, вертикальный шаг – <code>rowStep = reelProfile.step || SYMBOL_HEIGHT</code>.</li>
+  <li>Каждому рилу задаётся <code>startDelayMs = reelIndex * curve.reelStartDelayMs</code> (каскадный старт слева-направо, сверху-вниз).</li>
+</ul>
+
+<h3>3.2. Сценарий и шаги спина</h3>
+
+Менеджер хранит:
+
+<ul>
+  <li><code>spinIndex</code> – счётчик спинов / шагов сценария.</li>
+</ul>
+
+Методы:
+
+<ul>
+  <li><code>setMatrixImmediately(matrix)</code> – устанавливает матрицу без анимации: каждый <code>ZeusReel</code> получает свой <code>currentSymbol</code>.</li>
+  <li><code>spinToMatrix(targetMatrix)</code>:
+    <ol>
+      <li>Увеличивает <code>spinIndex</code>.</li>
+      <li>Для каждой ячейки вызывает <code>reel.spinToSymbol(targetSymbol, spinIndex)</code>, где:
+        <ul>
+          <li><code>currentSymbol</code> – значение из текущей матрицы (состояние до спина).</li>
+          <li><code>targetSymbol</code> – значение из новой матрицы (состояние после спина).</li>
+        </ul>
+      </li>
+    </ol>
+  </li>
+</ul>
+
+<blockquote>
+Матрица описывает только состояния между спинами: &laquo;сейчас&raquo; и &laquo;после спина&raquo;. Вращение ленты гарантирует, что уезжающий символ под маской соответствует <code>currentSymbol</code>, а приезжающий &mdash; <code>targetSymbol</code>.
+</blockquote>
+
+<h2>4. Логика одной ленты – <code>ZeusReel</code></h2>
+
+Файл: <code>ZeusReel.js</code>
+
+<h3>4.1. Опорные индексы на бесконечной ленте</h3>
+
+Лента рассматривается как бесконечная последовательность символов, промаркированная целыми индексами <code>k</code>. Для связи с матрицей используются опорные индексы:
+
+<ul>
+  <li><code>anchorIndex</code> – индекс символа, который ВИДЕН под маской в начале спина (уезжающий символ).</li>
+  <li><code>targetAnchorIndex</code> – индекс символа, который окажется под маской в конце спина (приезжающий символ).</li>
+  <li><code>anchorStepId</code> и <code>targetAnchorStepId</code> – номера шага сценария для уезжающего / приезжающего символа (для отладки). Эти значения добавляются к подписи <code>col,row</code> на самих символах в виде <code>[номер]</code>.</li>
+</ul>
+
+<h3>4.2. Запуск спина – <code>spinToSymbol(symbolType, stepId)</code></h3>
+
+При старте спина:
+
+<ol>
+  <li>Сохраняется <code>targetSymbol = symbolType</code>.</li>
+  <li>Вычисляется, сколько шагов (по <code>step</code>) пройдёт центр окна:
+    <pre>
+const absDist = Math.abs(totalDistance);
+const steps   = Math.max(1, Math.round(absDist / step));
+const direction = totalDistance &gt;= 0 ? 1 : -1;
+    </pre>
+  </li>
+  <li>Обновляются опорные индексы:
+    <pre>
+targetAnchorIndex  = anchorIndex + direction * steps;
+targetAnchorStepId = stepId;
+    </pre>
+  </li>
+  <li><strong>Важно:</strong> никакой &laquo;перекраски&raquo; ленты не происходит. Символы привязаны к индексам <code>k</code>, а какие именно символы должны быть у опорных индексов &mdash; определяется функцией <code>_getSymbolByIndex(k)</code>.</li>
+</ol>
+
+<h3>4.3. Смещение по времени – связь с Timing Tool</h3>
+
+В <code>update(deltaMs)</code> по текущему времени <code>t</code> получается смещение по кривой:
+
+<pre>
+const offset = curve.getOffsetAt(t);
+const direction = totalDistance &gt;= 0 ? 1 : -1;
+const effectiveOffset = (offset - curveOffsetStart) * direction;
+</pre>
+
+Далее строится &laquo;мировой&raquo; прогресс ленты в пикселях:
+
+<pre>
+// anchorIndex трактуется как символ ПОД маской.
+// В превью Timing Tool base = символ НАД маской,
+// поэтому base = anchorIndex + 1.
+const progressWorld = (anchorIndex + 1) * step + effectiveOffset;
+</pre>
+
+Это соответствует формуле <code>progress</code> в <code>drawHoldWinCell</code> из <code>timing_preview_hold_win.js</code>. Далее:
+
+<pre>
+const base = Math.floor(progressWorld / step);
+const kMin = base - 2;
+</pre>
+
+И для небольшого пула символов (обычно 4):
+
+<pre>
+for (let i = 0; i &lt; poolSize; i += 1) {
+  const k = kMin + i;
+  const y = -step + (progressWorld - k * step);
+  const visibleY = y + padding;
+  const symbolType = _getSymbolByIndex(k);
+  ...
+}
+</pre>
+
+<h3>4.4. Мэппинг индекса в тип символа – <code>_getSymbolByIndex(k)</code></h3>
+
+Лента не хранится как явный массив. Вместо этого есть функция:
+
+<pre>
+_getSymbolByIndex(k) {
+  if (k === anchorIndex)      return currentSymbol; // уезжающий
+  if (k === targetAnchorIndex) return targetSymbol; // приезжающий
+
+  // Остальные – детерминированный "рандом" 0/1 по k, row, col.
+  const seed = k * 73856093 + col * 19349663 + row * 83492791;
+  return (seed &amp; 1) === 0 ? 0 : 1;
+}
+</pre>
+
+Таким образом:
+
+<ul>
+  <li>В начале спина символ под маской (индекс <code>anchorIndex</code>) всегда <code>currentSymbol</code>.</li>
+  <li>В конце спина символ под маской (индекс <code>targetAnchorIndex</code>) всегда <code>targetSymbol</code>.</li>
+  <li>Все промежуточные символы на ленте не меняются в течение спина, так как завязаны на <code>k</code> детерминировано.</li>
+</ul>
+
+<h3>4.5. Завершение спина</h3>
+
+Когда время спина истекло:
+
+<pre>
+anchorIndex   = targetAnchorIndex;
+anchorStepId  = targetAnchorStepId;
+currentSymbol = targetSymbol;
+</pre>
+
+То есть:
+
+<ul>
+  <li>Приехавший по сценарию символ становится текущим и будет уезжать в следующем спине.</li>
+  <li>Опорная позиция ленты смещается вперёд на <code>steps</code> шагов по профилю Timing Tool.</li>
+</ul>
+
+<h2>5. Подключение в <code>zeusMain.js</code> и отладка</h2>
+
+Файл: <code>zeusMain.js</code>
+
+<h3>5.1. Загрузка профиля</h3>
+
+<ul>
+  <li>Профиль загружается из <code>./reel_animation/hw_normal_speed.json</code> и без изменений передаётся в <code>ReelAnimationCurve</code> и <code>ZeusSlotManager</code>.</li>
+  <li>При ошибке загрузки используется fallback-профиль, но в реальной игре должен применяться именно экспорт Timing Tool.</li>
+</ul>
+
+<h3>5.2. Отладочная лента слева</h3>
+
+Для визуальной проверки создан отдельный <code>ZeusReel</code> слева от сетки:
+
+<ul>
+  <li>Использует тот же профиль и кривую, что и центральная колонка (<code>col = 1</code>).</li>
+  <li>Маска отключена (<code>useMask: false</code>), чтобы видеть всю ленту.</li>
+  <li>При каждом спине ему передаётся тот же <code>stepId</code> и целевой символ, что и ячейке [1,1] сетки.</li>
+</ul>
+
+На отладочной ленте благодаря индексам <code>col,row</code> и <code>[stepId]</code> можно визуально убедиться, что:
+
+<ul>
+  <li>уезжающий и приезжающий символы на ленте совпадают с состояниями матрицы сценария;</li>
+  <li>во время анимации эти опорные символы не &laquo;подкрашиваются&raquo; и не перескакивают;</li>
+  <li>ленту ведёт профиль Timing Tool (start / linear / end с overshoot), но логика символов остаётся стабильной.</li>
+</ul>
+
+<h2>6. Итог</h2>
+
+<ul>
+  <li><strong>Timing Tool</strong> полностью управляет геометрией движения ленты (время, дистанция, кривая).</li>
+  <li><strong>Сценарий</strong> управляет только тем, какой символ уезжает и какой приезжает в каждой ячейке.</li>
+  <li><strong>ZeusReel</strong> связывает эти два мира через опорные индексы на бесконечной ленте и детерминированный мэппинг <code>k → symbolType</code>.</li>
+</ul>
+
+</body>
+</html>
+
