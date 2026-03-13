@@ -15,10 +15,13 @@ export class ZeusReel {
    * @param {ReelAnimationCurve} options.curve - анимационная кривая
    * @param {number} options.row - индекс ряда в сетке (0..ROWS-1)
    * @param {number} options.col - индекс колонки в сетке (0..COLS-1)
+   * @param {PIXI.Texture} [options.symbolTexture] - текстура символа (монетки)
    * @param {number} [options.startDelayMs] - задержка старта спина для этого рила
    * @param {function} [options.onStop] - коллбек при остановке рила
    * @param {boolean} [options.useMask] - использовать ли маску окна (для отладочных лент можно отключать)
    * @param {number}  [options.padding] - внутренние отступы внутри маски (px)
+   * @param {PIXI.Texture} [options.plateTexture] - текстура фоновой подложки ячейки
+   * @param {function} [options.createSpineCoin] - фабрика Spine-монетки для оверлея
    */
   constructor({
     parent,
@@ -29,10 +32,13 @@ export class ZeusReel {
     curve,
     row,
     col,
+    symbolTexture = null,
     startDelayMs = 0,
     onStop,
     useMask = true,
-    padding = 0
+    padding = 0,
+    plateTexture = null,
+    createSpineCoin = null
   }) {
     this.container = new PIXI.Container();
     this.container.sortableChildren = true;
@@ -45,14 +51,29 @@ export class ZeusReel {
     this.curve = curve;
     this.row = row;
     this.col = col;
+    this.useMask = useMask;
+    this.symbolTexture = symbolTexture;
+    this.plateTexture = plateTexture;
     this.step = this.curve.step || this.height;
     this.startDelayMs = startDelayMs;
     this.onStop = typeof onStop === 'function' ? onStop : null;
     // Внутренний отступ внутри окна маски. Для "плотных" рилов = 0.
     this.padding = padding;
+    this.createSpineCoin = typeof createSpineCoin === 'function' ? createSpineCoin : null;
 
     this.frame = new PIXI.Graphics();
+
+    // Контейнер символа: Graphics для простых заливок + спрайты монет.
     this.symbol = new PIXI.Graphics();
+    this.coinSprites = [];
+    this.plateSprites = [];
+    // Монетка-оверлей поверх маски для финального состояния рила (Spine или спрайт).
+    this.overlayCoin = null;
+    // Два Spine-экземпляра для опорных символов внутри маски:
+    // [0] — уезжающий (anchorIndex), [1] — приезжающий (targetAnchorIndex).
+    // Остальные пролетающие символы остаются спрайтами.
+    this.spineCoins = [null, null];
+
     this.container.addChild(this.symbol);
     this.container.addChild(this.frame);
 
@@ -120,11 +141,35 @@ export class ZeusReel {
     const y = padding;
 
     this.symbol.clear();
-    this._fillSymbolRect(symbolType, x, y, w, h);
 
-    // Отладочная подпись индекса ячейки на статичном символе.
+    // Статичная подложка в центре окна для текущего состояния рила.
+    if (this.plateTexture) {
+      let plate = this.plateSprites[0];
+      if (!plate) {
+        plate = new PIXI.Sprite(this.plateTexture);
+        plate.anchor.set(0.5);
+        this.plateSprites[0] = plate;
+        this.symbol.addChild(plate);
+      }
+      plate.visible = true;
+      plate.x = x + w / 2;
+      plate.y = y + h / 2;
+    }
+    // Для основных рилов под маской не рисуем центральный символ внутри маски,
+    // чтобы конечная монета показывалась только оверлеем поверх маски.
+    if (!this.symbolTexture || !this.useMask) {
+      // В отладочных/безмасочных рилах можно нарисовать символ как обычно.
+      this._fillSymbolRect(symbolType, x, y, w, h, 0);
+    }
+
+    // Отладочная подпись индекса ячейки на статичном символе + номер спина, если есть.
     this.debugLabels.removeChildren();
-    const label = new PIXI.Text(`${this.col},${this.row}`, {
+    let labelText = `${this.col},${this.row}`;
+    const stepId = this.targetAnchorStepId || this.anchorStepId || 0;
+    if (stepId > 0) {
+      labelText += ` [${stepId}]`;
+    }
+    const label = new PIXI.Text(labelText, {
       fontFamily: 'Arial',
       fontSize: 14,
       fill: 0xff0000,
@@ -137,7 +182,127 @@ export class ZeusReel {
     this.debugLabels.addChild(label);
   }
 
-  _fillSymbolRect(symbolType, x, y, w, h) {
+  /**
+   * Отрисовать один прямоугольник символа (как в версии до текстур):
+   * - цветной прямоугольник-фон
+   * - сверху маленький квадратик-индикатор.
+   *
+   * @param {number} symbolType
+   * @param {number} x
+   * @param {number} y
+   * @param {number} w
+   * @param {number} h
+   * @param {number} slotIndex - индекс слота в текущем кадре (0..poolSize-1)
+   * @private
+   */
+  _fillSymbolRect(symbolType, x, y, w, h, slotIndex) {
+    // 0 — пусто, 1 — монетка.
+    if (symbolType !== 1) {
+      return;
+    }
+
+    if (this.symbolTexture) {
+      let sprite = this.coinSprites[slotIndex];
+      if (!sprite) {
+        sprite = new PIXI.Sprite(this.symbolTexture);
+        sprite.anchor.set(0.5);
+        this.coinSprites[slotIndex] = sprite;
+        this.symbol.addChild(sprite);
+      }
+      sprite.visible = true;
+      // Без трансформаций: просто ставим центр монетки в центр ячейки.
+      sprite.x = x + w / 2;
+      sprite.y = y + h / 2;
+      return;
+    }
+
+    // Фолбэк, если текстура не загрузилась: однотонный прямоугольник.
+    this.symbol.beginFill(0x60a5fa);
+    this.symbol.drawRoundedRect(x, y, w, h, 6);
+    this.symbol.endFill();
+  }
+
+  /**
+   * Показать/обновить монетку-оверлей в центре окна рила
+   * согласно currentSymbol. Работает только для рилов под маской.
+   */
+  showOverlayFromCurrent() {
+    if (!this.useMask) return;
+
+    // Для финального состояния показываем монетку только если текущий символ = 1.
+    if (this.currentSymbol !== 1) {
+      this.clearOverlay();
+      return;
+    }
+
+    const parent = this.container.parent;
+    if (!parent) return;
+
+    // Ленивое создание оверлей-объекта: сначала Spine, если есть фабрика,
+    // иначе фолбэк на обычный спрайт.
+    if (!this.overlayCoin) {
+      if (this.createSpineCoin) {
+        this.overlayCoin = this.createSpineCoin();
+      } else if (this.symbolTexture) {
+        const sprite = new PIXI.Sprite(this.symbolTexture);
+        sprite.anchor.set(0.5);
+        this.overlayCoin = sprite;
+      }
+    }
+
+    if (!this.overlayCoin) return;
+
+    if (!this.overlayCoin.parent) {
+      parent.addChild(this.overlayCoin);
+    }
+
+    parent.sortableChildren = true;
+    const baseZ = (this.container.zIndex || 0) + 10;
+    // Чем ниже ряд рила, тем выше монетка в overlay.
+    this.overlayCoin.zIndex = baseZ + this.row;
+
+    const padding = this.padding;
+    const w = this.width - padding * 2;
+    const h = this.step - padding * 2;
+
+    const centerX = this.container.x + padding + w / 2;
+    const centerY = this.container.y + padding + h / 2;
+
+    this.overlayCoin.x = centerX;
+    this.overlayCoin.y = centerY;
+    this.overlayCoin.visible = true;
+
+    // Оверлей Spine: один раз start, затем idle в цикле.
+    if (this.overlayCoin.state) {
+      this.overlayCoin.state.setAnimation(0, 'start', false);
+      const overlayListener = {
+        complete: (entry) => {
+          if (entry.animation && entry.animation.name === 'start') {
+            this.overlayCoin.state.setAnimation(0, 'idle', true);
+            this.overlayCoin.state.removeListener(overlayListener);
+          }
+        }
+      };
+      this.overlayCoin.state.addListener(overlayListener);
+    }
+  }
+
+  /**
+   * Спрятать монетку-оверлей для этого рила (не удаляя спрайт).
+   */
+  clearOverlay() {
+    if (this.overlayCoin) {
+      this.overlayCoin.visible = false;
+    }
+  }
+
+  /**
+   * Старая реализация однотонной заливки сохранена на случай отладки.
+   * Сейчас не используется, но может быть полезна как fallback.
+   * @private
+   */
+  // eslint-disable-next-line class-methods-use-this
+  _fillSymbolRectSolid(symbolType, x, y, w, h) {
     if (symbolType === 0) {
       this.symbol.beginFill(0x4ade80); // зелёный
     } else {
@@ -166,6 +331,9 @@ export class ZeusReel {
     this.targetSymbol = symbolType;
     this.isSpinning = true;
     this.elapsedMs = 0;
+    // При новом спине возвращаем внутренний символ под маской,
+    // чтобы лента снова рисовалась.
+    this.symbol.visible = true;
 
     // Сколько "шагов" (step) пройдёт центр окна за один спин.
     const step = this.step;
@@ -190,6 +358,21 @@ export class ZeusReel {
     this.elapsedMs += deltaMs;
     const localTime = this.elapsedMs - this.startDelayMs;
     if (localTime <= 0) {
+      // Во время задержки до старта анимации показываем уезжающую монету
+      // там же, где стоял оверлей, чтобы не было мигания при смене.
+      if (this.createSpineCoin && this.currentSymbol === 1) {
+        if (!this.spineCoins[0]) {
+          this.spineCoins[0] = this.createSpineCoin();
+          this.container.addChild(this.spineCoins[0]);
+          this.spineCoins[0].state.setAnimation(0, '1', true);
+        }
+        const pd = this.padding;
+        const sw = this.width - pd * 2;
+        const sh = this.step - pd * 2;
+        this.spineCoins[0].visible = true;
+        this.spineCoins[0].x = pd + sw / 2;
+        this.spineCoins[0].y = pd + sh / 2;
+      }
       return;
     }
 
@@ -201,7 +384,23 @@ export class ZeusReel {
     const step = this.step;
     const poolSize = 4;
 
+    // Готовим графику к перерисовке.
     this.symbol.clear();
+    if (this.coinSprites) {
+      for (let i = 0; i < this.coinSprites.length; i += 1) {
+        const s = this.coinSprites[i];
+        if (s) s.visible = false;
+      }
+    }
+    if (this.plateSprites) {
+      for (let i = 0; i < this.plateSprites.length; i += 1) {
+        const p = this.plateSprites[i];
+        if (p) p.visible = false;
+      }
+    }
+    // Скрываем Spine-монеты опорных символов; покажем только те, что попадут в кадр.
+    if (this.spineCoins[0]) this.spineCoins[0].visible = false;
+    if (this.spineCoins[1]) this.spineCoins[1].visible = false;
 
     const padding = this.padding;
     const w = this.width - padding * 2;
@@ -228,7 +427,44 @@ export class ZeusReel {
       const visibleY = y + padding;
 
       const symbolType = this._getSymbolByIndex(k);
-      this._fillSymbolRect(symbolType, x, visibleY, w, h);
+
+      // Фоновая подложка слота под символом/Spine.
+      if (this.plateTexture) {
+        let plate = this.plateSprites[i];
+        if (!plate) {
+          plate = new PIXI.Sprite(this.plateTexture);
+          plate.anchor.set(0.5);
+          this.plateSprites[i] = plate;
+          this.symbol.addChild(plate);
+        }
+        plate.visible = true;
+        plate.x = x + w / 2;
+        plate.y = visibleY + h / 2;
+      }
+
+      // Опорные символы рисуем через Spine (если фабрика есть),
+      // все остальные пролетающие символы остаются спрайтами.
+      let spineSlotIdx = -1;
+      if (this.createSpineCoin && symbolType === 1) {
+        if (k === this.anchorIndex) spineSlotIdx = 0;
+        else if (k === this.targetAnchorIndex) spineSlotIdx = 1;
+      }
+
+      if (spineSlotIdx >= 0) {
+        // Ленивое создание Spine-монетки и добавление в контейнер (под маску).
+        // В прокрутках используем анимацию «1».
+        if (!this.spineCoins[spineSlotIdx]) {
+          this.spineCoins[spineSlotIdx] = this.createSpineCoin();
+          this.container.addChild(this.spineCoins[spineSlotIdx]);
+          this.spineCoins[spineSlotIdx].state.setAnimation(0, '1', true);
+        }
+        const sc = this.spineCoins[spineSlotIdx];
+        sc.visible = true;
+        sc.x = x + w / 2;
+        sc.y = visibleY + h / 2;
+      } else {
+        this._fillSymbolRect(symbolType, x, visibleY, w, h, i);
+      }
 
       // Базовая подпись ячейки.
       let labelText = `${this.col},${this.row}`;
@@ -255,6 +491,10 @@ export class ZeusReel {
     }
 
     if (localTime >= this.totalDurationMs) {
+      // Прячем Spine-монеты опорных символов: overlay возьмёт на себя финальное состояние.
+      if (this.spineCoins[0]) this.spineCoins[0].visible = false;
+      if (this.spineCoins[1]) this.spineCoins[1].visible = false;
+
       this.isSpinning = false;
       this.symbol.y = 0;
       // К концу спина опорный индекс ленты смещается к целевому,
@@ -264,7 +504,7 @@ export class ZeusReel {
       this.currentSymbol = this.targetSymbol;
       this._drawSymbol(this.currentSymbol);
       if (this.onStop) {
-        this.onStop(this.currentSymbol);
+        this.onStop(this);
       }
     }
   }
@@ -281,8 +521,19 @@ export class ZeusReel {
     if (k === this.anchorIndex) return this.currentSymbol;
     if (k === this.targetAnchorIndex) return this.targetSymbol;
 
-    // Простое детерминированное "рандомное" распределение по k и позиции рила,
-    // чтобы между спинами цвет полосы не прыгал.
+    // Целевая / текущая ячейка на ленте должна быть изолирована пустышками,
+    // поэтому непосредственные соседи по ленте всегда = 0.
+    if (
+      k === this.anchorIndex - 1
+      || k === this.anchorIndex + 1
+      || k === this.targetAnchorIndex - 1
+      || k === this.targetAnchorIndex + 1
+    ) {
+      return 0;
+    }
+
+    // Остальные позиции — детерминированный "рандом" 0/1,
+    // стабильный от кадра к кадру.
     const seed = k * 73856093 + this.col * 19349663 + this.row * 83492791;
     return (seed & 1) === 0 ? 0 : 1;
   }

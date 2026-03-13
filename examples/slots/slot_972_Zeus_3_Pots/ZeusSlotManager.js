@@ -17,6 +17,10 @@ export class ZeusSlotManager {
    * @param {number} [options.gapX] - горизонтальное расстояние между рилами
    * @param {number} [options.gapY] - вертикальное расстояние между рилами
    * @param {object} options.reelProfile - один из профилей из reel_animation.json
+   * @param {PIXI.Texture} [options.symbolTexture] - текстура символа (монетки)
+   * @param {PIXI.Texture} [options.frameTexture] - текстура рамки поверх поля
+   * @param {PIXI.Texture} [options.plateTexture] - текстура фоновой подложки ячейки
+   * @param {function} [options.createSpineCoin] - фабрика Spine-монетки для оверлея
    * @param {function} [options.onSpinComplete] - коллбек по завершении спина всех рилов
    */
   constructor({
@@ -30,6 +34,10 @@ export class ZeusSlotManager {
     gapX = 0,
     gapY = 0,
     reelProfile,
+    symbolTexture = null,
+    frameTexture = null,
+    plateTexture = null,
+    createSpineCoin = null,
     onSpinComplete
   }) {
     this.rows = rows;
@@ -46,9 +54,23 @@ export class ZeusSlotManager {
     // Timing Tool длительность и дистанция Linear зависят от индекса колонки:
     // n = tapeLength + col * extraLength.
     this.reelProfile = reelProfile;
+    this.symbolTexture = symbolTexture;
+    this.plateTexture = plateTexture;
+    this.createSpineCoin = typeof createSpineCoin === 'function' ? createSpineCoin : null;
     this.reels = [];
     this.spinningCount = 0;
     this.spinIndex = 0; // номер шага сценария / спина
+
+    // Рамка поверх поля, но под финальными монетками-оверлеями.
+    if (frameTexture) {
+      parent.sortableChildren = true;
+      const frameSprite = new PIXI.Sprite(frameTexture);
+      frameSprite.x = originX-22;
+      frameSprite.y = originY-14;
+      frameSprite.zIndex = (parent.zIndex || 0) + 5;
+      parent.addChild(frameSprite);
+      this.frameSprite = frameSprite;
+    }
 
     this._createReels(parent);
   }
@@ -71,8 +93,11 @@ export class ZeusSlotManager {
           row,
           col,
           curve,
+          symbolTexture: this.symbolTexture,
+          plateTexture: this.plateTexture,
           startDelayMs: reelIndex * curve.reelStartDelayMs,
-          onStop: () => this._onReelStop()
+          onStop: (stoppedReel) => this._onReelStop(stoppedReel),
+          createSpineCoin: this.createSpineCoin
         });
         this.reels.push(reel);
       }
@@ -83,12 +108,18 @@ export class ZeusSlotManager {
     return row * this.cols + col;
   }
 
-  _onReelStop() {
+  _onReelStop(stoppedReel) {
     this.spinningCount -= 1;
+
+    if (stoppedReel && stoppedReel.useMask) {
+      stoppedReel.showOverlayFromCurrent();
+    }
+
     if (this.spinningCount <= 0) {
       this.spinningCount = 0;
+      const finalMatrix = this.getCurrentMatrix();
+
       if (this.onSpinComplete) {
-        const finalMatrix = this.getCurrentMatrix();
         this.onSpinComplete(finalMatrix);
       }
     }
@@ -139,6 +170,10 @@ export class ZeusSlotManager {
         const idx = this._index(row, col);
         const reel = this.reels[idx];
         const symbol = targetMatrix[row]?.[col] ?? 0;
+        // Перед стартом конкретного рила очищаем только его оверлей.
+        if (reel.clearOverlay) {
+          reel.clearOverlay();
+        }
         reel.spinToSymbol(symbol, stepId);
       }
     }
