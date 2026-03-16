@@ -1,4 +1,5 @@
 import { ReelAnimationCurve } from './ReelAnimationCurve.js';
+import { applyCoinMetaToSpine } from './CoinSpineMapping.js';
 
 /**
  * Один рил (для прототипа — одна ячейка 3×3).
@@ -21,7 +22,10 @@ export class ZeusReel {
    * @param {boolean} [options.useMask] - использовать ли маску окна (для отладочных лент можно отключать)
    * @param {number}  [options.padding] - внутренние отступы внутри маски (px)
    * @param {PIXI.Texture} [options.plateTexture] - текстура фоновой подложки ячейки
-   * @param {function} [options.createSpineCoin] - фабрика Spine-монетки для оверлея
+   * @param {{createOverlayCoin:function, createScrollCoin:function(number):object}|null} [options.coinFactory]
+   *   Фабрика Spine-монеток для этого рила. Содержит два метода:
+   *   - createOverlayCoin() — создаёт монетку оверлея (уникальный SkeletonData для этого рила)
+   *   - createScrollCoin(slotIdx) — создаёт scroll-монетку для слота 0 или 1
    */
   constructor({
     parent,
@@ -38,13 +42,22 @@ export class ZeusReel {
     useMask = true,
     padding = 0,
     plateTexture = null,
-    createSpineCoin = null
+    coinFactory = null
   }) {
     this.container = new PIXI.Container();
     this.container.sortableChildren = true;
     this.container.x = x;
     this.container.y = y;
     parent.addChild(this.container);
+
+    // Изолированный контейнер для оверлей-монетки этого рила.
+    // Живёт рядом с this.container (в том же parent), но полностью отдельно.
+    this.overlayContainer = new PIXI.Container();
+    this.overlayContainer.x = x;
+    this.overlayContainer.y = y;
+    this.overlayContainer.zIndex = 20 + row;
+    parent.sortableChildren = true;
+    parent.addChild(this.overlayContainer);
 
     this.width = width;
     this.height = height;
@@ -59,7 +72,7 @@ export class ZeusReel {
     this.onStop = typeof onStop === 'function' ? onStop : null;
     // Внутренний отступ внутри окна маски. Для "плотных" рилов = 0.
     this.padding = padding;
-    this.createSpineCoin = typeof createSpineCoin === 'function' ? createSpineCoin : null;
+    this.coinFactory = coinFactory || null;
 
     this.frame = new PIXI.Graphics();
 
@@ -113,12 +126,21 @@ export class ZeusReel {
     this.anchorStepId = 0;
     this.targetAnchorStepId = 0;
 
+    // Meta-данные символов (для anchor/target).
+    this.currentSymbolMeta = null;
+    this.targetSymbolMeta = null;
+
     // Смещения по кривой: берём реальный offset на старте и общий
     // сдвиг за полный цикл (учитывает overshoot).
     this.curveOffsetStart = this.curve.getOffsetAt(0);
     this.totalDistance = (this.curve.startOffset || 0)
       + (this.curve.linearDistance || 0)
       + (this.curve.endDelta || 0);
+
+    // Sticky-состояние (hold-n-win): если рил стал sticky, он больше не крутится
+    // в регулярных спинах, а overlay-монетка остаётся до конца серии.
+    this.isSticky = false;
+    this.stickyMeta = null;
 
     // Для отладочного превью лент рамку не рисуем, чтобы не было белых квадратов.
     // this._drawFrame();
@@ -223,77 +245,168 @@ export class ZeusReel {
   }
 
   /**
-   * Показать/обновить монетку-оверлей в центре окна рила
-   * согласно currentSymbol. Работает только для рилов под маской.
+   * Гарантировать наличие overlay-монетки для sticky-состояния.
+   * Используется, когда рил уже стал sticky и нам нужно только убедиться,
+   * что монетка на месте (без пересоздания).
+   * @private
    */
-  showOverlayFromCurrent() {
+  _ensureStickyOverlay() {
     if (!this.useMask) return;
+    if (!this.coinFactory?.createOverlayCoin) return;
 
-    // Для финального состояния показываем монетку только если текущий символ = 1.
-    if (this.currentSymbol !== 1) {
-      this.clearOverlay();
-      return;
-    }
-
-    const parent = this.container.parent;
-    if (!parent) return;
-
-    // Ленивое создание оверлей-объекта: сначала Spine, если есть фабрика,
-    // иначе фолбэк на обычный спрайт.
     if (!this.overlayCoin) {
-      if (this.createSpineCoin) {
-        this.overlayCoin = this.createSpineCoin();
-      } else if (this.symbolTexture) {
-        const sprite = new PIXI.Sprite(this.symbolTexture);
-        sprite.anchor.set(0.5);
-        this.overlayCoin = sprite;
-      }
-    }
+      const coin = this.coinFactory.createOverlayCoin();
+      this.overlayCoin = coin;
 
-    if (!this.overlayCoin) return;
+      // Скин — до addChild, чтобы не было флэша.
+      applyCoinMetaToSpine(coin, this.stickyMeta || this.currentSymbolMeta);
 
-    if (!this.overlayCoin.parent) {
-      parent.addChild(this.overlayCoin);
-    }
+      const padding = this.padding;
+      const w = this.width - padding * 2;
+      const h = this.step - padding * 2;
+      coin.x = padding + w / 2;
+      coin.y = padding + h / 2;
 
-    parent.sortableChildren = true;
-    const baseZ = (this.container.zIndex || 0) + 10;
-    // Чем ниже ряд рила, тем выше монетка в overlay.
-    this.overlayCoin.zIndex = baseZ + this.row;
+      this.overlayContainer.addChild(coin);
 
-    const padding = this.padding;
-    const w = this.width - padding * 2;
-    const h = this.step - padding * 2;
+      coin.state.clearTracks();
+      coin.state.setAnimation(0, 'start', false);
 
-    const centerX = this.container.x + padding + w / 2;
-    const centerY = this.container.y + padding + h / 2;
-
-    this.overlayCoin.x = centerX;
-    this.overlayCoin.y = centerY;
-    this.overlayCoin.visible = true;
-
-    // Оверлей Spine: один раз start, затем idle в цикле.
-    if (this.overlayCoin.state) {
-      this.overlayCoin.state.setAnimation(0, 'start', false);
-      const overlayListener = {
-        complete: (entry) => {
-          if (entry.animation && entry.animation.name === 'start') {
-            this.overlayCoin.state.setAnimation(0, 'idle', true);
-            this.overlayCoin.state.removeListener(overlayListener);
+      const listener = {
+        complete: (trackEntry) => {
+          if (trackEntry.animation?.name === 'start') {
+            coin.state.removeListener(listener);
+            if (!coin.destroyed) {
+              coin.state.clearTracks();
+              coin.state.setAnimation(0, 'idle', true);
+            }
           }
         }
       };
-      this.overlayCoin.state.addListener(overlayListener);
+      coin.state.addListener(listener);
+    } else {
+      // Просто гарантируем правильную позицию и видимость.
+      const coin = this.overlayCoin;
+      const padding = this.padding;
+      const w = this.width - padding * 2;
+      const h = this.step - padding * 2;
+      coin.x = padding + w / 2;
+      coin.y = padding + h / 2;
+      coin.visible = true;
     }
   }
 
   /**
-   * Спрятать монетку-оверлей для этого рила (не удаляя спрайт).
+   * Показать монетку-оверлей для текущего символа рила.
+   * Для обычных монет overlay пересоздаётся на каждый спин.
+   * Для sticky-монет overlay создаётся один раз и остаётся до конца серии.
+   */
+  showOverlayFromCurrent() {
+    if (!this.useMask) return;
+
+    if (this.currentSymbol !== 1 || !this.currentSymbolMeta) {
+      // Для пустых/не-монетных символов оверлей убираем.
+      this.clearOverlay();
+      return;
+    }
+
+    const meta = this.currentSymbolMeta;
+    const isStickyMeta = meta.type === 'sticky';
+
+    if (isStickyMeta) {
+      // Рил становится sticky: запоминаем meta и гарантируем overlay без пересоздания.
+      this.isSticky = true;
+      this.stickyMeta = meta;
+      this._ensureStickyOverlay();
+      return;
+    }
+
+    // Обычная монета: пересоздаём overlay на каждый спин.
+    this._destroyOverlayCoin();
+    if (!this.coinFactory?.createOverlayCoin) return;
+
+    const coin = this.coinFactory.createOverlayCoin();
+    this.overlayCoin = coin;
+
+    // Скин — до addChild, чтобы не было флэша.
+    applyCoinMetaToSpine(coin, this.currentSymbolMeta);
+
+    // Позиция в изолированном контейнере этого рила.
+    const padding = this.padding;
+    const w = this.width - padding * 2;
+    const h = this.step - padding * 2;
+    coin.x = padding + w / 2;
+    coin.y = padding + h / 2;
+
+    // Добавляем на сцену ДО запуска анимации (как в spine_test.html).
+    this.overlayContainer.addChild(coin);
+
+    // start → idle через listener: точный паттерн из spine_test.html.
+    coin.state.clearTracks();
+    coin.state.setAnimation(0, 'start', false);
+
+    const listener = {
+      complete: (trackEntry) => {
+        if (trackEntry.animation?.name === 'start') {
+          coin.state.removeListener(listener);
+          if (!coin.destroyed) {
+            coin.state.clearTracks();
+            coin.state.setAnimation(0, 'idle', true);
+          }
+        }
+      }
+    };
+    coin.state.addListener(listener);
+  }
+
+  /**
+   * Уничтожить scroll-монетку по индексу (0 — уезжающая, 1 — приезжающая).
+   * Вызывается при старте и конце каждого спина — монетки всегда пересоздаются заново.
+   * @private
+   */
+  _destroyScrollCoin(idx) {
+    const coin = this.spineCoins[idx];
+    if (!coin) return;
+    this.spineCoins[idx] = null;
+    if (coin.parent) coin.parent.removeChild(coin);
+    if (coin.state) coin.state.clearTracks();
+    if (typeof coin.removeSlotObject === 'function') {
+      try {
+        coin.removeSlotObject('text_holder');
+      } catch (e) {
+        // noop
+      }
+    }
+    if (!coin.destroyed) coin.destroy({ children: true });
+  }
+
+  /**
+   * Синхронно уничтожить текущий оверлей: removeChild → clearTracks → destroy.
+   * @private
+   */
+  _destroyOverlayCoin() {
+    const coin = this.overlayCoin;
+    if (!coin) return;
+    this.overlayCoin = null;
+    if (coin.parent) coin.parent.removeChild(coin);
+    if (coin.state) coin.state.clearTracks();
+    if (typeof coin.removeSlotObject === 'function') {
+      try {
+        coin.removeSlotObject('text_holder');
+      } catch (e) {
+        // noop
+      }
+    }
+    if (!coin.destroyed) coin.destroy({ children: true });
+  }
+
+  /**
+   * Спрятать монетку-оверлей для этого рила и уничтожить Spine-экземпляр.
    */
   clearOverlay() {
-    if (this.overlayCoin) {
-      this.overlayCoin.visible = false;
-    }
+    // Для sticky-рилов overlay живёт до конца серии — его не трогаем обычным clear.
+    if (this.isSticky) return;
+    this._destroyOverlayCoin();
   }
 
   /**
@@ -315,9 +428,17 @@ export class ZeusReel {
   /**
    * Установить символ без анимации.
    */
-  setSymbol(symbolType) {
+  setSymbol(symbolType, symbolMeta = null) {
     this.currentSymbol = symbolType;
     this.targetSymbol = symbolType;
+    this.currentSymbolMeta = symbolMeta;
+    this.targetSymbolMeta = symbolMeta;
+    // При прямой установке sticky считаем рил зафиксированным.
+    if (symbolMeta && symbolMeta.type === 'sticky') {
+      this.isSticky = true;
+      this.stickyMeta = symbolMeta;
+      this._ensureStickyOverlay();
+    }
     this.isSpinning = false;
     this.elapsedMs = 0;
     this.symbol.y = 0;
@@ -327,8 +448,9 @@ export class ZeusReel {
   /**
    * Запустить анимацию спина к заданному символу.
    */
-  spinToSymbol(symbolType, stepId = 0) {
+  spinToSymbol(symbolType, stepId = 0, symbolMeta = null) {
     this.targetSymbol = symbolType;
+    this.targetSymbolMeta = symbolMeta;
     this.isSpinning = true;
     this.elapsedMs = 0;
     // При новом спине возвращаем внутренний символ под маской,
@@ -346,6 +468,11 @@ export class ZeusReel {
     // целевой якорь (куда приедет символ) помечаем stepId.
     this.targetAnchorIndex = this.anchorIndex + direction * steps;
     this.targetAnchorStepId = stepId;
+
+    // Уничтожаем scroll-монетки прошлого спина — при следующем обращении
+    // создадутся свежие экземпляры с нужным скином и анимацией с нуля.
+    this._destroyScrollCoin(0);
+    this._destroyScrollCoin(1);
   }
 
   /**
@@ -360,11 +487,14 @@ export class ZeusReel {
     if (localTime <= 0) {
       // Во время задержки до старта анимации показываем уезжающую монету
       // там же, где стоял оверлей, чтобы не было мигания при смене.
-      if (this.createSpineCoin && this.currentSymbol === 1) {
+      if (this.coinFactory?.createScrollCoin && this.currentSymbol === 1 && this.currentSymbolMeta) {
         if (!this.spineCoins[0]) {
-          this.spineCoins[0] = this.createSpineCoin();
-          this.container.addChild(this.spineCoins[0]);
-          this.spineCoins[0].state.setAnimation(0, '1', true);
+          const sc = this.coinFactory.createScrollCoin(0);
+          applyCoinMetaToSpine(sc, this.currentSymbolMeta);
+          sc.state.clearTracks();
+          sc.state.setAnimation(0, '1', true);
+          this.container.addChild(sc);
+          this.spineCoins[0] = sc;
         }
         const pd = this.padding;
         const sw = this.width - pd * 2;
@@ -445,18 +575,32 @@ export class ZeusReel {
       // Опорные символы рисуем через Spine (если фабрика есть),
       // все остальные пролетающие символы остаются спрайтами.
       let spineSlotIdx = -1;
-      if (this.createSpineCoin && symbolType === 1) {
-        if (k === this.anchorIndex) spineSlotIdx = 0;
-        else if (k === this.targetAnchorIndex) spineSlotIdx = 1;
+      let spineMeta = null;
+      if (this.coinFactory?.createScrollCoin && symbolType === 1) {
+        if (k === this.anchorIndex) {
+          spineSlotIdx = 0;
+          spineMeta = this.currentSymbolMeta;
+        } else if (k === this.targetAnchorIndex) {
+          spineSlotIdx = 1;
+          spineMeta = this.targetSymbolMeta;
+        }
+        // Если meta не пришла — не рисуем spine с чужим артефактным скином,
+        // падаем на спрайт (spineSlotIdx остаётся -1).
+        if (spineSlotIdx >= 0 && !spineMeta) {
+          spineSlotIdx = -1;
+        }
       }
 
       if (spineSlotIdx >= 0) {
-        // Ленивое создание Spine-монетки и добавление в контейнер (под маску).
-        // В прокрутках используем анимацию «1».
+        // Создаём новый экземпляр только один раз за спин (после _destroyScrollCoin в spinToSymbol).
+        // Скин и трек 0 устанавливаются сразу при создании — никакого переиспользования.
         if (!this.spineCoins[spineSlotIdx]) {
-          this.spineCoins[spineSlotIdx] = this.createSpineCoin();
-          this.container.addChild(this.spineCoins[spineSlotIdx]);
-          this.spineCoins[spineSlotIdx].state.setAnimation(0, '1', true);
+          const sc = this.coinFactory.createScrollCoin(spineSlotIdx);
+          applyCoinMetaToSpine(sc, spineMeta);
+          sc.state.clearTracks();
+          sc.state.setAnimation(0, '1', true);
+          this.container.addChild(sc);
+          this.spineCoins[spineSlotIdx] = sc;
         }
         const sc = this.spineCoins[spineSlotIdx];
         sc.visible = true;
@@ -491,9 +635,9 @@ export class ZeusReel {
     }
 
     if (localTime >= this.totalDurationMs) {
-      // Прячем Spine-монеты опорных символов: overlay возьмёт на себя финальное состояние.
-      if (this.spineCoins[0]) this.spineCoins[0].visible = false;
-      if (this.spineCoins[1]) this.spineCoins[1].visible = false;
+      // Уничтожаем scroll-монетки — overlay покажет финальное состояние.
+      this._destroyScrollCoin(0);
+      this._destroyScrollCoin(1);
 
       this.isSpinning = false;
       this.symbol.y = 0;
@@ -502,6 +646,12 @@ export class ZeusReel {
       this.anchorIndex = this.targetAnchorIndex;
       this.anchorStepId = this.targetAnchorStepId;
       this.currentSymbol = this.targetSymbol;
+      this.currentSymbolMeta = this.targetSymbolMeta;
+      // Если после спина выпала sticky-монета — помечаем рил как sticky.
+      if (this.currentSymbolMeta && this.currentSymbolMeta.type === 'sticky') {
+        this.isSticky = true;
+        this.stickyMeta = this.currentSymbolMeta;
+      }
       this._drawSymbol(this.currentSymbol);
       if (this.onStop) {
         this.onStop(this);

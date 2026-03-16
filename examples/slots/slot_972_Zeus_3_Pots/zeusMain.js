@@ -1,6 +1,8 @@
 import { ZeusSlotManager } from './ZeusSlotManager.js';
 import { ReelAnimationCurve } from './ReelAnimationCurve.js';
 import { ZeusReel } from './ZeusReel.js';
+import { parseScenarioCode, metaToNumericSymbol } from './SymbolMapping.js';
+import { fontManager } from './FontManager.js';
 
 // Параметры сцены
 const STAGE_WIDTH = 1920;
@@ -50,7 +52,7 @@ async function createApp() {
   return app;
 }
 
-function createSlotManager(app, reelProfile, symbolTexture, frameTexture, plateTexture, createSpineCoin) {
+function createSlotManager(app, reelProfile, symbolTexture, frameTexture, plateTexture, coinFactories) {
 
   // ВЕРСТКА поля 3×3 всегда опирается на физический размер символа,
   // а не на шаг анимации из профиля. Профиль используется только для движения рилов.
@@ -79,7 +81,7 @@ function createSlotManager(app, reelProfile, symbolTexture, frameTexture, plateT
     symbolTexture,
     frameTexture,
     plateTexture,
-    createSpineCoin,
+    coinFactories,
     onSpinComplete: (finalMatrix) => {
       // Для отладки покажем в консоли итоговую матрицу
       // eslint-disable-next-line no-console
@@ -164,41 +166,77 @@ function setupSpinDemo(app, slotManager) {
     }
   });
 
-  function triggerSpin(nextMatrix) {
-    const target = nextMatrix;
-    slotManager.spinToMatrix(target);
+  function triggerSpin(nextStep) {
+    // nextStep может быть либо чистой числовой матрицей (фолбэк),
+    // либо объектом { symbols, meta } из сценария.
+    const targetMatrix = Array.isArray(nextStep?.symbols) ? nextStep.symbols : nextStep;
+    const metaMatrix = Array.isArray(nextStep?.meta) ? nextStep.meta : null;
+
+    slotManager.spinToMatrix(targetMatrix, metaMatrix);
 
     // Отладочная лента (если включена) повторяет поведение центральной ячейки [1,1]
     // по целевому символу.
-    if (ENABLE_DEBUG_REEL && slotManager.debugReel && target[1]) {
-      const debugTargetSymbol = typeof target[1][1] !== 'undefined' ? target[1][1] : 0;
+    if (ENABLE_DEBUG_REEL && slotManager.debugReel && targetMatrix[1]) {
+      const debugTargetSymbol = typeof targetMatrix[1][1] !== 'undefined' ? targetMatrix[1][1] : 0;
+      const debugMeta = metaMatrix && metaMatrix[1] ? metaMatrix[1][1] : null;
       // Используем тот же номер шага сценария, что и в слот-менеджере.
       const stepId = slotManager.spinIndex || 0;
-      slotManager.debugReel.spinToSymbol(debugTargetSymbol, stepId);
+      slotManager.debugReel.spinToSymbol(debugTargetSymbol, stepId, debugMeta);
     }
   }
 
   // Сценарий спинов (последовательность матриц).
-  let scenario = [];
+  // Храним отдельно числовые значения для старой логики 0/1
+  // и meta-объекты для маппинга на Spine-скины.
+  let scenarioNumeric = [];
+  let scenarioMeta = [];
   let scenarioIndex = 0;
 
   async function loadScenario() {
     try {
-      const resp = await fetch('./scenario/scenario_zeus_2026-03-12T15-44-52.json');
+      const resp = await fetch('./scenario/scenario_zeus_2026-03-16T10-16-49.json');
       if (!resp.ok) throw new Error('Failed to load scenario JSON');
       const data = await resp.json();
       if (Array.isArray(data)) {
-        scenario = data.map((step) => step.matrix).filter((m) => Array.isArray(m));
+        scenarioNumeric = [];
+        scenarioMeta = [];
+
+        data.forEach((step) => {
+          const matrix = step && Array.isArray(step.matrix) ? step.matrix : null;
+          if (!matrix) return;
+
+          const rows = matrix.length;
+          const numericMatrix = [];
+          const metaMatrix = [];
+
+          for (let r = 0; r < rows; r += 1) {
+            const rowCodes = Array.isArray(matrix[r]) ? matrix[r] : [];
+            const numericRow = [];
+            const metaRow = [];
+            for (let c = 0; c < rowCodes.length; c += 1) {
+              const code = typeof rowCodes[c] === 'string' ? rowCodes[c] : 'E';
+              const meta = parseScenarioCode(code);
+              numericRow.push(metaToNumericSymbol(meta));
+              metaRow.push(meta);
+            }
+            numericMatrix.push(numericRow);
+            metaMatrix.push(metaRow);
+          }
+
+          scenarioNumeric.push(numericMatrix);
+          scenarioMeta.push(metaMatrix);
+        });
       }
     } catch (e) {
       // eslint-disable-next-line no-console
       console.error('Failed to load scenario, using random matrices.', e);
-      scenario = [];
+      scenarioNumeric = [];
+      scenarioMeta = [];
     }
   }
 
-  function getNextScenarioMatrix() {
-    if (scenario.length === 0) {
+  function getNextScenarioStep() {
+    if (scenarioNumeric.length === 0) {
       // Фолбэк: если сценарий не загрузился — генерим случайную матрицу как раньше.
       const m = [];
       for (let r = 0; r < ROWS; r += 1) {
@@ -210,30 +248,38 @@ function setupSpinDemo(app, slotManager) {
       }
       return m;
     }
-    const matrix = scenario[scenarioIndex % scenario.length];
+    const numericMatrix = scenarioNumeric[scenarioIndex % scenarioNumeric.length];
+    const metaMatrix = scenarioMeta[scenarioIndex % scenarioMeta.length];
     scenarioIndex += 1;
-    return matrix;
+    return {
+      symbols: numericMatrix,
+      meta: metaMatrix
+    };
   }
 
   // Клавиатура: пробел — новый спин по сценарию.
   window.addEventListener('keydown', (evt) => {
     if (evt.code === 'Space') {
       evt.preventDefault();
-      const m = getNextScenarioMatrix();
-      triggerSpin(m);
+      const step = getNextScenarioStep();
+      triggerSpin(step);
     }
   });
 
   // Начальная инициализация: загружаем сценарий и ставим первый спин.
   (async () => {
     await loadScenario();
-    const firstMatrix = getNextScenarioMatrix();
-    slotManager.setMatrixImmediately(firstMatrix);
+    const firstStep = getNextScenarioStep();
+    const firstMatrix = Array.isArray(firstStep?.symbols) ? firstStep.symbols : firstStep;
+    const firstMeta = Array.isArray(firstStep?.meta) ? firstStep.meta : null;
+    slotManager.setMatrixImmediately(firstMatrix, firstMeta);
   })();
 }
 
 async function main() {
   const app = await createApp();
+
+  await fontManager.loadFonts();
 
   let reelConfig;
   try {
@@ -261,40 +307,43 @@ async function main() {
   const frameTexture = await PIXI.Assets.load('./png/Frame.png');
   const plateTexture = await PIXI.Assets.load('./png/plate.png');
 
-  // Spine-монетка для оверлея: skeleton.json + skeleton.atlas в spine/coin.
-  // Регистрируем алиасы и один раз подгружаем ресурсы.
+  // Spine-монетки: один скелетон + по 3 уникальных атлас-алиаса на каждый рил.
+  // Уникальный алиас → уникальный cacheKey в Spine.from() → отдельный SkeletonData
+  // → отдельные объекты Attachment → изолированный attachment.uvs (Float32Array).
+  // Это устраняет баг, когда несколько монеток из одного SkeletonData перезаписывают
+  // общий attachment.uvs при _applyState(), что приводило к неверным UV у всех, кроме последней.
+  const TOTAL_REELS = ROWS * COLS; // 9 рилов для сетки 3×3
+  // Слоты: 0 = overlay, 1 = scroll[0] (уходящий), 2 = scroll[1] (приходящий)
+  const SLOTS_PER_REEL = 3;
+
   PIXI.Assets.add({ alias: 'zeusCoinSkeleton', src: './spine/coin/skeleton.json' });
-  PIXI.Assets.add({ alias: 'zeusCoinAtlas', src: './spine/coin/skeleton.atlas' });
-  await PIXI.Assets.load(['zeusCoinSkeleton', 'zeusCoinAtlas']);
+  const atlasAliases = [];
+  for (let i = 0; i < TOTAL_REELS * SLOTS_PER_REEL; i++) {
+    const alias = `zeusCoinAtlas_${i}`;
+    PIXI.Assets.add({ alias, src: './spine/coin/skeleton.atlas' });
+    atlasAliases.push(alias);
+  }
+  await PIXI.Assets.load(['zeusCoinSkeleton', ...atlasAliases]);
 
-  const createSpineCoin = () => {
-    const spineCoin = spine.Spine.from({
-      skeleton: 'zeusCoinSkeleton',
-      atlas: 'zeusCoinAtlas'
-    });
-
-    // Скин-монетка: mult. setSkin принимает объект Skin, не строку.
-    const multSkin = spineCoin.skeleton.data.findSkin('mult');
-    if (multSkin) {
-      spineCoin.skeleton.setSkin(multSkin);
+  /** Создаёт изолированный Spine-экземпляр из конкретного атлас-алиаса. */
+  function makeSpine(atlasAlias) {
+    const c = spine.Spine.from({ skeleton: 'zeusCoinSkeleton', atlas: atlasAlias });
+    if (!c.skeleton.physics) {
+      c.skeleton.physics = { update: () => {}, updateGlobal: () => {} };
     }
-    spineCoin.skeleton.setSlotsToSetupPose();
+    // defaultMix = 0 на каждом экземпляре — мгновенный переход без блендинга.
+    c.state.data.defaultMix = 0;
+    return c;
+  }
 
-    // Заглушка physics, если не задана в экспорте.
-    if (!spineCoin.skeleton.physics) {
-      spineCoin.skeleton.physics = {
-        update: () => {},
-        updateGlobal: () => {}
-      };
-    }
+  // Создаём по одной фабрике на рил: overlay и scroll-монетки используют
+  // разные алиасы → разные SkeletonData → нет общих attachment.uvs.
+  const coinFactories = Array.from({ length: TOTAL_REELS }, (_, reelIdx) => ({
+    createOverlayCoin: () => makeSpine(`zeusCoinAtlas_${reelIdx * SLOTS_PER_REEL + 0}`),
+    createScrollCoin:  (slotIdx) => makeSpine(`zeusCoinAtlas_${reelIdx * SLOTS_PER_REEL + 1 + Math.min(slotIdx, 1)}`),
+  }));
 
-    // Базовая анимация — idle, зацикленная.
-    spineCoin.state.setAnimation(0, 'idle', true);
-
-    return spineCoin;
-  };
-
-  const slotManager = createSlotManager(app, reelConfig, coinTexture, frameTexture, plateTexture, createSpineCoin);
+  const slotManager = createSlotManager(app, reelConfig, coinTexture, frameTexture, plateTexture, coinFactories);
   setupSpinDemo(app, slotManager);
 }
 

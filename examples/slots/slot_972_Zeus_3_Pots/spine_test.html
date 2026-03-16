@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Spine Coin Test</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #1a1a2e;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── Левая колонка: канвас ── */
+    #canvas-wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0f0f23;
+      position: relative;
+    }
+
+    #info-bar {
+      position: absolute;
+      bottom: 12px;
+      left: 0; right: 0;
+      text-align: center;
+      font-size: 13px;
+      color: #888;
+      pointer-events: none;
+    }
+
+    #info-bar span { color: #ffd700; font-weight: bold; }
+
+    /* ── Правая панель управления ── */
+    #controls {
+      width: 300px;
+      background: #16213e;
+      border-left: 1px solid #2a2a4a;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #controls h1 {
+      padding: 14px 16px 10px;
+      font-size: 15px;
+      color: #ffd700;
+      border-bottom: 1px solid #2a2a4a;
+      letter-spacing: 0.5px;
+    }
+
+    .section {
+      padding: 10px 12px 6px;
+      border-bottom: 1px solid #1e2a44;
+    }
+
+    .section h2 {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #6a8aad;
+      margin-bottom: 7px;
+    }
+
+    .btn-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+
+    button {
+      padding: 5px 10px;
+      border: 1px solid #2d4a6a;
+      border-radius: 5px;
+      background: #1e3050;
+      color: #c0d0e0;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+
+    button:hover { background: #2a4570; border-color: #5080c0; }
+
+    button.active {
+      background: #1a5a9a;
+      border-color: #4da6ff;
+      color: #fff;
+      font-weight: bold;
+    }
+
+    /* цвет для групп скинов */
+    button[data-group="eternal"]  { border-color: #804040; }
+    button[data-group="eternal"].active  { background: #6a1010; border-color: #ff4040; }
+    button[data-group="expand"]   { border-color: #408040; }
+    button[data-group="expand"].active   { background: #104a10; border-color: #40ff40; }
+    button[data-group="multi"]    { border-color: #806040; }
+    button[data-group="multi"].active    { background: #4a3010; border-color: #ffb040; }
+    button[data-group="jackpot"]  { border-color: #6040a0; }
+    button[data-group="jackpot"].active  { background: #301060; border-color: #a060ff; }
+    button[data-group="mystery"]  { border-color: #408080; }
+    button[data-group="mystery"].active  { background: #104040; border-color: #40ffff; }
+    button[data-group="special"]  { border-color: #808040; }
+    button[data-group="special"].active  { background: #404010; border-color: #ffff40; }
+
+    button[data-type="anim"] { border-color: #3a6060; }
+    button[data-type="anim"].active { background: #0a4040; border-color: #40c0c0; color: #80ffff; }
+
+    #loop-toggle {
+      width: 100%;
+      margin-top: 6px;
+      padding: 7px;
+      font-size: 13px;
+    }
+
+    #log {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 12px;
+      font-size: 11px;
+      color: #708090;
+      font-family: monospace;
+    }
+
+    #log div { padding: 1px 0; border-bottom: 1px solid #1a2030; }
+    #log .ok  { color: #60c060; }
+    #log .err { color: #e05050; }
+    #log .info { color: #a0a0c0; }
+  </style>
+</head>
+<body>
+
+<div id="canvas-wrap">
+  <canvas id="canvas"></canvas>
+  <div id="info-bar">Скин: <span id="cur-skin">—</span> &nbsp;|&nbsp; Анимация: <span id="cur-anim">—</span></div>
+</div>
+
+<div id="controls">
+  <h1>🪙 Spine Coin Test</h1>
+
+  <!-- Масштаб -->
+  <div class="section">
+    <h2>Масштаб</h2>
+    <div style="display:flex;align-items:center;gap:8px;padding:4px 0">
+      <input type="range" id="scale-slider" min="0.1" max="2" step="0.05" value="1" style="flex:1">
+      <span id="scale-val" style="min-width:36px;color:#ffd700;font-size:13px">1.0</span>
+    </div>
+  </div>
+
+  <!-- Анимации -->
+  <div class="section">
+    <h2>Анимации</h2>
+    <div class="btn-grid" id="anim-buttons"></div>
+    <button id="loop-toggle" data-type="anim">🔁 Loop: ON</button>
+  </div>
+
+  <!-- Базовые скины -->
+  <div class="section">
+    <h2>Regular / Base</h2>
+    <div class="btn-grid">
+      <button data-skin="mult"   data-group="special">mult</button>
+      <button data-skin="sticky" data-group="special">sticky</button>
+    </div>
+  </div>
+
+  <!-- Multi (violet _V) -->
+  <div class="section">
+    <h2>Multi — _V (violet pot)</h2>
+    <div class="btn-grid">
+      <button data-skin="multi_mult"  data-group="multi">multi_mult</button>
+      <button data-skin="multi_mini"  data-group="multi">multi_mini</button>
+      <button data-skin="multi_midi"  data-group="multi">multi_midi</button>
+      <button data-skin="multi_major" data-group="multi">multi_major</button>
+      <button data-skin="multi_grand" data-group="multi">multi_grand</button>
+    </div>
+  </div>
+
+  <!-- Eternal (red _R) -->
+  <div class="section">
+    <h2>Eternal — _R (red pot)</h2>
+    <div class="btn-grid">
+      <button data-skin="eternal_mult"  data-group="eternal">eternal_mult</button>
+      <button data-skin="eternal_mini"  data-group="eternal">eternal_mini</button>
+      <button data-skin="eternal_midi"  data-group="eternal">eternal_midi</button>
+      <button data-skin="eternal_major" data-group="eternal">eternal_major</button>
+      <button data-skin="eternal_grand" data-group="eternal">eternal_grand</button>
+    </div>
+  </div>
+
+  <!-- Expand (green _G) -->
+  <div class="section">
+    <h2>Expand — _G (green pot)</h2>
+    <div class="btn-grid">
+      <button data-skin="expand_mult"  data-group="expand">expand_mult</button>
+      <button data-skin="expand_mini"  data-group="expand">expand_mini</button>
+      <button data-skin="expand_midi"  data-group="expand">expand_midi</button>
+      <button data-skin="expand_major" data-group="expand">expand_major</button>
+      <button data-skin="expand_grand" data-group="expand">expand_grand</button>
+    </div>
+  </div>
+
+  <!-- Jackpots (no pot) -->
+  <div class="section">
+    <h2>Jackpot — no pot</h2>
+    <div class="btn-grid">
+      <button data-skin="mini"  data-group="jackpot">mini</button>
+      <button data-skin="midi"  data-group="jackpot">midi</button>
+      <button data-skin="major" data-group="jackpot">major</button>
+    </div>
+  </div>
+
+  <!-- Mystery -->
+  <div class="section">
+    <h2>Mystery</h2>
+    <div class="btn-grid">
+      <button data-skin="mistery"               data-group="mystery">mistery</button>
+      <button data-skin="mistery_jackpot_mini"  data-group="mystery">jp_mini</button>
+      <button data-skin="mistery_jackpot_midi"  data-group="mystery">jp_midi</button>
+      <button data-skin="mistery_jackpot_major" data-group="mystery">jp_major</button>
+      <button data-skin="mistery_jackpot_grand" data-group="mystery">jp_grand</button>
+    </div>
+  </div>
+
+  <!-- 9 монет -->
+  <div class="section">
+    <h2>Сетка 3×3 (9 монет)</h2>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <label style="font-size:12px;color:#6a8aad;min-width:64px">Задержка:</label>
+        <input type="number" id="grid-delay" value="400" min="0" max="5000" step="50"
+          style="width:64px;background:#1e3050;color:#c0d0e0;border:1px solid #2d4a6a;border-radius:4px;padding:3px 6px;font-size:12px">
+        <span style="font-size:11px;color:#607090">мс</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <label style="font-size:12px;color:#6a8aad;min-width:64px">Скин:</label>
+        <select id="grid-skin" style="flex:1;background:#1e3050;color:#c0d0e0;border:1px solid #2d4a6a;border-radius:4px;padding:3px 6px;font-size:12px">
+          <option value="mult">mult</option>
+          <option value="sticky">sticky</option>
+          <option value="multi_mult">multi_mult</option>
+          <option value="multi_grand">multi_grand</option>
+          <option value="eternal_mult">eternal_mult</option>
+          <option value="expand_mult">expand_mult</option>
+          <option value="mini">mini</option>
+          <option value="midi">midi</option>
+          <option value="major">major</option>
+        </select>
+      </div>
+      <label style="font-size:12px;color:#6a8aad;display:flex;align-items:center;gap:6px">
+        <input type="checkbox" id="grid-manual-update"> ручной update()
+        <span style="font-size:10px;color:#445566">(autoUpdate=false)</span>
+      </label>
+      <div class="btn-grid" style="margin-top:2px">
+        <button id="btn-run9" style="flex:1;background:#1a4a1a;border-color:#3a8a3a;color:#90ff90">▶ Запустить 9</button>
+        <button id="btn-clear9" style="background:#4a1a1a;border-color:#8a3a3a;color:#ff9090">✕ Очистить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Лог -->
+  <div id="log"></div>
+</div>
+
+<script src="../../assets/libs/pixi.min.js"></script>
+<script src="../../assets/libs/spine-pixi.js"></script>
+<script type="module">
+
+const CANVAS_W = 600;
+const CANVAS_H = 600;
+const ANIMATIONS = ['1', 'appearance', 'flip', 'hit', 'idle', 'start', 'win'];
+
+// ── Состояние одиночной монеты ────────────────────────────────────────
+let currentSkin = 'mult';
+let currentAnim = 'idle';
+let loopAnim = true;
+let coinScale = 1;
+let spineCoin = null;
+let app = null;
+
+// ── Состояние сетки 9 монет ───────────────────────────────────────────
+const GRID_ROWS = 3;
+const GRID_COLS = 3;
+const CELL_W = CANVAS_W / GRID_COLS;   // 200
+const CELL_H = CANVAS_H / GRID_ROWS;   // 200
+const GRID_SCALE = 0.6;
+let gridCoins = [];          // массив {coin, label, state}
+let gridTimers = [];
+let gridAutoUpdate = false;  // если true — монеты не используют PIXI-тикер
+
+// ── Лог ──────────────────────────────────────────────────────────────
+const logEl = document.getElementById('log');
+function log(msg, type = 'info') {
+  const d = document.createElement('div');
+  d.className = type;
+  d.textContent = `[${new Date().toLocaleTimeString('ru')}] ${msg}`;
+  logEl.prepend(d);
+}
+
+// ── PIXI App (v8 API) ─────────────────────────────────────────────────
+async function initApp() {
+  app = new PIXI.Application();
+  await app.init({
+    width: CANVAS_W,
+    height: CANVAS_H,
+    background: 0x0d1117,
+    antialias: true,
+  });
+
+  // Вставляем canvas в контейнер
+  const wrap = document.getElementById('canvas-wrap');
+  const placeholder = document.getElementById('canvas');
+  if (placeholder) placeholder.remove();
+  app.canvas.style.display = 'block';
+  app.canvas.style.width = CANVAS_W + 'px';
+  app.canvas.style.height = CANVAS_H + 'px';
+  wrap.insertBefore(app.canvas, wrap.firstChild);
+
+  // Сетка
+  const grid = new PIXI.Graphics();
+  grid.lineStyle(1, 0x1e2a3a, 1);
+  for (let x = 0; x <= CANVAS_W; x += 40) { grid.moveTo(x, 0); grid.lineTo(x, CANVAS_H); }
+  for (let y = 0; y <= CANVAS_H; y += 40) { grid.moveTo(0, y); grid.lineTo(CANVAS_W, y); }
+  app.stage.addChild(grid);
+
+  // Крест в центре
+  const cross = new PIXI.Graphics();
+  cross.lineStyle(1, 0x3a4a5a, 1);
+  cross.moveTo(CANVAS_W / 2, 0); cross.lineTo(CANVAS_W / 2, CANVAS_H);
+  cross.moveTo(0, CANVAS_H / 2); cross.lineTo(CANVAS_W, CANVAS_H / 2);
+  app.stage.addChild(cross);
+
+  log('PIXI инициализирован', 'ok');
+  await loadAssets();
+}
+
+// ── Загрузка ассетов ─────────────────────────────────────────────────
+async function loadAssets() {
+  log('Загрузка skeleton.json и skeleton.atlas…');
+  PIXI.Assets.add({ alias: 'coinSkeleton', src: './spine/coin/skeleton.json' });
+  PIXI.Assets.add({ alias: 'coinAtlas',    src: './spine/coin/skeleton.atlas' });
+  try {
+    await PIXI.Assets.load(['coinSkeleton', 'coinAtlas']);
+    log('Ассеты загружены', 'ok');
+    createCoin();
+  } catch (e) {
+    log(`Ошибка загрузки: ${e.message}`, 'err');
+    console.error(e);
+  }
+}
+
+// ── Фабрика Spine-монетки ─────────────────────────────────────────────
+function makeCoin() {
+  const c = spine.Spine.from({ skeleton: 'coinSkeleton', atlas: 'coinAtlas' });
+  if (!c.skeleton.physics) {
+    c.skeleton.physics = { update: () => {}, updateGlobal: () => {} };
+  }
+  return c;
+}
+
+// ── Создание одиночной монеты ─────────────────────────────────────────
+function createCoin() {
+  clearGrid();   // убираем сетку, если была
+  if (spineCoin) {
+    spineCoin.parent?.removeChild(spineCoin);
+    spineCoin.state?.clearTracks();
+    if (!spineCoin.destroyed) spineCoin.destroy({ children: true });
+  }
+
+  spineCoin = makeCoin();
+  spineCoin.x = CANVAS_W / 2;
+  spineCoin.y = CANVAS_H / 2;
+  spineCoin.scale.set(coinScale);
+
+  applySkin(currentSkin, false);
+  app.stage.addChild(spineCoin);
+  playAnim(currentAnim);
+  log('Spine создан', 'ok');
+}
+
+// ── Применить скин ───────────────────────────────────────────────────
+function applySkin(name, restartAnim = true) {
+  if (!spineCoin) return;
+  const skin = spineCoin.skeleton.data.findSkin(name);
+  if (!skin) { log(`Скин не найден: ${name}`, 'err'); return; }
+
+  spineCoin.skeleton.setSkin(skin);
+  spineCoin.skeleton.setSlotsToSetupPose();
+  currentSkin = name;
+  document.getElementById('cur-skin').textContent = name;
+
+  document.querySelectorAll('[data-skin]').forEach(b => {
+    b.classList.toggle('active', b.dataset.skin === name);
+  });
+
+  log(`Скин → ${name}`, 'info');
+  if (restartAnim) playAnim(currentAnim);
+}
+
+// ── Запустить анимацию ───────────────────────────────────────────────
+function playAnim(name) {
+  if (!spineCoin) return;
+  const animData = spineCoin.skeleton.data.animations?.find(a => a.name === name);
+  if (!animData) { log(`Анимация не найдена: ${name}`, 'err'); return; }
+
+  spineCoin.state.clearTracks();
+  spineCoin.state.setAnimation(0, name, loopAnim);
+  currentAnim = name;
+  document.getElementById('cur-anim').textContent = `${name}${loopAnim ? ' 🔁' : ''}`;
+
+  document.querySelectorAll('[data-type="anim"]').forEach(b => {
+    if (b.dataset.anim) b.classList.toggle('active', b.dataset.anim === name);
+  });
+
+  log(`Анимация → ${name} (loop=${loopAnim})`, 'info');
+}
+
+// ── Кнопки анимаций ──────────────────────────────────────────────────
+const animContainer = document.getElementById('anim-buttons');
+ANIMATIONS.forEach(anim => {
+  const btn = document.createElement('button');
+  btn.textContent = anim;
+  btn.dataset.anim = anim;
+  btn.dataset.type = 'anim';
+  btn.onclick = () => playAnim(anim);
+  animContainer.appendChild(btn);
+});
+
+// ── Кнопки скинов ────────────────────────────────────────────────────
+document.querySelectorAll('[data-skin]').forEach(btn => {
+  btn.onclick = () => applySkin(btn.dataset.skin);
+});
+
+// ── Loop toggle ──────────────────────────────────────────────────────
+const loopBtn = document.getElementById('loop-toggle');
+loopBtn.onclick = () => {
+  loopAnim = !loopAnim;
+  loopBtn.textContent = `🔁 Loop: ${loopAnim ? 'ON' : 'OFF'}`;
+  loopBtn.classList.toggle('active', loopAnim);
+  playAnim(currentAnim);
+};
+loopBtn.classList.add('active');
+
+// ── Масштаб ──────────────────────────────────────────────────────────
+const scaleSlider = document.getElementById('scale-slider');
+const scaleVal = document.getElementById('scale-val');
+scaleSlider.oninput = () => {
+  coinScale = parseFloat(scaleSlider.value);
+  scaleVal.textContent = coinScale.toFixed(2);
+  if (spineCoin) spineCoin.scale.set(coinScale);
+};
+
+// ── Клавиши ─────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  const idx = ANIMATIONS.indexOf(currentAnim);
+  if (e.key === 'ArrowRight') playAnim(ANIMATIONS[(idx + 1) % ANIMATIONS.length]);
+  if (e.key === 'ArrowLeft')  playAnim(ANIMATIONS[(idx + ANIMATIONS.length - 1) % ANIMATIONS.length]);
+});
+
+// ═══════════════════════════════════════════════════════════════════
+//  СЕТКА 9 МОНЕТ
+// ═══════════════════════════════════════════════════════════════════
+
+// ── Очистить сетку ───────────────────────────────────────────────────
+function destroyDisplayObj(obj) {
+  if (!obj) return;
+  obj.parent?.removeChild(obj);
+  if (!obj.destroyed) obj.destroy({ children: true });
+}
+
+function clearGrid() {
+  gridTimers.forEach(t => clearTimeout(t));
+  gridTimers = [];
+  gridCoins.forEach(entry => {
+    if (!entry) return;
+    entry.coin?.state?.clearTracks();
+    destroyDisplayObj(entry.coin);
+    destroyDisplayObj(entry.labelBg);
+    destroyDisplayObj(entry.coordText);
+    destroyDisplayObj(entry.statusText);
+  });
+  gridCoins = [];
+}
+
+// ── Запустить один экземпляр и play start → idle ─────────────────────
+function spawnGridCoin(row, col, skinName, delayMs) {
+  const idx = row * GRID_COLS + col;
+  const cx = col * CELL_W + CELL_W / 2;
+  const cy = row * CELL_H + CELL_H / 2;
+
+  const entry = { coin: null, labelBg: null, state: 'waiting' };
+  gridCoins[idx] = entry;
+
+  // Метка-фон (позиция ячейки)
+  const labelBg = new PIXI.Graphics();
+  labelBg.rect(cx - CELL_W / 2 + 2, cy - CELL_H / 2 + 2, CELL_W - 4, CELL_H - 4).stroke({ width: 1, color: 0x2a3a5a });
+  // Текст координаты
+  const coordText = new PIXI.Text({ text: `[${row},${col}]`, style: { fontSize: 11, fill: 0x445566 } });
+  coordText.x = cx - CELL_W / 2 + 6;
+  coordText.y = cy - CELL_H / 2 + 4;
+  app.stage.addChild(labelBg);
+  app.stage.addChild(coordText);
+  entry.labelBg = labelBg;
+  entry.coordText = coordText;
+
+  // Статус-текст (start/idle/…)
+  const statusText = new PIXI.Text({ text: '⏳ wait', style: { fontSize: 12, fill: 0x607090 } });
+  statusText.x = cx - 28;
+  statusText.y = cy + CELL_H / 2 - 20;
+  app.stage.addChild(statusText);
+  entry.statusText = statusText;
+
+  const timer = setTimeout(() => {
+    const coin = makeCoin();
+    coin.x = cx;
+    coin.y = cy;
+    coin.scale.set(GRID_SCALE);
+    if (gridAutoUpdate) coin.autoUpdate = false;
+
+    // Применяем скин
+    const skin = coin.skeleton.data.findSkin(skinName);
+    if (skin) {
+      coin.skeleton.setSkin(skin);
+      coin.skeleton.setSlotsToSetupPose();
+    }
+
+    app.stage.addChild(coin);
+    entry.coin = coin;
+    entry.state = 'start';
+    statusText.text = '▶ start';
+    statusText.style.fill = 0xffaa40;
+    log(`[${row},${col}] start — скин: ${skinName}`, 'info');
+
+    // start → idle через listener
+    coin.state.clearTracks();
+    coin.state.setAnimation(0, 'start', false);
+
+    const listener = {
+      complete: (trackEntry) => {
+        if (trackEntry.animation?.name === 'start') {
+          coin.state.removeListener(listener);
+          if (!coin.destroyed) {
+            coin.state.clearTracks();
+            coin.state.setAnimation(0, 'idle', true);
+            entry.state = 'idle';
+            statusText.text = '🔁 idle';
+            statusText.style.fill = 0x60ff90;
+            log(`[${row},${col}] idle`, 'ok');
+          }
+        }
+      }
+    };
+    coin.state.addListener(listener);
+
+  }, delayMs);
+
+  gridTimers.push(timer);
+}
+
+// ── Запустить все 9 монет ────────────────────────────────────────────
+function run9Coins() {
+  clearGrid();
+  if (spineCoin) {
+    spineCoin.parent?.removeChild(spineCoin);
+    spineCoin.state?.clearTracks();
+    if (!spineCoin.destroyed) spineCoin.destroy({ children: true });
+    spineCoin = null;
+  }
+
+  const delay = parseInt(document.getElementById('grid-delay').value, 10) || 300;
+  const skin  = document.getElementById('grid-skin').value || 'mult';
+  gridAutoUpdate = document.getElementById('grid-manual-update').checked;
+
+  log(`=== 9 монет: задержка ${delay}ms, скин ${skin}, manual=${gridAutoUpdate} ===`, 'ok');
+
+  let i = 0;
+  for (let r = 0; r < GRID_ROWS; r++) {
+    for (let c = 0; c < GRID_COLS; c++) {
+      spawnGridCoin(r, c, skin, i * delay);
+      i++;
+    }
+  }
+}
+
+// ── Кнопки сетки ─────────────────────────────────────────────────────
+document.getElementById('btn-run9').onclick    = run9Coins;
+document.getElementById('btn-clear9').onclick  = () => { clearGrid(); log('Сетка очищена', 'info'); };
+
+// ── Старт ────────────────────────────────────────────────────────────
+initApp().then(() => {
+  app.ticker.add((ticker) => {
+    if (!gridAutoUpdate) return;
+    const deltaS = ticker.deltaMS / 1000;
+    gridCoins.forEach(entry => {
+      if (entry?.coin && !entry.coin.destroyed) {
+        entry.coin.update(deltaS);
+      }
+    });
+  });
+});
+</script>
+</body>
+</html>

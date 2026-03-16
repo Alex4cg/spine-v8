@@ -20,7 +20,9 @@ export class ZeusSlotManager {
    * @param {PIXI.Texture} [options.symbolTexture] - текстура символа (монетки)
    * @param {PIXI.Texture} [options.frameTexture] - текстура рамки поверх поля
    * @param {PIXI.Texture} [options.plateTexture] - текстура фоновой подложки ячейки
-   * @param {function} [options.createSpineCoin] - фабрика Spine-монетки для оверлея
+   * @param {Array<{createOverlayCoin:function, createScrollCoin:function}>} [options.coinFactories]
+   *   Массив фабрик монеток — по одной на каждый рил (row*cols + col).
+   *   Каждый элемент: { createOverlayCoin(), createScrollCoin(slotIdx) }.
    * @param {function} [options.onSpinComplete] - коллбек по завершении спина всех рилов
    */
   constructor({
@@ -37,7 +39,7 @@ export class ZeusSlotManager {
     symbolTexture = null,
     frameTexture = null,
     plateTexture = null,
-    createSpineCoin = null,
+    coinFactories = null,
     onSpinComplete
   }) {
     this.rows = rows;
@@ -56,7 +58,7 @@ export class ZeusSlotManager {
     this.reelProfile = reelProfile;
     this.symbolTexture = symbolTexture;
     this.plateTexture = plateTexture;
-    this.createSpineCoin = typeof createSpineCoin === 'function' ? createSpineCoin : null;
+    this.coinFactories = Array.isArray(coinFactories) ? coinFactories : null;
     this.reels = [];
     this.spinningCount = 0;
     this.spinIndex = 0; // номер шага сценария / спина
@@ -97,7 +99,7 @@ export class ZeusSlotManager {
           plateTexture: this.plateTexture,
           startDelayMs: reelIndex * curve.reelStartDelayMs,
           onStop: (stoppedReel) => this._onReelStop(stoppedReel),
-          createSpineCoin: this.createSpineCoin
+          coinFactory: this.coinFactories ? (this.coinFactories[reelIndex] || null) : null
         });
         this.reels.push(reel);
       }
@@ -128,14 +130,16 @@ export class ZeusSlotManager {
   /**
    * Установить матрицу символов без анимации.
    * @param {number[][]} matrix - matrix[row][col]
+   * @param {import('./SymbolMapping.js').SymbolMeta[][]} [metaMatrix] - meta[row][col]
    */
-  setMatrixImmediately(matrix) {
+  setMatrixImmediately(matrix, metaMatrix) {
     for (let row = 0; row < this.rows; row += 1) {
       for (let col = 0; col < this.cols; col += 1) {
         const idx = this._index(row, col);
         const reel = this.reels[idx];
         const symbol = matrix[row]?.[col] ?? 0;
-        reel.setSymbol(symbol);
+        const meta = metaMatrix && metaMatrix[row] ? metaMatrix[row][col] : null;
+        reel.setSymbol(symbol, meta);
       }
     }
   }
@@ -160,21 +164,43 @@ export class ZeusSlotManager {
   /**
    * Запустить спин ко всей матрице.
    * @param {number[][]} targetMatrix - matrix[row][col]
+   * @param {import('./SymbolMapping.js').SymbolMeta[][]} [targetMetaMatrix] - meta[row][col]
    */
-  spinToMatrix(targetMatrix) {
+  spinToMatrix(targetMatrix, targetMetaMatrix) {
     this.spinIndex += 1;
     const stepId = this.spinIndex;
-    this.spinningCount = this.rows * this.cols;
+    // Считаем только те рилы, которые реально будут крутиться.
+    this.spinningCount = 0;
     for (let row = 0; row < this.rows; row += 1) {
       for (let col = 0; col < this.cols; col += 1) {
         const idx = this._index(row, col);
         const reel = this.reels[idx];
         const symbol = targetMatrix[row]?.[col] ?? 0;
+        const meta = targetMetaMatrix && targetMetaMatrix[row] ? targetMetaMatrix[row][col] : null;
+
+        // Если рил уже sticky — он больше не крутится в регулярных спинах,
+        // символ и overlay остаются как есть.
+        if (reel.isSticky) {
+          continue;
+        }
+
         // Перед стартом конкретного рила очищаем только его оверлей.
+        // Для будущего sticky (по meta.type === 'sticky') overlay пересоздастся
+        // при остановке рила в showOverlayFromCurrent.
         if (reel.clearOverlay) {
           reel.clearOverlay();
         }
-        reel.spinToSymbol(symbol, stepId);
+
+        this.spinningCount += 1;
+        reel.spinToSymbol(symbol, stepId, meta);
+      }
+    }
+
+    // Если все рилы уже sticky и крутить нечего — немедленно завершаем спин.
+    if (this.spinningCount === 0) {
+      const finalMatrix = this.getCurrentMatrix();
+      if (this.onSpinComplete) {
+        this.onSpinComplete(finalMatrix);
       }
     }
   }
