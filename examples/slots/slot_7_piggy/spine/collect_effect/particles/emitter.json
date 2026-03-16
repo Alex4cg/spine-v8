@@ -9,7 +9,7 @@
 		"minimumScaleMultiplier": 1
 	},
 	"speed": {
-		"start": 100,
+		"start": 30,
 		"end": 100,
 		"minimumSpeedMultiplier": 1
 	},
@@ -22,10 +22,10 @@
 		"min": 5,
 		"max": 371
 	},
-	"noRotation": false,
+	"noRotation": true,
 	"rotationSpeed": {
-		"min": 50,
-		"max": 500
+		"min": 0,
+		"max": 0
 	},
 	"lifetime": {
 		"min": 0.5,

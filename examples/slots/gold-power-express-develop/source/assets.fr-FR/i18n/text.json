@@ -1,0 +1,123 @@
+{
+  "aclonicaRegular": {
+    "welcomeScreen": {
+      "winUpTo": "GAGNEZ JUSQU’À",
+      "continue": "CONTINUER"
+    }
+  },
+  "aclonicaRegularSmall": {
+    "welcomeScreen": {
+      "feature1": "Jeu bonus Hold & Win",
+      "feature2": "Fonction de collecteur exceptionnelle",
+      "feature3": "Fonction multiplicateurs et jackpots",
+      "doNotShow": "NE PLUS AFFICHER"
+    }
+  },
+  "karantina": {
+    "welcomeScreen": {
+      "continue": "CONTINUER"
+    }
+  },
+  "karantinaBold": {
+    "field": {
+      "major": "MAJOR",
+      "midi": "MIDI",
+      "mini": "MINI",
+      "bet": "MISE"
+    },
+    "buyModal": {
+      "buy": "ACHETER",
+      "on": "ALLUMÉ",
+      "off": "ÉTEINT"
+    },
+    "welcomScreen": {
+      "continue": "CONTINUER"
+    }
+  },
+  "karantinaRegular": {
+    "buyModal": {
+      "title": {
+        "main": "FONCTION D’ACHAT",
+        "sideBets": "Mises secondaires",
+        "bonusGame": "Jeu Bonus"
+      }
+    },
+    "freeSpinsModal": {
+      "title": {
+        "main": "JEU BONUS",
+        "total": "GAIN TOTAL",
+        "max": "GAIN MAX"
+      }
+    }
+  },
+  "robotoCondensedBold": {
+    "infoLine": {
+      "winUpTo": "GAGNEZ JUSQU’À",
+      "win": "GAIN",
+      "lastWin": "DERNIER GAIN"
+    },
+    "winBoard": {
+      "popUp": {
+        "tap": "APPUYER",
+        "click": "CLIQUER",
+        "toContinue": "POUR CONTINUER"
+      }
+    },
+    "buyModal": {
+      "description": {
+        "regular": "H&W RÉGULIER",
+        "jackpot": "H&W JACKPOT",
+        "sidebet": "CHANCE D’OBTENIR\nDE PIÈCES"
+      }
+    },
+    "welcomeScreen": {
+      "feature1": "Plus de 6 pièces\ndéclenchent le jeu bonus",
+      "feature2": "Multiplicateurs, prix en argent et\ndéclencheurs de jeu bonus",
+      "feature3": "Dans HOLD&WIN, vous pouvez\nobtenir des pièces de jackpot",
+      "doNotShow": "NE PLUS MONTRER"
+    },
+    "bonusModal": {
+      "clickToContinue": "CLIQUER POUR CONTINUER",
+      "tapToContinue": "APPUYER POUR CONTINUER",
+      "winUpTo": "GAGNEZ JUSQU'À"
+    }
+  },
+  "robotoCondensedRegular": {
+    "buyModal": {
+      "description": {
+        "common": "Activez les mises secondaires pour augmenter vos chances de gagner !"
+      }
+    },
+    "bonusModal": {
+      "feature1": "Multiplicateur de cellule",
+      "feature2": "Pièce de collecte"
+    }
+  },
+  "limelightRegular": {
+    "welcomeScreen": {
+      "winUpTo": "GAGNEZ JUSQU'À"
+    }
+  },
+  "freeSpinsModal": {
+    "title": {
+      "main": "JEU BONUS",
+      "total": "GAIN TOTAL",
+      "max": "GAIN MAX"
+    }
+  },
+  "bonusModal": {
+    "feature1": "Multiplicateur de cellule",
+    "feature2": "Pièce de collecte",
+    "winUpTo": "GAGNEZ JUSQU'À",
+    "winMultiplier": "x5 000",
+    "clickToContinue": "CLIQUER POUR CONTINUER",
+    "tapToContinue": "APPUYER POUR CONTINUER"
+  },
+  "winBoard": {
+    "popUp": {
+      "tap": "APPUYER",
+      "click": "CLIQUER",
+      "toContinue": "POUR CONTINUER"
+    }
+  }
+}

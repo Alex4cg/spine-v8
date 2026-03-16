@@ -1,0 +1,16 @@
+skeleton.png
+size:2048,1024
+filter:Linear,Linear
+desktop/Layer_01
+bounds:2,100,1379,886
+offsets:247,180,1920,1080
+desktop/Layer_02
+bounds:1382,2,984,641
+offsets:508,237,1920,1080
+rotate:90
+sum
+bounds:2,23,187,75
+offsets:0,2,187,79
+title
+bounds:191,31,116,67
+offsets:56,15,230,100

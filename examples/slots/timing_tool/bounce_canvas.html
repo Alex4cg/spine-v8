@@ -1,0 +1,1452 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Timing — холст 2048×2048, контейнеры Старт / Лайн / Энд</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      background: #1a1a1a;
+      color: #e0e0e0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 12px;
+    }
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .toolbar-block {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 6px;
+      padding: 6px 12px;
+      background: rgba(0,0,0,0.25);
+      border-radius: 8px;
+      border: 1px solid #3a3a3a;
+      max-width: 280px;
+    }
+    .toolbar-block--wide { max-width: 380px; }
+    .toolbar-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .toolbar-pair {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
+    .toolbar-block-title {
+      font-size: 10px;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-right: 4px;
+    }
+    .toolbar label { font-size: 12px; display: flex; align-items: center; gap: 6px; }
+    .toolbar input[type="number"] { width: 64px; padding: 4px 6px; border-radius: 4px; border: 1px solid #444; background: #2a2a2a; color: #eee; }
+    .wrap {
+      overflow: auto;
+      max-width: 100%;
+      max-height: calc(100vh - 60px);
+      border: 1px solid #444;
+      border-radius: 8px;
+      background: #333;
+    }
+    #mainCanvas { display: block; }
+    .toolbar .preset-btn { padding:4px 8px; border-radius:4px; border:1px solid #555; background:#333; color:#ddd; cursor:pointer; font-size:11px; }
+    .toolbar .preset-btn.filled { background:#2a4a2a; border-color:#3a6a3a; color:#bfe; }
+    .toolbar .preset-btn.active { background:#6a2a2a; border-color:#8a3a3a; color:#fff; }
+    .toolbar .btn-big { padding:6px 14px; border-radius:4px; border:1px solid #555; background:#333; color:#ddd; cursor:pointer; font-size:12px; min-width:140px; }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <div class="toolbar-block">
+      <span class="toolbar-block-title">FILE</span>
+      <div class="toolbar-row">
+        <button type="button" id="copyJsonBtn" style="padding:4px 10px;border-radius:4px;border:1px solid #555;background:#333;color:#ddd;cursor:pointer;font-size:11px">Скопировать JSON</button>
+      </div>
+      <div class="toolbar-row">
+        <label for="loadPathSelect" style="font-size:11px;color:#aaa;">Загрузить из</label>
+        <select id="loadPathSelect" style="width:140px;padding:4px 6px;border-radius:4px;border:1px solid #444;background:#2a2a2a;color:#eee;font-size:11px;">
+          <option value="default.json">default.json</option>
+        </select>
+        <button type="button" id="loadCurvesBtn" style="padding:4px 10px;border-radius:4px;border:1px solid #555;background:#333;color:#ddd;cursor:pointer;font-size:11px">Загрузить</button>
+        <button type="button" id="saveCurvesBtn" style="padding:4px 10px;border-radius:4px;border:1px solid #555;background:#333;color:#ddd;cursor:pointer;font-size:11px">Сохранить</button>
+      </div>
+      <div class="toolbar-row">
+        <span id="info" style="font-size:11px;opacity:0.9;color:#888;"></span>
+      </div>
+    </div>
+    <div class="toolbar-block toolbar-block--wide">
+      <span class="toolbar-block-title">EXPORT_PACK</span>
+      <div class="toolbar-row">
+        <button type="button" id="presetRegNorm" class="preset-btn" data-preset="regNorm">REG_NORM</button>
+        <button type="button" id="presetRegFast" class="preset-btn" data-preset="regFast">REG_FAST</button>
+        <button type="button" id="presetRegFfast" class="preset-btn" data-preset="regFfast">REG_FFAST</button>
+      </div>
+      <div class="toolbar-row">
+        <button type="button" id="presetBonNorm" class="preset-btn" data-preset="bonNorm">BON_NORM</button>
+        <button type="button" id="presetBonFast" class="preset-btn" data-preset="bonFast">BON_FAST</button>
+        <button type="button" id="presetBonFfast" class="preset-btn" data-preset="bonFfast">BON_FFAST</button>
+      </div>
+      <div class="toolbar-row">
+        <button type="button" id="savePackBtn" style="padding:4px 10px;border-radius:4px;border:1px solid #555;background:#333;color:#ddd;cursor:pointer;font-size:11px">SAVE_PACK</button>
+        <button type="button" id="loadPackBtn" style="padding:4px 10px;border-radius:4px;border:1px solid #555;background:#333;color:#ddd;cursor:pointer;font-size:11px">LOAD_PACK</button>
+        <input type="file" accept=".json" id="loadPackFileInput" style="display:none;">
+      </div>
+      <div class="toolbar-row">
+        <button type="button" id="exportPackBtn" class="btn-big">EXPORT_PACK</button>
+        <button type="button" id="exportPresetBtn" class="btn-big">EXPORT_PRESET</button>
+      </div>
+    </div>
+    <div class="toolbar-block">
+      <span class="toolbar-block-title">MATRIX</span>
+      <div class="toolbar-row">
+        <span class="toolbar-pair">
+          <label for="tapeLengthInput" style="font-size:11px;color:#aaa;">Длина ленты</label>
+          <input type="number" id="tapeLengthInput" min="1" max="20" value="3" style="width:44px;padding:2px 6px;border-radius:4px;border:1px solid #444;background:#2a2a2a;color:#eee;font-size:11px;" title="Линейные отрезки (по 1 шагу).">
+        </span>
+        <span class="toolbar-pair">
+          <label for="extraLengthInput" style="font-size:11px;color:#aaa;">Доп.</label>
+          <input type="number" id="extraLengthInput" min="0" max="10" value="0" style="width:40px;padding:2px 6px;border-radius:4px;border:1px solid #444;background:#2a2a2a;color:#eee;font-size:11px;" title="+ шагов на каждую колонку.">
+        </span>
+        <span class="toolbar-pair">
+          <label for="playfieldColsInput" style="font-size:11px;color:#aaa;">Сетка</label>
+          <input type="number" id="playfieldColsInput" min="1" max="10" value="3" style="width:36px;padding:2px 6px;border-radius:4px;border:1px solid #444;background:#2a2a2a;color:#eee;font-size:11px;" title="Колонки">
+          <span style="font-size:11px;color:#888;">×</span>
+          <input type="number" id="playfieldRowsInput" min="1" max="10" value="3" style="width:36px;padding:2px 6px;border-radius:4px;border:1px solid #444;background:#2a2a2a;color:#eee;font-size:11px;" title="Строки">
+        </span>
+      </div>
+      <div class="toolbar-row">
+        <span class="toolbar-pair">
+          <label for="reelStartDelayInput" style="font-size:11px;color:#aaa;">Задержка (мс)</label>
+          <input type="number" id="reelStartDelayInput" min="0" step="50" value="150" style="width:52px;padding:2px 6px;border-radius:4px;border:1px solid #444;background:#2a2a2a;color:#eee;font-size:11px;" title="Между колонками">
+        </span>
+        <span class="toolbar-pair">
+          <label for="reelCellWidthInput" style="font-size:11px;color:#aaa;">Шир. ячейки (px)</label>
+          <input type="number" id="reelCellWidthInput" min="12" max="250" value="28" style="width:48px;padding:2px 6px;border-radius:4px;border:1px solid #444;background:#2a2a2a;color:#eee;font-size:11px;" title="Ширина рила в превью">
+        </span>
+      </div>
+    </div>
+    <div class="toolbar-block">
+      <span class="toolbar-block-title">CURVE</span>
+      <div class="toolbar-row">
+        <label for="tangentLengthSlider" style="font-size:11px;color:#aaa;">Длина тангенса</label>
+        <input type="range" id="tangentLengthSlider" min="0.05" max="0.5" step="0.01" value="0.2" style="width:100px;vertical-align:middle;">
+        <span id="tangentLengthValue" style="font-size:11px;color:#888;min-width:28px;">0.2</span>
+      </div>
+      <div class="toolbar-row">
+        <label for="symbolStepInput" style="font-size:11px;color:#aaa;">Шаг (px)</label>
+        <input type="number" id="symbolStepInput" min="0" step="10" value="40" style="width:52px;padding:2px 6px;border-radius:4px;border:1px solid #444;background:#2a2a2a;color:#eee;font-size:11px;" title="0 = без снаппинга. Размер символа для дискретных остановок ленты.">
+        <button type="button" id="fitStartBtn" style="padding:4px 10px;border-radius:4px;border:1px solid #555;background:#333;color:#ddd;cursor:pointer;font-size:11px">fit start</button>
+        <button type="button" id="fitEndBtn" style="padding:4px 10px;border-radius:4px;border:1px solid #555;background:#333;color:#ddd;cursor:pointer;font-size:11px">fit end</button>
+      </div>
+    </div>
+    <div class="toolbar-block">
+      <span class="toolbar-block-title">PREVIEW</span>
+      <div class="toolbar-row">
+        <label style="font-size:11px;color:#aaa;cursor:pointer;"><input type="radio" name="previewMode" value="standard" checked> Стандарт</label>
+      </div>
+      <div class="toolbar-row">
+        <label style="font-size:11px;color:#aaa;cursor:pointer;"><input type="radio" name="previewMode" value="holdAndWin"> Hold&nbsp;&amp;&nbsp;Win</label>
+      </div>
+      <div class="toolbar-row">
+        <label style="font-size:11px;color:#aaa;cursor:pointer;"><input type="radio" name="previewSymbolStyle" value="rectangles" checked> Прямоугольники</label>
+        <label style="font-size:11px;color:#aaa;cursor:pointer;"><input type="radio" name="previewSymbolStyle" value="textures"> Текстуры</label>
+      </div>
+    </div>
+  </div>
+  <div class="wrap">
+    <canvas id="mainCanvas" width="2048" height="2048"></canvas>
+  </div>
+
+  <script src="timing_preview.js"></script>
+  <script src="timing_preview_hold_win.js"></script>
+  <script>
+(function () {
+  const CANVAS_SIZE = 2048;
+  const GRID_STEP = 64;
+  const canvas = document.getElementById('mainCanvas');
+  const ctx = canvas.getContext('2d');
+  const infoEl = document.getElementById('info');
+  const copyJsonBtn = document.getElementById('copyJsonBtn');
+  const SAVE_LOAD_BASE = 'save_load/';
+  const loadPathSelect = document.getElementById('loadPathSelect');
+  const loadCurvesBtn = document.getElementById('loadCurvesBtn');
+  const saveCurvesBtn = document.getElementById('saveCurvesBtn');
+  const fitStartBtn = document.getElementById('fitStartBtn');
+  const fitEndBtn = document.getElementById('fitEndBtn');
+  const tangentLengthSlider = document.getElementById('tangentLengthSlider');
+  const tangentLengthValue = document.getElementById('tangentLengthValue');
+  const symbolStepInput = document.getElementById('symbolStepInput');
+  const tapeLengthInput = document.getElementById('tapeLengthInput');
+  const extraLengthInput = document.getElementById('extraLengthInput');
+  const playfieldColsInput = document.getElementById('playfieldColsInput');
+  const reelStartDelayInput = document.getElementById('reelStartDelayInput');
+  const playfieldRowsInput = document.getElementById('playfieldRowsInput');
+  const reelCellWidthInput = document.getElementById('reelCellWidthInput');
+  let previewMode = 'standard';
+  let previewSymbolStyle = 'rectangles';
+  let textureImages = [];
+  let textureImagesLoaded = false;
+  let standardPreview = null;
+  let holdWinPreview = null;
+  let previewInstance = null;
+
+  const EXPORT_PACK_IDS = ['regNorm', 'regFast', 'regFfast', 'bonNorm', 'bonFast', 'bonFfast'];
+  let exportPackPresets = { regNorm: null, regFast: null, regFfast: null, bonNorm: null, bonFast: null, bonFfast: null };
+  let activeExportPresetId = null;
+
+  function getTangentLength() { return Math.max(0.05, Math.min(0.5, parseFloat(tangentLengthSlider.value) || 0.2)); }
+  function getSymbolStep() { const v = parseFloat(symbolStepInput.value); return Number.isFinite(v) && v > 0 ? v : 0; }
+  /** Высота линейного блока всегда = 1 шаг (при step 0 — 40px). */
+  function getLinearHeightPx() { const s = getSymbolStep(); return s > 0 ? s : 40; }
+  /** Количество линейных отрезков (по 1 шагу) — базовая длина ленты. */
+  function getTapeLength() { const v = parseInt(tapeLengthInput.value, 10); return Number.isFinite(v) && v >= 1 && v <= 20 ? v : 3; }
+  /** Доп. шагов на каждую следующую колонку: колонка col проходит getTapeLengthForColumn(col) отрезков. */
+  function getExtraLength() { const v = parseInt(extraLengthInput.value, 10); return Number.isFinite(v) && v >= 0 && v <= 10 ? v : 0; }
+  /** Число линейных отрезков для колонки col (0-based). */
+  function getTapeLengthForColumn(col) { const c = typeof col === 'number' ? col : 0; return getTapeLength() + c * getExtraLength(); }
+  function snapToStep(value, step) { return step > 0 ? Math.round(value / step) * step : value; }
+
+  tangentLengthSlider.addEventListener('input', () => { tangentLengthValue.textContent = tangentLengthSlider.value; });
+
+  function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
+
+  // Keyframe t and value are normalized 0-1 within each container
+  // t = normalized time (0 to 1), value = normalized distance (0 = start, 1 = end of container height)
+  // t1=1 means start keyframes span [0,1], t2=0 means end keyframes span [0,1]
+  let t1 = 1, t2 = 0, y1 = 1;
+  let startKeyframes = [];
+  let endKeyframes = [];
+  function makeStartKey(t, value) {
+    return { t, value, inHandle: { dx: 0, dy: 0 }, outHandle: { dx: 0, dy: 0 } };
+  }
+  function makeEndKey(t, value) {
+    return { t, value, inHandle: { dx: 0, dy: 0 }, outHandle: { dx: 0, dy: 0 } };
+  }
+  function ensureStartKeyHandles(keys) {
+    keys.forEach(k => { if (!k.inHandle) k.inHandle = { dx: 0, dy: 0 }; if (!k.outHandle) k.outHandle = { dx: 0, dy: 0 }; });
+  }
+  function ensureEndKeyHandles(keys) {
+    keys.forEach(k => { if (!k.inHandle) k.inHandle = { dx: 0, dy: 0 }; if (!k.outHandle) k.outHandle = { dx: 0, dy: 0 }; });
+  }
+
+  // Container dimensions = actual values: width = ms, height = pixels
+  // Default: 500ms duration, 100px distance
+  // All containers in one horizontal line
+  const containers = {
+    start:  { x: 200,  y: 300, w: 500, h: 100, label: 'Старт' },
+    linear: { x: 750,  y: 300, w: 500, h: 100, label: 'Лайн' },
+    end:    { x: 1300, y: 300, w: 500, h: 100, label: 'Энд' }
+  };
+
+  function getSlope() {
+    const L = containers.linear;
+    return L.w > 1 ? L.h / L.w : 0;
+  }
+  function getY2() { return y1 + getSlope() * (t2 - t1); }
+
+  function sortStart() {
+    startKeyframes.sort((a, b) => a.t - b.t);
+    if (startKeyframes.length) {
+      startKeyframes[0].t = 0;
+      startKeyframes[startKeyframes.length - 1].t = t1;
+    }
+    ensureStartKeyHandles(startKeyframes);
+  }
+  function sortEnd() {
+    endKeyframes.sort((a, b) => a.t - b.t);
+    if (endKeyframes.length) {
+      endKeyframes[0].t = t2;
+      endKeyframes[endKeyframes.length - 1].t = 1;
+    }
+    ensureEndKeyHandles(endKeyframes);
+  }
+
+  function cubicBezier1D(u, p0, p1, p2, p3) {
+    const v = 1 - u, v2 = v * v, v3 = v2 * v, u2 = u * u, u3 = u2 * u;
+    return v3 * p0 + 3 * v2 * u * p1 + 3 * v * u2 * p2 + u3 * p3;
+  }
+  function evaluateStartBezier(t) {
+    const keys = startKeyframes;
+    if (!keys.length) return 1;
+    if (keys.length === 1) return keys[0].value;
+    if (t <= keys[0].t) return keys[0].value;
+    if (t >= keys[keys.length - 1].t) return keys[keys.length - 1].value;
+    let i = 0;
+    while (i < keys.length - 1 && keys[i + 1].t <= t) i++;
+    const a = keys[i], b = keys[i + 1];
+    const dt = b.t - a.t;
+    if (dt <= 0) return a.value;
+    const t0 = a.t, v0 = a.value, t1b = b.t, v1b = b.value;
+    const c1t = t0 + (a.outHandle.dx || 0), c1v = v0 + (a.outHandle.dy || 0);
+    const c2t = t1b + (b.inHandle.dx || 0), c2v = v1b + (b.inHandle.dy || 0);
+    let lo = 0, hi = 1;
+    for (let iter = 0; iter < 24; iter++) {
+      const u = (lo + hi) / 2;
+      if (cubicBezier1D(u, t0, c1t, c2t, t1b) < t) lo = u; else hi = u;
+    }
+    const u = (lo + hi) / 2;
+    const result = cubicBezier1D(u, v0, c1v, c2v, v1b);
+    return Number.isFinite(result) ? result : v0;
+  }
+  function evaluateEndBezier(t) {
+    const keys = endKeyframes;
+    if (!keys.length) return getY2();
+    if (keys.length === 1) return keys[0].value;
+    if (t <= keys[0].t) return keys[0].value;
+    if (t >= keys[keys.length - 1].t) return keys[keys.length - 1].value;
+    let i = 0;
+    while (i < keys.length - 1 && keys[i + 1].t <= t) i++;
+    const a = keys[i], b = keys[i + 1];
+    const dt = b.t - a.t;
+    if (dt <= 0) return a.value;
+    const t0 = a.t, v0 = a.value, t1b = b.t, v1b = b.value;
+    const c1t = t0 + (a.outHandle.dx || 0), c1v = v0 + (a.outHandle.dy || 0);
+    const c2t = t1b + (b.inHandle.dx || 0), c2v = v1b + (b.inHandle.dy || 0);
+    let lo = 0, hi = 1;
+    for (let iter = 0; iter < 24; iter++) {
+      const u = (lo + hi) / 2;
+      if (cubicBezier1D(u, t0, c1t, c2t, t1b) < t) lo = u; else hi = u;
+    }
+    const u = (lo + hi) / 2;
+    return cubicBezier1D(u, v0, c1v, c2v, v1b);
+  }
+  function getValue(t) {
+    const y2 = getY2();
+    if (t <= 0) return startKeyframes[0] ? startKeyframes[0].value : 1;
+    if (t >= 1) return endKeyframes.length ? endKeyframes[endKeyframes.length - 1].value : y2;
+    if (t <= t1) return evaluateStartBezier(t);
+    if (t <= t2) return y1 + (y2 - y1) * (t - t1) / (t2 - t1);
+    return evaluateEndBezier(t);
+  }
+
+  function getStartDuration() { return containers.start.w; }
+  /** Длительность линейной фазы для колонки col (без аргумента = колонка 0). */
+  function getLinearDuration(col) { return getTapeLengthForColumn(col) * containers.linear.w; }
+  function getEndDuration() { return containers.end.w; }
+  function getStartDistance() {
+    if (startKeyframes.length < 2) return 0;
+    return startKeyframes[startKeyframes.length - 1].value - startKeyframes[0].value;
+  }
+  /** Расстояние линейной фазы для колонки col (без аргумента = колонка 0). */
+  function getLinearDistance(col) { return getTapeLengthForColumn(col) * containers.linear.h; }
+  function getEndDistance() {
+    if (endKeyframes.length < 2) return 0;
+    return endKeyframes[endKeyframes.length - 1].value - endKeyframes[0].value;
+  }
+  function getTotalDistance(col) {
+    return getStartDistance() + getLinearDistance(col) + getEndDistance();
+  }
+
+  function eventToCanvas(evt) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = CANVAS_SIZE / rect.width;
+    const scaleY = CANVAS_SIZE / rect.height;
+    return {
+      x: (evt.clientX - rect.left) * scaleX,
+      y: (evt.clientY - rect.top) * scaleY
+    };
+  }
+
+  // Dynamic value range based on container height
+  // Reference: at height 420, value range is 1.5 centered at 0.5
+  // Value range: -50 to +50 px by default (100px range, center at 0)
+  function getStartValueRange() { return containers.start.h; }
+  function getStartValueBase() { return -containers.start.h / 2; }
+  function getEndValueRange() { return containers.end.h; }
+  function getEndValueBase() { return -containers.end.h / 2; }
+  
+  function startDataToLocal(t, v) {
+    const R = containers.start;
+    const range = getStartValueRange();
+    const base = getStartValueBase();
+    const lx = (t / t1) * R.w;
+    // v=-50 (top) → ly=0, v=+50 (bottom) → ly=R.h
+    const ly = (v - base) / range * R.h;
+    return { x: R.x + lx, y: R.y + ly };
+  }
+  function startLocalToData(lx, ly) {
+    const R = containers.start;
+    const range = getStartValueRange();
+    const base = getStartValueBase();
+    const t = (lx - R.x) / R.w * t1;
+    const v = base + (ly - R.y) / R.h * range;
+    return { t: clamp01(t), v };
+  }
+  function endDataToLocal(t, v) {
+    const R = containers.end;
+    const range = getEndValueRange();
+    const base = getEndValueBase();
+    const lx = ((t - t2) / (1 - t2)) * R.w;
+    // v=-50 (top) → ly=0, v=+50 (bottom) → ly=R.h
+    const ly = (v - base) / range * R.h;
+    return { x: R.x + lx, y: R.y + ly };
+  }
+  function endLocalToData(lx, ly) {
+    const R = containers.end;
+    const range = getEndValueRange();
+    const base = getEndValueBase();
+    const t = t2 + (lx - R.x) / R.w * (1 - t2);
+    const v = base + (ly - R.y) / R.h * range;
+    return { t: clamp01(t), v };
+  }
+
+  const handleRadius = 8;
+  const handleHitRadius = 14;
+  const resizeHandleW = 12;  // width of external resize handle
+  const resizeHandleL = 30;  // length of external resize handle
+  const resizeHandleGap = 6; // gap between container and handle
+
+  // Get external resize handle positions for a container
+  function getResizeHandles(R) {
+    return {
+      // Horizontal handle (right side, controls width)
+      h: { x: R.x + R.w + resizeHandleGap, y: R.y + R.h / 2 - resizeHandleL / 2, w: resizeHandleW, h: resizeHandleL },
+      // Vertical handle (bottom side, controls height)
+      v: { x: R.x + R.w / 2 - resizeHandleL / 2, y: R.y + R.h + resizeHandleGap, w: resizeHandleL, h: resizeHandleW }
+    };
+  }
+
+  function pointInRect(px, py, r) {
+    return px >= r.x && px <= r.x + r.w && py >= r.y && py <= r.y + r.h;
+  }
+
+  function findHit(canvasX, canvasY) {
+    const y2 = getY2();
+    
+    // 1. Check bezier handles first (highest priority)
+    for (let i = 0; i < startKeyframes.length; i++) {
+      const k = startKeyframes[i];
+      const p = startDataToLocal(k.t + (k.outHandle.dx || 0), k.value + (k.outHandle.dy || 0));
+      if (i < startKeyframes.length - 1 && (canvasX - p.x) ** 2 + (canvasY - p.y) ** 2 <= handleHitRadius ** 2)
+        return { type: 'handle', phase: 'start', index: i, handle: 'out' };
+      const pi = startDataToLocal(k.t + (k.inHandle.dx || 0), k.value + (k.inHandle.dy || 0));
+      if (i > 0 && (canvasX - pi.x) ** 2 + (canvasY - pi.y) ** 2 <= handleHitRadius ** 2)
+        return { type: 'handle', phase: 'start', index: i, handle: 'in' };
+    }
+    for (let i = 0; i < endKeyframes.length; i++) {
+      const k = endKeyframes[i];
+      const p = endDataToLocal(k.t + (k.outHandle.dx || 0), k.value + (k.outHandle.dy || 0));
+      if (i < endKeyframes.length - 1 && (canvasX - p.x) ** 2 + (canvasY - p.y) ** 2 <= handleHitRadius ** 2)
+        return { type: 'handle', phase: 'end', index: i, handle: 'out' };
+      const pi = endDataToLocal(k.t + (k.inHandle.dx || 0), k.value + (k.inHandle.dy || 0));
+      if (i > 0 && (canvasX - pi.x) ** 2 + (canvasY - pi.y) ** 2 <= handleHitRadius ** 2)
+        return { type: 'handle', phase: 'end', index: i, handle: 'in' };
+    }
+    
+    // 2. Check keyframes
+    for (let i = 1; i < startKeyframes.length; i++) {
+      const k = startKeyframes[i];
+      const p = startDataToLocal(k.t, k.value);
+      if ((canvasX - p.x) ** 2 + (canvasY - p.y) ** 2 <= handleRadius ** 2 + 40)
+        return { type: 'key', phase: 'start', index: i };
+    }
+    for (let i = 0; i < endKeyframes.length - 1; i++) {
+      const k = endKeyframes[i];
+      const p = endDataToLocal(k.t, k.value);
+      if ((canvasX - p.x) ** 2 + (canvasY - p.y) ** 2 <= handleRadius ** 2 + 40)
+        return { type: 'key', phase: 'end', index: i };
+    }
+    
+    // 3. Check external resize handles (before container body)
+    const startHandles = getResizeHandles(containers.start);
+    if (pointInRect(canvasX, canvasY, startHandles.h)) return { type: 'startResize', edge: 'r' };
+    if (pointInRect(canvasX, canvasY, startHandles.v)) return { type: 'startResize', edge: 'b' };
+    
+    const endHandles = getResizeHandles(containers.end);
+    if (pointInRect(canvasX, canvasY, endHandles.h)) return { type: 'endResize', edge: 'r' };
+    if (pointInRect(canvasX, canvasY, endHandles.v)) return { type: 'endResize', edge: 'b' };
+    
+    const linearHandles = getResizeHandles(containers.linear);
+    if (pointInRect(canvasX, canvasY, linearHandles.h)) return { type: 'linearResize', edge: 'r' };
+    // vertical resize for linear disabled — height always = 1 step
+    
+    // 4. Container body drag
+    const L = containers.linear;
+    if (canvasX >= L.x && canvasX <= L.x + L.w && canvasY >= L.y && canvasY <= L.y + L.h) {
+      return { type: 'linearDrag' };
+    }
+    
+    const S = containers.start;
+    if (canvasX >= S.x && canvasX <= S.x + S.w && canvasY >= S.y && canvasY <= S.y + S.h) {
+      return { type: 'startDrag' };
+    }
+    
+    const E = containers.end;
+    if (canvasX >= E.x && canvasX <= E.x + E.w && canvasY >= E.y && canvasY <= E.y + E.h) {
+      return { type: 'endDrag' };
+    }
+
+    if (previewInstance) {
+      const b = previewInstance.getPreviewBounds();
+      if (pointInRect(canvasX, canvasY, b)) return { type: 'previewDrag' };
+    }
+    
+    return null;
+  }
+
+  function draw() {
+    containers.linear.h = getLinearHeightPx();
+    ctx.save();
+    ctx.fillStyle = '#606060';
+    ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+    ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x <= CANVAS_SIZE; x += GRID_STEP) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, CANVAS_SIZE);
+      ctx.stroke();
+    }
+    for (let y = 0; y <= CANVAS_SIZE; y += GRID_STEP) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(CANVAS_SIZE, y);
+      ctx.stroke();
+    }
+
+    const pad = 4;
+    function drawContainer(name, fillStyle, strokeStyle) {
+      const R = containers[name];
+      ctx.fillStyle = fillStyle;
+      ctx.fillRect(R.x - pad, R.y - pad, R.w + pad * 2, R.h + pad * 2);
+      ctx.strokeStyle = strokeStyle;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(R.x - pad, R.y - pad, R.w + pad * 2, R.h + pad * 2);
+      ctx.fillStyle = strokeStyle;
+      ctx.font = '14px sans-serif';
+      // Dynamic label showing ms × px range (±h/2 for easing containers)
+      let labelText;
+      if (name === 'linear') {
+        labelText = Math.round(R.h) + 'px' + R.w.toFixed(1) + 'ms';
+      } else {
+        labelText = name.charAt(0).toUpperCase() + name.slice(1) + ' (' + Math.round(R.w) + 'ms × ±' + Math.round(R.h / 2) + 'px)';
+      }
+      ctx.fillText(labelText, R.x, R.y - 8);
+      if (name !== 'linear') {
+        ctx.font = '10px sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.fillText('время (ms) →', R.x + R.w - 65, R.y + R.h + 14);
+        ctx.save();
+        ctx.translate(R.x - 10, R.y + R.h / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText('px ↓', -15, 0);
+        ctx.restore();
+        // Show pixel range: -h/2 (top) to +h/2 (bottom)
+        ctx.fillStyle = strokeStyle;
+        ctx.font = '11px sans-serif';
+        ctx.fillText('-' + Math.round(R.h / 2), R.x - 30, R.y + 10);
+        ctx.fillText('+' + Math.round(R.h / 2), R.x - 30, R.y + R.h - 2);
+      }
+    }
+
+    drawContainer('start', 'rgba(76, 201, 240, 0.12)', 'rgba(76, 201, 240, 0.7)');
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(containers.start.x, containers.start.y, containers.start.w, containers.start.h);
+    ctx.clip();
+    const R1 = containers.start;
+    const steps = 120;
+    ctx.strokeStyle = '#4cc9f0';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    for (let i = 0; i <= steps; i++) {
+      const t = (i / steps) * t1;
+      const v = evaluateStartBezier(t);
+      const p = startDataToLocal(t, v);
+      if (i === 0) ctx.moveTo(p.x, p.y);
+      else ctx.lineTo(p.x, p.y);
+    }
+    ctx.stroke();
+    startKeyframes.forEach((k, i) => {
+      const ac = startDataToLocal(k.t, k.value);
+      if (i < startKeyframes.length - 1 && k.outHandle) {
+        const oc = startDataToLocal(k.t + k.outHandle.dx, k.value + k.outHandle.dy);
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.6)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(ac.x, ac.y);
+        ctx.lineTo(oc.x, oc.y);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(oc.x, oc.y, 6, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(56, 189, 248, 0.5)';
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.9)';
+        ctx.fill();
+        ctx.stroke();
+      }
+      if (i > 0 && k.inHandle) {
+        const ic = startDataToLocal(k.t + k.inHandle.dx, k.value + k.inHandle.dy);
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.6)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(ac.x, ac.y);
+        ctx.lineTo(ic.x, ic.y);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(ic.x, ic.y, 6, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(56, 189, 248, 0.5)';
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.9)';
+        ctx.fill();
+        ctx.stroke();
+      }
+      ctx.beginPath();
+      ctx.arc(ac.x, ac.y, handleRadius, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(8, 47, 73, 0.95)';
+      ctx.strokeStyle = 'rgba(56, 189, 248, 1)';
+      ctx.lineWidth = 1.5;
+      ctx.fill();
+      ctx.stroke();
+    });
+    ctx.restore();
+    // Draw labels outside clip region
+    startKeyframes.forEach((k, i) => {
+      const ac = startDataToLocal(k.t, k.value);
+      if (i === 0) {
+        ctx.fillStyle = '#4cc9f0';
+        ctx.font = 'bold 13px sans-serif';
+        ctx.fillText('START', ac.x - 20, ac.y - 14);
+        ctx.font = '11px sans-serif';
+        ctx.fillText(Math.round(k.value) + 'px', ac.x - 20, ac.y + 22);
+      }
+      if (i === startKeyframes.length - 1) {
+        ctx.fillStyle = '#4cc9f0';
+        ctx.font = '11px sans-serif';
+        ctx.fillText(Math.round(k.value) + 'px', ac.x - 20, ac.y + 22);
+      }
+    });
+    // Draw external resize handles for Start
+    const startH = getResizeHandles(containers.start);
+    ctx.fillStyle = 'rgba(76, 201, 240, 0.6)';
+    ctx.fillRect(startH.h.x, startH.h.y, startH.h.w, startH.h.h); // horizontal (width)
+    ctx.fillRect(startH.v.x, startH.v.y, startH.v.w, startH.v.h); // vertical (height)
+    ctx.strokeStyle = 'rgba(76, 201, 240, 0.9)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(startH.h.x, startH.h.y, startH.h.w, startH.h.h);
+    ctx.strokeRect(startH.v.x, startH.v.y, startH.v.w, startH.v.h);
+
+    drawContainer('end', 'rgba(251, 146, 60, 0.1)', 'rgba(251, 146, 60, 0.7)');
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(containers.end.x, containers.end.y, containers.end.w, containers.end.h);
+    ctx.clip();
+    const R2 = containers.end;
+    ctx.strokeStyle = '#fb923c';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    for (let i = 0; i <= steps; i++) {
+      const t = t2 + (i / steps) * (1 - t2);
+      const v = evaluateEndBezier(t);
+      const p = endDataToLocal(t, v);
+      if (i === 0) ctx.moveTo(p.x, p.y);
+      else ctx.lineTo(p.x, p.y);
+    }
+    ctx.stroke();
+    endKeyframes.forEach((k, i) => {
+      const ac = endDataToLocal(k.t, k.value);
+      if (i < endKeyframes.length - 1 && k.outHandle) {
+        const oc = endDataToLocal(k.t + k.outHandle.dx, k.value + k.outHandle.dy);
+        ctx.strokeStyle = 'rgba(251, 146, 60, 0.6)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(ac.x, ac.y);
+        ctx.lineTo(oc.x, oc.y);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(oc.x, oc.y, 6, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(251, 146, 60, 0.5)';
+        ctx.strokeStyle = 'rgba(251, 146, 60, 0.9)';
+        ctx.fill();
+        ctx.stroke();
+      }
+      if (i > 0 && k.inHandle) {
+        const ic = endDataToLocal(k.t + k.inHandle.dx, k.value + k.inHandle.dy);
+        ctx.strokeStyle = 'rgba(251, 146, 60, 0.6)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(ac.x, ac.y);
+        ctx.lineTo(ic.x, ic.y);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(ic.x, ic.y, 6, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(251, 146, 60, 0.5)';
+        ctx.strokeStyle = 'rgba(251, 146, 60, 0.9)';
+        ctx.fill();
+        ctx.stroke();
+      }
+      ctx.beginPath();
+      ctx.arc(ac.x, ac.y, handleRadius, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(80, 40, 10, 0.9)';
+      ctx.strokeStyle = 'rgba(251, 146, 60, 1)';
+      ctx.lineWidth = 1.5;
+      ctx.fill();
+      ctx.stroke();
+    });
+    ctx.restore();
+    // Draw labels outside clip region
+    endKeyframes.forEach((k, i) => {
+      const ac = endDataToLocal(k.t, k.value);
+      if (i === 0) {
+        ctx.fillStyle = '#fb923c';
+        ctx.font = '11px sans-serif';
+        ctx.fillText(Math.round(k.value) + 'px', ac.x - 20, ac.y - 14);
+      }
+      if (i === endKeyframes.length - 1) {
+        ctx.fillStyle = '#fb923c';
+        ctx.font = 'bold 13px sans-serif';
+        ctx.fillText('END', ac.x - 12, ac.y + 24);
+        ctx.font = '11px sans-serif';
+        ctx.fillText(Math.round(k.value) + 'px', ac.x - 20, ac.y + 38);
+      }
+    });
+    // Draw external resize handles for End
+    const endH = getResizeHandles(containers.end);
+    ctx.fillStyle = 'rgba(251, 146, 60, 0.6)';
+    ctx.fillRect(endH.h.x, endH.h.y, endH.h.w, endH.h.h); // horizontal (width)
+    ctx.fillRect(endH.v.x, endH.v.y, endH.v.w, endH.v.h); // vertical (height)
+    ctx.strokeStyle = 'rgba(251, 146, 60, 0.9)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(endH.h.x, endH.h.y, endH.h.w, endH.h.h);
+    ctx.strokeRect(endH.v.x, endH.v.y, endH.v.w, endH.v.h);
+
+    drawContainer('linear', 'rgba(120, 220, 120, 0.08)', 'rgba(120, 220, 120, 0.7)');
+    const L = containers.linear;
+    ctx.strokeStyle = 'rgba(120, 220, 120, 0.95)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(L.x, L.y);
+    ctx.lineTo(L.x + L.w, L.y + L.h);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(120, 220, 120, 0.9)';
+    ctx.font = 'bold 12px sans-serif';
+    ctx.fillText(Math.round(L.h) + 'px' + L.w.toFixed(1) + 'ms', L.x + L.w - 95, L.y + L.h - 6);
+    const arrowLen = 14;
+    const angle = Math.atan2(L.h, L.w);
+    const midX = L.x + L.w * 0.6;
+    const midY = L.y + L.h * 0.6;
+    ctx.beginPath();
+    ctx.moveTo(midX - arrowLen * Math.cos(angle - 0.4), midY - arrowLen * Math.sin(angle - 0.4));
+    ctx.lineTo(midX, midY);
+    ctx.lineTo(midX - arrowLen * Math.cos(angle + 0.4), midY - arrowLen * Math.sin(angle + 0.4));
+    ctx.strokeStyle = 'rgba(120, 220, 120, 0.95)';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+    // Draw external resize handle for Linear (only horizontal — height fixed to 1 step)
+    const linH = getResizeHandles(containers.linear);
+    ctx.fillStyle = 'rgba(120, 220, 120, 0.6)';
+    ctx.fillRect(linH.h.x, linH.h.y, linH.h.w, linH.h.h);
+    ctx.strokeStyle = 'rgba(120, 220, 120, 0.9)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(linH.h.x, linH.h.y, linH.h.w, linH.h.h);
+    ctx.restore();
+
+    const y2 = getY2();
+  }
+
+  let dragging = null;
+  canvas.addEventListener('pointerdown', (evt) => {
+    const { x, y } = eventToCanvas(evt);
+    const hit = findHit(x, y);
+    if (!hit) return;
+    evt.preventDefault();
+    if (hit.type === 'previewDrag' && previewInstance) {
+      const pos = previewInstance.getPosition();
+      dragging = { type: 'previewDrag', startX: x, startY: y, startPreviewX: pos.x, startPreviewY: pos.y };
+    } else {
+      dragging = { ...hit, startX: x, startY: y };
+    }
+    canvas.setPointerCapture(evt.pointerId);
+  });
+  canvas.addEventListener('pointermove', (evt) => {
+    const { x, y } = eventToCanvas(evt);
+    if (!dragging) return;
+    if (dragging.type === 'linearResize') {
+      const L = containers.linear;
+      if (dragging.edge === 'r') L.w = Math.max(10, x - L.x);
+      L.h = getLinearHeightPx();
+      sortEnd();
+    } else if (dragging.type === 'startResize') {
+      const S = containers.start;
+      // width = duration in ms, height = distance in pixels
+      if (dragging.edge === 'r' || dragging.corner === 'br') S.w = Math.max(50, x - S.x);
+      if (dragging.edge === 'b' || dragging.corner === 'br') S.h = Math.max(20, y - S.y);
+    } else if (dragging.type === 'endResize') {
+      const E = containers.end;
+      // width = duration in ms, height = distance in pixels
+      if (dragging.edge === 'r' || dragging.corner === 'br') E.w = Math.max(50, x - E.x);
+      if (dragging.edge === 'b' || dragging.corner === 'br') E.h = Math.max(20, y - E.y);
+    } else if (dragging.type === 'linearDrag') {
+      const dx = x - dragging.startX, dy = y - dragging.startY;
+      containers.linear.x += dx;
+      containers.linear.y += dy;
+      dragging.startX = x;
+      dragging.startY = y;
+    } else if (dragging.type === 'startDrag') {
+      const dx = x - dragging.startX, dy = y - dragging.startY;
+      containers.start.x += dx;
+      containers.start.y += dy;
+      dragging.startX = x;
+      dragging.startY = y;
+    } else if (dragging.type === 'endDrag') {
+      const dx = x - dragging.startX, dy = y - dragging.startY;
+      containers.end.x += dx;
+      containers.end.y += dy;
+      dragging.startX = x;
+      dragging.startY = y;
+    } else if (dragging.type === 'previewDrag' && previewInstance) {
+      const dx = x - dragging.startX, dy = y - dragging.startY;
+      previewInstance.setPosition(dragging.startPreviewX + dx, dragging.startPreviewY + dy);
+    } else if (dragging.type === 'handle') {
+      const phase = dragging.phase;
+      const keys = phase === 'start' ? startKeyframes : endKeyframes;
+      const k = keys[dragging.index];
+      const data = phase === 'start' ? startLocalToData(x, y) : endLocalToData(x, y);
+      if (dragging.handle === 'out') {
+        k.outHandle.dx = data.t - k.t;
+        k.outHandle.dy = data.v - k.value;
+      } else {
+        k.inHandle.dx = data.t - k.t;
+        k.inHandle.dy = data.v - k.value;
+      }
+    } else if (dragging.type === 'key') {
+      const phase = dragging.phase;
+      const keys = phase === 'start' ? startKeyframes : endKeyframes;
+      const k = keys[dragging.index];
+      const data = phase === 'start' ? startLocalToData(x, y) : endLocalToData(x, y);
+      const step = getSymbolStep();
+      let val = data.v;
+      if (step > 0) {
+        if (phase === 'start' && dragging.index === keys.length - 1) val = snapToStep(val, step);
+        if (phase === 'end' && (dragging.index === 0 || dragging.index === keys.length - 1)) val = snapToStep(val, step);
+      }
+      if (dragging.index === 0) { 
+        k.t = 0; k.value = val;
+      } else if (dragging.index === keys.length - 1) { 
+        k.t = 1; k.value = val;
+      } else { 
+        k.t = clamp01(data.t); k.value = val;
+      }
+      if (phase === 'start') sortStart(); else sortEnd();
+    }
+    draw();
+  });
+  canvas.addEventListener('pointerup', (evt) => {
+    if (dragging) canvas.releasePointerCapture(evt.pointerId);
+    dragging = null;
+  });
+  canvas.addEventListener('pointerleave', () => {
+    if (dragging) canvas.releasePointerCapture(dragging.pointerId);
+    dragging = null;
+  });
+
+  function fitStartTangentToLinear() {
+    if (startKeyframes.length < 2) return;
+    ensureStartKeyHandles(startKeyframes);
+    const last = startKeyframes[startKeyframes.length - 1];
+    const startMs = containers.start.w;
+    const linearMs = containers.linear.w;
+    const linearPx = containers.linear.h;
+    if (linearMs <= 0) return;
+    const slope = (linearPx * startMs) / linearMs;
+    const dx = getTangentLength();
+    const dy = dx * slope;
+    // Exit tangent at last key is given by last.inHandle (c2→last). We want direction (1, slope), so set inHandle = (-dx, -dy).
+    last.inHandle.dx = -dx;
+    last.inHandle.dy = -dy;
+    sortStart();
+    draw();
+  }
+
+  function fitEndTangentToLinear() {
+    if (endKeyframes.length < 2) return;
+    ensureEndKeyHandles(endKeyframes);
+    const first = endKeyframes[0];
+    const endMs = containers.end.w;
+    const linearMs = containers.linear.w;
+    const linearPx = containers.linear.h;
+    if (linearMs <= 0) return;
+    const slope = (linearPx * endMs) / linearMs;
+    const dx = getTangentLength();
+    const dy = dx * slope;
+    // Incoming tangent at first key (from Linear) is given by first.outHandle (p0→c1). We want direction (1, slope).
+    first.outHandle.dx = dx;
+    first.outHandle.dy = dy;
+    sortEnd();
+    draw();
+  }
+
+  const TIMING_STORAGE_KEY = 'timing_tool_editor_state';
+
+  /** Строит объект для экспорта в игровой движок: только поля, нужные для идентичной анимации (без editor-only). */
+  function buildGameExportFromState(state) {
+    if (!state || typeof state !== 'object') return null;
+    const c = state.containers;
+    const game = {
+      step: state.step,
+      tapeLength: state.tapeLength,
+      extraLength: state.extraLength,
+      reelStartDelayMs: state.reelStartDelayMs,
+      containers: {
+        start: c && c.start ? { durationMs: c.start.durationMs, rangePx: c.start.rangePx } : undefined,
+        linear: c && c.linear ? { durationMs: c.linear.durationMs, distancePx: c.linear.distancePx } : undefined,
+        end: c && c.end ? { durationMs: c.end.durationMs, rangePx: c.end.rangePx } : undefined
+      },
+      startCurve: state.startCurve,
+      endCurve: state.endCurve
+    };
+    if (state.playfieldCols != null) game.playfieldCols = state.playfieldCols;
+    if (state.playfieldRows != null) game.playfieldRows = state.playfieldRows;
+    return game;
+  }
+
+  /** Полное состояние редактора для Сохранить/Загрузить (все изменяемые параметры). */
+  function getSaveState() {
+    const cols = parseInt(playfieldColsInput.value, 10);
+    const rows = parseInt(playfieldRowsInput.value, 10);
+    const delayMs = parseInt(reelStartDelayInput.value, 10);
+    let previewX, previewY;
+    if (previewInstance && typeof previewInstance.getPosition === 'function') {
+      const pos = previewInstance.getPosition();
+      previewX = pos.x;
+      previewY = pos.y;
+    }
+    return {
+      tangentLength: getTangentLength(),
+      step: getSymbolStep(),
+      tapeLength: getTapeLength(),
+      extraLength: getExtraLength(),
+      playfieldCols: Number.isFinite(cols) && cols >= 1 && cols <= 10 ? cols : 3,
+      playfieldRows: Number.isFinite(rows) && rows >= 1 && rows <= 10 ? rows : 3,
+      reelStartDelayMs: Number.isFinite(delayMs) && delayMs >= 0 ? delayMs : 0,
+      reelCellWidthPx: getReelWidthPx(),
+      previewMode: previewMode,
+      previewSymbolStyle: previewSymbolStyle,
+      previewX: previewX,
+      previewY: previewY,
+      containers: {
+        start: { x: containers.start.x, y: containers.start.y, durationMs: containers.start.w, rangePx: containers.start.h },
+        linear: { x: containers.linear.x, y: containers.linear.y, durationMs: containers.linear.w, distancePx: containers.linear.h },
+        end: { x: containers.end.x, y: containers.end.y, durationMs: containers.end.w, rangePx: containers.end.h }
+      },
+      startCurve: startKeyframes.map(k => ({ t: k.t, value: k.value, in: k.inHandle, out: k.outHandle })),
+      endCurve: endKeyframes.map(k => ({ t: k.t, value: k.value, in: k.inHandle, out: k.outHandle }))
+    };
+  }
+
+  /** Экспорт кривых (для копирования в буфер; парсинг в игре — отдельно). */
+  function getExportJson() {
+    return JSON.stringify({
+      step: getSymbolStep(),
+      tapeLength: getTapeLength(),
+      extraLength: getExtraLength(),
+      containers: {
+        start: { x: containers.start.x, y: containers.start.y, durationMs: containers.start.w, rangePx: containers.start.h, actualDistancePx: getStartDistance() },
+        linear: { x: containers.linear.x, y: containers.linear.y, durationMs: containers.linear.w, distancePx: containers.linear.h, actualDistancePx: getLinearDistance() },
+        end: { x: containers.end.x, y: containers.end.y, durationMs: containers.end.w, rangePx: containers.end.h, actualDistancePx: getEndDistance() }
+      },
+      totals: { durationMs: getStartDuration() + getLinearDuration() + getEndDuration(), distancePx: getTotalDistance() },
+      startCurve: startKeyframes.map(k => ({ t: k.t, value: k.value, in: k.inHandle, out: k.outHandle })),
+      endCurve: endKeyframes.map(k => ({ t: k.t, value: k.value, in: k.inHandle, out: k.outHandle }))
+    }, null, 2);
+  }
+
+  function applyImportedJson(obj) {
+    if (!obj || typeof obj !== 'object') return;
+    if (obj.tangentLength != null) {
+      const v = Math.max(0.05, Math.min(0.5, Number(obj.tangentLength) || 0.2));
+      tangentLengthSlider.value = v;
+      tangentLengthValue.textContent = v;
+    }
+    if (typeof obj.step === 'number' && obj.step >= 0) symbolStepInput.value = obj.step;
+    if (obj.tapeLength != null) {
+      const v = Math.max(1, Math.min(20, Math.floor(Number(obj.tapeLength))));
+      tapeLengthInput.value = v;
+    }
+    // Доп длина: восстанавливаем из JSON; если ключа нет (старый файл) — 0
+    if (Object.prototype.hasOwnProperty.call(obj, 'extraLength') && obj.extraLength != null) {
+      const v = Math.max(0, Math.min(10, Math.floor(Number(obj.extraLength))));
+      extraLengthInput.value = v;
+    } else {
+      extraLengthInput.value = 0;
+    }
+    if (obj.playfieldCols != null || obj.playfieldRows != null) {
+      if (obj.playfieldCols != null) {
+        const c = Math.max(1, Math.min(10, Math.floor(Number(obj.playfieldCols))));
+        playfieldColsInput.value = c;
+      }
+      if (obj.playfieldRows != null) {
+        const r = Math.max(1, Math.min(10, Math.floor(Number(obj.playfieldRows))));
+        playfieldRowsInput.value = r;
+      }
+      const c = parseInt(playfieldColsInput.value, 10) || 3;
+      const r = parseInt(playfieldRowsInput.value, 10) || 3;
+      if (standardPreview) standardPreview.setPlayfieldSize(c, r);
+      if (holdWinPreview) holdWinPreview.setPlayfieldSize(c, r);
+    }
+    if (obj.reelStartDelayMs != null) {
+      const ms = Math.max(0, Math.floor(Number(obj.reelStartDelayMs)));
+      reelStartDelayInput.value = ms;
+      if (standardPreview) standardPreview.setReelStartDelayMs(ms);
+      if (holdWinPreview) holdWinPreview.setReelStartDelayMs(ms);
+    }
+    if (obj.reelCellWidthPx != null) {
+      const w = Math.max(12, Math.min(250, Math.floor(Number(obj.reelCellWidthPx))));
+      reelCellWidthInput.value = w;
+    }
+    if (obj.previewMode === 'holdAndWin' || obj.previewMode === 'standard') {
+      previewMode = obj.previewMode;
+      previewInstance = previewMode === 'holdAndWin' ? holdWinPreview : standardPreview;
+      const radios = document.querySelectorAll('input[name="previewMode"]');
+      for (let i = 0; i < radios.length; i++) {
+        radios[i].checked = radios[i].value === previewMode;
+      }
+    }
+    if (obj.previewSymbolStyle === 'textures' || obj.previewSymbolStyle === 'rectangles') {
+      previewSymbolStyle = obj.previewSymbolStyle;
+      const symbolRadios = document.querySelectorAll('input[name="previewSymbolStyle"]');
+      for (let i = 0; i < symbolRadios.length; i++) {
+        symbolRadios[i].checked = symbolRadios[i].value === previewSymbolStyle;
+      }
+      if (previewSymbolStyle === 'textures') loadSimTextures(draw);
+    }
+    if (typeof obj.previewX === 'number' && typeof obj.previewY === 'number' && standardPreview && holdWinPreview) {
+      standardPreview.setPosition(obj.previewX, obj.previewY);
+      holdWinPreview.setPosition(obj.previewX, obj.previewY);
+    }
+    if (obj.containers) {
+      const c = obj.containers;
+      if (c.start) {
+        containers.start.x = Number(c.start.x) || containers.start.x;
+        containers.start.y = Number(c.start.y) || containers.start.y;
+        if (c.start.durationMs != null) containers.start.w = Math.max(50, Number(c.start.durationMs));
+        if (c.start.rangePx != null) containers.start.h = Math.max(20, Number(c.start.rangePx));
+      }
+      if (c.linear) {
+        containers.linear.x = Number(c.linear.x) || containers.linear.x;
+        containers.linear.y = Number(c.linear.y) || containers.linear.y;
+        if (c.linear.durationMs != null) containers.linear.w = Math.max(10, Number(c.linear.durationMs));
+        // linear.h always set from step below
+      }
+      if (c.end) {
+        containers.end.x = Number(c.end.x) || containers.end.x;
+        containers.end.y = Number(c.end.y) || containers.end.y;
+        if (c.end.durationMs != null) containers.end.w = Math.max(50, Number(c.end.durationMs));
+        if (c.end.rangePx != null) containers.end.h = Math.max(20, Number(c.end.rangePx));
+      }
+    }
+    if (obj.startCurve && Array.isArray(obj.startCurve) && obj.startCurve.length >= 2) {
+      startKeyframes = obj.startCurve.map(k => ({
+        t: Number(k.t),
+        value: Number(k.value),
+        inHandle: k.in && typeof k.in.dx === 'number' ? { dx: k.in.dx, dy: k.in.dy } : { dx: 0, dy: 0 },
+        outHandle: k.out && typeof k.out.dx === 'number' ? { dx: k.out.dx, dy: k.out.dy } : { dx: 0, dy: 0 }
+      }));
+    }
+    if (obj.endCurve && Array.isArray(obj.endCurve) && obj.endCurve.length >= 2) {
+      endKeyframes = obj.endCurve.map(k => ({
+        t: Number(k.t),
+        value: Number(k.value),
+        inHandle: k.in && typeof k.in.dx === 'number' ? { dx: k.in.dx, dy: k.in.dy } : { dx: 0, dy: 0 },
+        outHandle: k.out && typeof k.out.dx === 'number' ? { dx: k.out.dx, dy: k.out.dy } : { dx: 0, dy: 0 }
+      }));
+    }
+    sortStart();
+    sortEnd();
+    containers.linear.h = getLinearHeightPx();
+    draw();
+  }
+
+  /** Обновить выпадающий список из save_load/list.json (только .json). Возвращает Promise. Кеш отключаем, чтобы подхватывать обновлённый list.json. */
+  function refreshSaveLoadList() {
+    const listUrl = new URL(SAVE_LOAD_BASE + 'list.json', window.location.href).href;
+    const cacheBust = listUrl + (listUrl.indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now();
+    return fetch(cacheBust, { cache: 'no-store' })
+      .then(r => { if (!r.ok) throw new Error(r.statusText); return r.json(); })
+      .then(arr => {
+        const names = Array.isArray(arr) ? arr.filter(n => typeof n === 'string' && n.endsWith('.json')) : [];
+        const current = loadPathSelect.value;
+        loadPathSelect.innerHTML = '';
+        if (names.length === 0) {
+          loadPathSelect.appendChild(new Option('default.json', 'default.json'));
+          infoEl.textContent = 'Список пуст, добавлен default.json';
+          return;
+        }
+        names.forEach(name => {
+          const opt = new Option(name, name);
+          loadPathSelect.appendChild(opt);
+        });
+        if (names.indexOf(current) >= 0) loadPathSelect.value = current;
+        else loadPathSelect.selectedIndex = 0;
+      })
+      .catch(() => {
+        loadPathSelect.innerHTML = '';
+        loadPathSelect.appendChild(new Option('default.json', 'default.json'));
+        infoEl.textContent = 'Список недоступен (save_load/list.json)';
+      });
+  }
+
+  /** Загрузить выбранный в select файл и применить настройки. */
+  function loadSelectedFile() {
+    const name = (loadPathSelect.value || 'default.json').trim();
+    if (!name) return;
+    const url = new URL(SAVE_LOAD_BASE + name, window.location.href).href;
+    infoEl.textContent = 'Загрузка…';
+    fetch(url)
+      .then(r => { if (!r.ok) throw new Error(r.statusText); return r.json(); })
+      .then(obj => {
+        applyImportedJson(obj);
+        infoEl.textContent = 'Настройки загружены';
+      })
+      .catch(e => { infoEl.textContent = 'Ошибка загрузки: ' + (e.message || e); });
+  }
+
+  function updatePresetButtonsHighlight() {
+    document.querySelectorAll('.preset-btn').forEach(btn => {
+      const id = btn.getAttribute('data-preset');
+      const isActive = id === activeExportPresetId;
+      const isFilled = exportPackPresets[id] != null;
+      btn.classList.toggle('active', isActive);
+      btn.classList.toggle('filled', isFilled && !isActive);
+    });
+  }
+
+  function updateExportButtonsState() {
+    const exportPresetBtn = document.getElementById('exportPresetBtn');
+    const exportPackBtn = document.getElementById('exportPackBtn');
+    if (exportPresetBtn) exportPresetBtn.disabled = activeExportPresetId == null;
+    if (exportPackBtn) exportPackBtn.disabled = EXPORT_PACK_IDS.some(id => exportPackPresets[id] == null);
+  }
+
+  function switchToExportPreset(id) {
+    if (id === activeExportPresetId) return;
+    if (activeExportPresetId != null) {
+      exportPackPresets[activeExportPresetId] = getSaveState();
+    }
+    activeExportPresetId = id;
+    const state = exportPackPresets[id];
+    if (state && typeof state === 'object') {
+      applyImportedJson(state);
+    }
+    updatePresetButtonsHighlight();
+    updateExportButtonsState();
+    infoEl.textContent = 'Пресет ' + id;
+  }
+
+  function getExportPackJson() {
+    return {
+      regNorm: exportPackPresets.regNorm,
+      regFast: exportPackPresets.regFast,
+      regFfast: exportPackPresets.regFfast,
+      bonNorm: exportPackPresets.bonNorm,
+      bonFast: exportPackPresets.bonFast,
+      bonFfast: exportPackPresets.bonFfast
+    };
+  }
+
+  copyJsonBtn.addEventListener('click', () => {
+    navigator.clipboard.writeText(getExportJson()).then(() => { infoEl.textContent = 'JSON скопирован'; }).catch(() => {});
+  });
+  saveCurvesBtn.addEventListener('click', () => {
+    const filename = (loadPathSelect.value || 'default.json').trim().split(/[/\\]/).pop() || 'default.json';
+    try {
+      const blob = new Blob([JSON.stringify(getSaveState(), null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      infoEl.textContent = 'Сохранено как ' + filename;
+    } catch (e) {
+      infoEl.textContent = 'Ошибка сохранения';
+    }
+  });
+  loadCurvesBtn.addEventListener('click', () => {
+    refreshSaveLoadList().then(() => loadSelectedFile());
+  });
+  loadPathSelect.addEventListener('change', () => { loadSelectedFile(); });
+
+  document.querySelectorAll('.preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => { switchToExportPreset(btn.getAttribute('data-preset')); });
+  });
+  document.getElementById('savePackBtn').addEventListener('click', () => {
+    try {
+      const blob = new Blob([JSON.stringify(getExportPackJson(), null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'export_pack.json';
+      a.click();
+      URL.revokeObjectURL(a.href);
+      infoEl.textContent = 'Пак сохранён (export_pack.json)';
+    } catch (e) {
+      infoEl.textContent = 'Ошибка сохранения пака';
+    }
+  });
+  const loadPackFileInput = document.getElementById('loadPackFileInput');
+  document.getElementById('loadPackBtn').addEventListener('click', () => { loadPackFileInput.click(); });
+  loadPackFileInput.addEventListener('change', () => {
+    const file = loadPackFileInput.files && loadPackFileInput.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const obj = JSON.parse(reader.result);
+        if (!obj || typeof obj !== 'object') throw new Error('Неверный формат');
+        EXPORT_PACK_IDS.forEach(key => {
+          if (Object.prototype.hasOwnProperty.call(obj, key)) {
+            const v = obj[key];
+            exportPackPresets[key] = (v && typeof v === 'object') ? v : null;
+          }
+        });
+        activeExportPresetId = 'regNorm';
+        const state = exportPackPresets.regNorm;
+        if (state && typeof state === 'object') applyImportedJson(state);
+        updatePresetButtonsHighlight();
+        updateExportButtonsState();
+        infoEl.textContent = 'Пак загружен';
+      } catch (e) {
+        infoEl.textContent = 'Ошибка загрузки пака: ' + (e.message || e);
+      }
+      loadPackFileInput.value = '';
+    };
+    reader.readAsText(file);
+  });
+  document.getElementById('exportPackBtn').addEventListener('click', () => {
+    if (EXPORT_PACK_IDS.some(id => exportPackPresets[id] == null)) return;
+    try {
+      const pack = {};
+      EXPORT_PACK_IDS.forEach(id => {
+        pack[id] = buildGameExportFromState(exportPackPresets[id]);
+      });
+      const blob = new Blob([JSON.stringify(pack, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'reel_animation.json';
+      a.click();
+      URL.revokeObjectURL(a.href);
+      infoEl.textContent = 'Пак экспортирован (reel_animation.json)';
+    } catch (e) {
+      infoEl.textContent = 'Ошибка экспорта пака: ' + (e.message || e);
+    }
+  });
+  document.getElementById('exportPresetBtn').addEventListener('click', () => {
+    if (activeExportPresetId == null) return;
+    const state = exportPackPresets[activeExportPresetId];
+    if (!state) return;
+    try {
+      const game = buildGameExportFromState(state);
+      const blob = new Blob([JSON.stringify(game, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'timing_preset_' + activeExportPresetId + '.json';
+      a.click();
+      URL.revokeObjectURL(a.href);
+      infoEl.textContent = 'Пресет экспортирован: timing_preset_' + activeExportPresetId + '.json';
+    } catch (e) {
+      infoEl.textContent = 'Ошибка экспорта пресета: ' + (e.message || e);
+    }
+  });
+  updateExportButtonsState();
+
+  fitStartBtn.addEventListener('click', () => {
+    fitStartTangentToLinear();
+    draw();
+  });
+  fitEndBtn.addEventListener('click', () => {
+    fitEndTangentToLinear();
+    draw();
+  });
+
+  symbolStepInput.addEventListener('input', () => { containers.linear.h = getLinearHeightPx(); draw(); });
+  symbolStepInput.addEventListener('change', () => { containers.linear.h = getLinearHeightPx(); draw(); });
+  tapeLengthInput.addEventListener('input', draw);
+  tapeLengthInput.addEventListener('change', draw);
+  extraLengthInput.addEventListener('input', draw);
+  extraLengthInput.addEventListener('change', draw);
+
+  if (startKeyframes.length === 0) {
+    // Horizontal line at 0px by default (no movement until user adjusts curve)
+    startKeyframes = [makeStartKey(0, 0), makeStartKey(1, 0)];
+  }
+  if (endKeyframes.length === 0) {
+    // Horizontal line at 0px by default (center of -50 to +50 range = no movement)
+    endKeyframes = [makeEndKey(0, 0), makeEndKey(1, 0)];
+  }
+  containers.linear.h = getLinearHeightPx();
+  sortStart();
+  sortEnd();
+  draw();
+
+  function getReelStartDelayMs() {
+    const v = parseInt(reelStartDelayInput.value, 10);
+    return Number.isFinite(v) && v >= 0 ? v : 0;
+  }
+  function getReelWidthPx() {
+    const v = parseInt(reelCellWidthInput.value, 10);
+    return Number.isFinite(v) && v >= 12 && v <= 250 ? v : 28;
+  }
+  function getPreviewMode() { return previewMode; }
+  function getPreviewSymbolStyle() { return previewSymbolStyle; }
+  function getTextureByIndex(i) {
+    if (!textureImages.length || typeof i !== 'number') return null;
+    const img = textureImages[i % textureImages.length];
+    return img && img.complete && img.naturalWidth ? img : null;
+  }
+
+  const SIM_BASE = 'sim/';
+  const SIM_TEXTURE_COUNT = 16;
+  function loadSimTextures(cb) {
+    if (textureImagesLoaded) {
+      if (typeof cb === 'function') cb();
+      return Promise.resolve();
+    }
+    function tryLoadList(list) {
+      textureImages = [];
+      let done = 0;
+      const total = list.length;
+      if (total === 0) {
+        textureImagesLoaded = true;
+        if (typeof cb === 'function') cb();
+        return;
+      }
+      list.forEach(function (name, idx) {
+        const img = new Image();
+        img.onload = function () {
+          textureImages[idx] = img;
+          done++;
+          if (done === total) {
+            textureImagesLoaded = true;
+            if (typeof cb === 'function') cb();
+          }
+        };
+        img.onerror = function () {
+          done++;
+          if (done === total) {
+            textureImagesLoaded = true;
+            if (typeof cb === 'function') cb();
+          }
+        };
+        img.src = SIM_BASE + name;
+      });
+    }
+    return fetch(SIM_BASE + 'list.json').then(function (r) {
+      if (r.ok) return r.json();
+      throw new Error('no list');
+    }).then(function (arr) {
+      if (Array.isArray(arr) && arr.length > 0) {
+        tryLoadList(arr);
+        return;
+      }
+      throw new Error('empty list');
+    }).catch(function () {
+      const list = [];
+      for (let i = 0; i < SIM_TEXTURE_COUNT; i++) list.push(i + '.png');
+      tryLoadList(list);
+    });
+  }
+
+  const previewApi = {
+    ctx,
+    startKeyframes,
+    endKeyframes,
+    containers,
+    evaluateStartBezier,
+    evaluateEndBezier,
+    getStartDuration,
+    getLinearDuration,
+    getEndDuration,
+    getStartDistance,
+    getLinearDistance,
+    getEndDistance,
+    getSymbolStep,
+    getReelStartDelayMs,
+    getReelWidthPx,
+    getPreviewMode,
+    getPreviewSymbolStyle,
+    getTextureByIndex,
+    draw
+  };
+  standardPreview = createTimingPreview(previewApi);
+  holdWinPreview = createHoldWinPreview(previewApi);
+  previewInstance = standardPreview;
+  standardPreview.start();
+  holdWinPreview.start();
+
+  function applyPreviewMode() {
+    const radios = document.querySelectorAll('input[name="previewMode"]');
+    for (let i = 0; i < radios.length; i++) {
+      if (radios[i].checked) {
+        previewMode = radios[i].value;
+        break;
+      }
+    }
+    const pos = previewInstance.getPosition();
+    standardPreview.setPosition(pos.x, pos.y);
+    holdWinPreview.setPosition(pos.x, pos.y);
+    previewInstance = previewMode === 'holdAndWin' ? holdWinPreview : standardPreview;
+    draw();
+  }
+  document.querySelectorAll('input[name="previewMode"]').forEach(function (radio) {
+    radio.addEventListener('change', applyPreviewMode);
+  });
+
+  function applyPreviewSymbolStyle() {
+    const symbolRadios = document.querySelectorAll('input[name="previewSymbolStyle"]');
+    for (let i = 0; i < symbolRadios.length; i++) {
+      if (symbolRadios[i].checked) {
+        previewSymbolStyle = symbolRadios[i].value;
+        break;
+      }
+    }
+    if (previewSymbolStyle === 'textures') {
+      loadSimTextures(draw);
+    } else {
+      draw();
+    }
+  }
+  document.querySelectorAll('input[name="previewSymbolStyle"]').forEach(function (radio) {
+    radio.addEventListener('change', applyPreviewSymbolStyle);
+  });
+
+  function applyPlayfieldSize() {
+    const cols = parseInt(playfieldColsInput.value, 10);
+    const rows = parseInt(playfieldRowsInput.value, 10);
+    if (Number.isFinite(cols) && Number.isFinite(rows)) {
+      if (standardPreview) standardPreview.setPlayfieldSize(cols, rows);
+      if (holdWinPreview) holdWinPreview.setPlayfieldSize(cols, rows);
+    }
+  }
+  playfieldColsInput.addEventListener('change', applyPlayfieldSize);
+  playfieldRowsInput.addEventListener('input', applyPlayfieldSize);
+  playfieldRowsInput.addEventListener('change', applyPlayfieldSize);
+  playfieldColsInput.addEventListener('input', applyPlayfieldSize);
+
+  function applyReelStartDelay() {
+    const ms = parseInt(reelStartDelayInput.value, 10);
+    if (Number.isFinite(ms) && ms >= 0) {
+      if (standardPreview) standardPreview.setReelStartDelayMs(ms);
+      if (holdWinPreview) holdWinPreview.setReelStartDelayMs(ms);
+    }
+  }
+  reelStartDelayInput.addEventListener('change', applyReelStartDelay);
+  reelStartDelayInput.addEventListener('input', applyReelStartDelay);
+  reelCellWidthInput.addEventListener('input', draw);
+  refreshSaveLoadList().then(() => loadSelectedFile());
+})();
+  </script>
+</body>
+</html>

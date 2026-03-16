@@ -1,0 +1,6 @@
+apiVersion: v2beta1
+variables:
+  GAME_TITLE: Gold Power Express
+  DEPLOY_TARGET: ${CI_COMMIT_REF_SLUG}
+games:
+- id: gold-power-express

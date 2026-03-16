@@ -1,0 +1,123 @@
+{
+  "aclonicaRegular": {
+    "welcomeScreen": {
+      "winUpTo": "GANHE ATÉ",
+      "continue": "CONTINUAR"
+    }
+  },
+  "aclonicaRegularSmall": {
+    "welcomeScreen": {
+      "feature1": "Jogo bônus Hold & Win",
+      "feature2": "Recurso de coletor excepcional",
+      "feature3": "Recurso de multiplicadores e jackpots",
+      "doNotShow": "NÃO MOSTRAR NOVAMENTE"
+    }
+  },
+  "karantina": {
+    "welcomeScreen": {
+      "continue": "CONTINUAR"
+    }
+  },
+  "karantinaBold": {
+    "field": {
+      "major": "MAJOR",
+      "midi": "MIDI",
+      "mini": "MINI",
+      "bet": "APOSTA"
+    },
+    "buyModal": {
+      "buy": "COMPRAR",
+      "on": "LIGADO",
+      "off": "DESLIGADO"
+    },
+    "welcomScreen": {
+      "continue": "CONTINUAR"
+    }
+  },
+  "karantinaRegular": {
+    "buyModal": {
+      "title": {
+        "main": "COMPRAR RECURSO",
+        "sideBets": "Apostas paralelas",
+        "bonusGame": "Jogo Bônus"
+      }
+    },
+    "freeSpinsModal": {
+      "title": {
+        "main": "JOGO BÔNUS",
+        "total": "GANHO TOTAL",
+        "max": "GANHO MÁX"
+      }
+    }
+  },
+  "robotoCondensedBold": {
+    "infoLine": {
+      "winUpTo": "GANHE ATÉ",
+      "win": "GANHO",
+      "lastWin": "ÚLTIMO GANHO"
+    },
+    "winBoard": {
+      "popUp": {
+        "tap": "TOQUE",
+        "click": "CLIQUE",
+        "toContinue": "PARA CONTINUAR"
+      }
+    },
+    "buyModal": {
+      "description": {
+        "regular": "H&W NORMAL",
+        "jackpot": "H&W JACKPOT",
+        "sidebet": "CHANCE DE\nAPARECER MOEDAS"
+      }
+    },
+    "welcomeScreen": {
+      "feature1": "6 ou mais moedas ativam\no Jogo Bônus",
+      "feature2": "Multiplicadores, prêmios em dinheiro\ne ativadores de Jogo Bônus",
+      "feature3": "No HOLD & WIN você pode pegar\nmoedas de jackpot",
+      "doNotShow": "NÃO MOSTRAR NOVAMENTE"
+    },
+    "bonusModal": {
+      "clickToContinue": "CLIQUE PARA CONTINUAR",
+      "tapToContinue": "TOQUE PARA CONTINUAR",
+      "winUpTo": "GANHE ATÉ"
+    }
+  },
+  "robotoCondensedRegular": {
+    "buyModal": {
+      "description": {
+        "common": "Ative as apostas paralelas para aumentar suas chances de ganhar!"
+      }
+    },
+    "bonusModal": {
+      "feature1": "Multiplicador de célula",
+      "feature2": "Moeda coletora"
+    }
+  },
+  "limelightRegular": {
+    "welcomeScreen": {
+      "winUpTo": "GANHE ATÉ"
+    }
+  },
+  "freeSpinsModal": {
+    "title": {
+      "main": "JOGO BÔNUS",
+      "total": "GANHO TOTAL",
+      "max": "GANHO MÁX"
+    }
+  },
+  "bonusModal": {
+    "feature1": "Multiplicador de célula",
+    "feature2": "Moeda coletora",
+    "winUpTo": "GANHE ATÉ",
+    "winMultiplier": "x5 000",
+    "clickToContinue": "CLIQUE PARA CONTINUAR",
+    "tapToContinue": "TOQUE PARA CONTINUAR"
+  },
+  "winBoard": {
+    "popUp": {
+      "tap": "TOQUE",
+      "click": "CLIQUE",
+      "toContinue": "PARA CONTINUAR"
+    }
+  }
+}

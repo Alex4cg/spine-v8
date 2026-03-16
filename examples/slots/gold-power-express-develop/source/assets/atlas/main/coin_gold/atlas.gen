@@ -1,0 +1,9 @@
+{
+  "coin_gold": {
+    "format": "webp",
+    "compression": 90,
+    "alphaCompression": 90,
+    "trim": false,
+    "rules": ["/\\d+\\.png/"]
+  }
+}

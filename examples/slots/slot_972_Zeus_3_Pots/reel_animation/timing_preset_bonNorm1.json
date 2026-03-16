@@ -1,0 +1,74 @@
+{
+  "step": 166,
+  "tapeLength": 5,
+  "extraLength": 1,
+  "reelStartDelayMs": 20,
+  "containers": {
+    "start": {
+      "durationMs": 260.1597442626953,
+      "rangePx": 137.4425048828125
+    },
+    "linear": {
+      "durationMs": 85.51968383789062,
+      "distancePx": 166
+    },
+    "end": {
+      "durationMs": 207.2000732421875,
+      "rangePx": 121.68490600585938
+    }
+  },
+  "startCurve": [
+    {
+      "t": 0,
+      "value": 0,
+      "in": {
+        "dx": 0,
+        "dy": 0
+      },
+      "out": {
+        "dx": 0,
+        "dy": 0
+      }
+    },
+    {
+      "t": 1,
+      "value": 0,
+      "in": {
+        "dx": -0.28,
+        "dy": -132.87908840887997
+      },
+      "out": {
+        "dx": 0,
+        "dy": 0
+      }
+    }
+  ],
+  "endCurve": [
+    {
+      "t": 0,
+      "value": 0,
+      "in": {
+        "dx": 0,
+        "dy": 0
+      },
+      "out": {
+        "dx": 0.28,
+        "dy": 105.82942771835654
+      }
+    },
+    {
+      "t": 1,
+      "value": 0,
+      "in": {
+        "dx": -0.6640929006594269,
+        "dy": -4.599952697753906
+      },
+      "out": {
+        "dx": 0,
+        "dy": 0
+      }
+    }
+  ],
+  "playfieldCols": 5,
+  "playfieldRows": 4
+}

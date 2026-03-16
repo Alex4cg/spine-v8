@@ -1,0 +1,123 @@
+{
+  "aclonicaRegular": {
+    "welcomeScreen": {
+      "winUpTo": "ВЫИГРАЙТЕ ДО",
+      "continue": "ПРОДОЛЖИТЬ"
+    }
+  },
+  "aclonicaRegularSmall": {
+    "welcomeScreen": {
+      "feature1": "Бонусная игра Hold & Win",
+      "feature2": "Уникальная фича коллектора",
+      "feature3": "Множители и джекпоты",
+      "doNotShow": "БОЛЬШЕ НЕ ПОКАЗЫВАТЬ"
+    }
+  },
+  "karantina": {
+    "welcomeScreen": {
+      "continue": "ПРОДОЛЖИТЬ"
+    }
+  },
+  "karantinaBold": {
+    "field": {
+      "major": "MAJOR",
+      "midi": "MIDI",
+      "mini": "MINI",
+      "bet": "СТАВКА"
+    },
+    "buyModal": {
+      "buy": "КУПИТЬ",
+      "on": "ВКЛ",
+      "off": "ВЫКЛ"
+    },
+    "welcomScreen": {
+      "continue": "ПРОДОЛЖИТЬ"
+    }
+  },
+  "karantinaRegular": {
+    "buyModal": {
+      "title": {
+        "main": "КУПИТЬ ФУНКЦИЮ",
+        "sideBets": "Дополнительные ставки",
+        "bonusGame": "Бонусная игра"
+      }
+    },
+    "freeSpinsModal": {
+      "title": {
+        "main": "БОНУСНАЯ ИГРА",
+        "total": "ОБЩИЙ\nВЫИГРЫШ",
+        "max": "МАКСИМАЛЬНЫЙ\nВЫИГРЫШ"
+      }
+    }
+  },
+  "robotoCondensedBold": {
+    "infoLine": {
+      "winUpTo": "ВЫИГРАЙТЕ ДО",
+      "win": "ВЫИГРЫШ",
+      "lastWin": "ПОСЛЕДНИЙ ВЫИГРЫШ"
+    },
+    "winBoard": {
+      "popUp": {
+        "tap": "КОСНИТЕСЬ",
+        "click": "НАЖМИТЕ",
+        "toContinue": "ДЛЯ ПРОДОЛЖЕНИЯ"
+      }
+    },
+    "buyModal": {
+      "description": {
+        "regular": "ОБЫЧНЫЙ H&W",
+        "jackpot": "JACKPOT H&W",
+        "sidebet": "ШАНС ВЫПАДЕНИЯ\nМОНЕТ"
+      }
+    },
+    "welcomeScreen": {
+      "feature1": "Выпадение 6 и более монет\nактивирует бонусную игру",
+      "feature2": "Множители, денежные призы и\nактиваторы бонусной игры",
+      "feature3": "В HOLD&WIN могут выпадать\nмонеты jackpot",
+      "doNotShow": "БОЛЬШЕ НЕ ПОКАЗЫВАТЬ"
+    },
+    "bonusModal": {
+      "clickToContinue": "НАЖМИТЕ ДЛЯ ПРОДОЛЖЕНИЯ",
+      "tapToContinue": "КОСНИТЕСЬ ДЛЯ ПРОДОЛЖЕНИЯ",
+      "winUpTo": "ВЫИГРАЙТЕ ДО"
+    }
+  },
+  "robotoCondensedRegular": {
+    "buyModal": {
+      "description": {
+        "common": "Активируйте дополнительные ставки, чтобы повысить шансы на выигрыш!"
+      }
+    },
+    "bonusModal": {
+      "feature1": "Множитель ячейки",
+      "feature2": "Монета-сборщик"
+    }
+  },
+  "limelightRegular": {
+    "welcomeScreen": {
+      "winUpTo": "ВЫИГРАЙТЕ ДО"
+    }
+  },
+  "freeSpinsModal": {
+    "title": {
+      "main": "БОНУСНАЯ ИГРА",
+      "total": "ОБЩИЙ ВЫИГРЫШ",
+      "max": "МАКСИМАЛЬНЫЙ ВЫИГРЫШ"
+    }
+  },
+  "bonusModal": {
+    "feature1": "Множитель ячейки",
+    "feature2": "Монета-сборщик",
+    "winUpTo": "ВЫИГРАЙТЕ ДО",
+    "winMultiplier": "x5 000",
+    "clickToContinue": "НАЖМИТЕ ДЛЯ ПРОДОЛЖЕНИЯ",
+    "tapToContinue": "КОСНИТЕСЬ ДЛЯ ПРОДОЛЖЕНИЯ"
+  },
+  "winBoard": {
+    "popUp": {
+      "tap": "КОСНИТЕСЬ",
+      "click": "НАЖМИТЕ",
+      "toContinue": "ДЛЯ ПРОДОЛЖЕНИЯ"
+    }
+  }
+}

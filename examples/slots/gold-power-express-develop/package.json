@@ -1,0 +1,22 @@
+{
+  "name": "gold-power-express",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "npx facade serve --layout-type=small-2026",
+    "prod": "npx facade serve --layout-type=small-2026 --production",
+    "build": "npx facade build --layout-type=small-2026 --mode=production"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@clawbuster/facade": "~1.1.0",
+    "@esotericsoftware/spine-pixi-v8": "4.2.89",
+    "howler": "^2.1.0",
+    "pixi.js": "^8.9.2"
+  },
+  "devDependencies": {
+    "@types/howler": "^2.2.12"
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "$extends": "../../assets/fonts/bitmap.gen",
+  "aclonicaRegular": {
+    "file": "../../assets/fonts/Aclonica-Regular.ttf",
+    "symbols": "0123456789& ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz,.!?&ÁÂÃÀÇÉÊÍÓÔÕÚÜáâãàçéêíóôõúü"
+  },
+  "aclonicaRegularSmall": {
+    "file": "../../assets/fonts/Aclonica-Regular.ttf",
+    "symbols": "0123456789& ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz,.!?&ÁÂÃÀÇÉÊÍÓÔÕÚÜáâãàçéêíóôõúü"
+  },
+  "aclonicaRegularMedium": {
+    "file": "../../assets/fonts/Aclonica-Regular.ttf"
+  },
+  "montserrat": {
+    "file": "../../assets/fonts/Montserrat-Bold.ttf"
+  },
+  "robotoBold": {
+    "file": "../../assets/fonts/RobotoCondensed-Bold.ttf"
+  },
+  "roboto": {
+    "file": "../../assets/fonts/Roboto-Bold.ttf"
+  },
+  "karantina": {
+    "file": "../../assets/fonts/Karantina-Bold.ttf",
+    "symbols": "CONTINUAR"
+  },
+  "karantinaBold": {
+    "symbols": "0123456789.xMAJORIMDSEAPOSTACOMPRLRIGDONTU"
+  },
+  "robotoCondensedBold": {
+    "symbols": "+0123456789.xWIN:&, -!?HoldABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzÁÂÃÀÇÉÊÍÓÔÕÚÜáâãàçéêíóôõúü'',:!&?- U+2A-2F\\,ãõñçüïëâêîôûáéíóúàèìòùâêîôûÁÉÍÓÚÀÈÌÒÙ"
+  },
+  "karantinaRegular": {
+    "symbols": "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyzÁÂÃÀÇÉÊÍÓÔÕÚÜáâãàçéêíóôõúü’"
+  },
+  "robotoCondensedRegular": {
+    "symbols": "0123456789& ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz,.!?&ÁÂÃÀÇÉÊÍÓÔÕÚÜáâãàçéêíóôõúü’'\":;()-"
+  },
+  "limelightRegular": {
+    "symbols": "GANHE ATÉ 0123456789. ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+  }
+}

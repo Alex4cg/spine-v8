@@ -1,0 +1,38 @@
+{
+  "pinata1": {
+    "x": -188,
+    "y": 286,
+    "scale": 1.42,
+    "zIndex": 3
+  },
+  "pinata2": {
+    "x": 578,
+    "y": 155,
+    "scale": 1,
+    "zIndex": 3
+  },
+  "pinata3": {
+    "x": 140,
+    "y": 156,
+    "scale": 1,
+    "zIndex": 3
+  },
+  "pinata4": {
+    "x": 359,
+    "y": 149,
+    "scale": 1.04,
+    "zIndex": 3
+  },
+  "bg": {
+    "x": 0,
+    "y": 0,
+    "scale": 1,
+    "zIndex": 0
+  },
+  "top": {
+    "x": 0,
+    "y": 0,
+    "scale": 1,
+    "zIndex": 2
+  }
+}

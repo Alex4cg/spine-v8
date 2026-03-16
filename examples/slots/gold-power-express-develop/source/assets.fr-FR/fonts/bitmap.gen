@@ -1,0 +1,41 @@
+{
+  "$extends": "../../assets/fonts/bitmap.gen",
+  "aclonicaRegular": {
+    "file": "../../assets/fonts/Aclonica-Regular.ttf",
+    "symbols": "0123456789& ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz,.!?&ÀÂÄÇÉÈÊËÎÏÔÖÙÛÜŸàâäçéèêëîïôöùûüÿŒœ’'"
+  },
+  "aclonicaRegularSmall": {
+    "file": "../../assets/fonts/Aclonica-Regular.ttf"
+  },
+  "aclonicaRegularMedium": {
+    "file": "../../assets/fonts/Aclonica-Regular.ttf"
+  },
+  "montserrat": {
+    "file": "../../assets/fonts/Montserrat-Bold.ttf"
+  },
+  "robotoBold": {
+    "file": "../../assets/fonts/RobotoCondensed-Bold.ttf"
+  },
+  "roboto": {
+    "file": "../../assets/fonts/Roboto-Bold.ttf"
+  },
+  "karantina": {
+    "file": "../../assets/fonts/Karantina-Bold.ttf",
+    "symbols": "CONTINUER"
+  },
+  "karantinaBold": {
+    "symbols": "0123456789.xMAJORIMDSEACHETRLÉUÉNTCOIN"
+  },
+  "robotoCondensedBold": {
+    "symbols": "+0123456789.xWIN:&, -!?HoldABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzÀÂÄÇÉÈÊËÎÏÔÖÙÛÜŸàâäçéèêëîïôöùûüÿŒœ‘’',:!&?- U+2A-2F\\,"
+  },
+  "karantinaRegular": {
+    "symbols": "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz ÀÂÄÇÉÈÊËÎÏÔÖÙÛÜŸàâäçéèêëîïôöùûüÿŒœ’"
+  },
+  "robotoCondensedRegular": {
+    "symbols": "0123456789& ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz,.!?&ÀÂÄÇÉÈÊËÎÏÔÖÙÛÜŸàâäçéèêëîïôöùûüÿŒœ'"
+  },
+  "limelightRegular": {
+    "symbols": "GAGNEZ JUSQU'À 0123456789. ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'"
+  }
+}

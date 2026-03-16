@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pinata Test - Slot 4</title>
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #1a1a1a;
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    #game-container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      background: #2a2a2a;
+      border: 2px solid #444;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+      transform-origin: center center;
+    }
+    
+    /* Экран загрузки */
+    #loading-screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #1a1a1a;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+      transition: opacity 0.5s ease-out;
+    }
+    
+    #loading-screen.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    
+    #loading-screen img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+    
+    /* Скрываем canvas до загрузки */
+    #game-container canvas {
+      opacity: 0;
+      transition: opacity 0.5s ease-in;
+    }
+    
+    #game-container canvas.visible {
+      opacity: 1;
+    }
+    
+    /* Дебаг панель */
+    #debug-toggle-button {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 10px 20px;
+      background: #4CAF50;
+      color: white;
+      border: 2px solid #45a049;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 14px;
+      z-index: 10001;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+      transition: all 0.2s;
+    }
+    
+    #debug-toggle-button:hover {
+      background: #45a049;
+    }
+    
+    #debug-panel {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      width: 300px;
+      background: rgba(0, 0, 0, 0.9);
+      border: 2px solid #4CAF50;
+      border-radius: 8px;
+      padding: 15px;
+      color: white;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      z-index: 10000;
+      display: none;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    }
+    
+    #debug-panel select {
+      width: 100%;
+      padding: 5px;
+      background: #333;
+      color: white;
+      border: 1px solid #555;
+      border-radius: 4px;
+      margin-bottom: 15px;
+    }
+    
+    #debug-panel .control-group {
+      margin-bottom: 10px;
+    }
+    
+    #debug-panel .control-group label {
+      display: block;
+      margin-bottom: 3px;
+    }
+    
+    #debug-panel .control-row {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+    }
+    
+    #debug-panel .control-row button {
+      padding: 4px 8px;
+      background: #555;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 12px;
+      min-width: 30px;
+    }
+    
+    #debug-panel .control-row input[type="range"] {
+      flex: 1;
+    }
+    
+    #debug-panel .control-row .value-display {
+      min-width: 60px;
+      text-align: right;
+      font-weight: bold;
+    }
+    
+    #debug-panel .button-group {
+      display: flex;
+      gap: 5px;
+      margin-top: 10px;
+    }
+    
+    #debug-panel .button-group button {
+      flex: 1;
+      padding: 5px;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    
+    #debug-panel .button-group .reset-btn {
+      background: #ff6b6b;
+    }
+    
+    #debug-panel .button-group .save-btn {
+      background: #4CAF50;
+    }
+    
+    /* Кнопки разовых анимаций */
+    #animation-buttons {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 1000;
+    }
+    
+    .animation-button {
+      padding: 8px 12px;
+      background: #555;
+      color: white;
+      border: 1px solid #777;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 600;
+      transition: all 0.2s;
+      min-width: 100px;
+      text-align: center;
+    }
+    
+    .animation-button:hover {
+      background: #666;
+      border-color: #888;
+      transform: translateY(-1px);
+    }
+    
+    .animation-button:active {
+      transform: translateY(0);
+      background: #444;
+    }
+    
+    .animation-button.hit {
+      background: #ff6b6b;
+      border-color: #ff5252;
+    }
+    
+    .animation-button.shoot {
+      background: #4ecdc4;
+      border-color: #45b7b8;
+    }
+    
+    .animation-button.hitup {
+      background: #ffe66d;
+      border-color: #ffd93d;
+      color: #1a1a1a;
+    }
+    
+    .animation-button.boom {
+      background: #ff6b35;
+      border-color: #ff5722;
+    }
+    
+    .animation-button.test {
+      background: #9b59b6;
+      border-color: #8e44ad;
+    }
+    
+    /* Стили для блоков управления пиньятами */
+    #pinatas-controls {
+      position: absolute;
+      bottom: 20px;  /* Внизу вместо top */
+      left: 20px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: row;  /* Слева направо вместо column */
+      gap: 10px;  /* Уменьшенный отступ */
+    }
+    
+    .pinata-controls {
+      background: rgba(0, 0, 0, 0.7);
+      padding: 10px;  /* Уменьшенный padding */
+      border-radius: 8px;
+      border: 1px solid #444;
+    }
+    
+    .animation-buttons-group {
+      display: flex;
+      flex-direction: column;  /* Вертикально вместо горизонтально */
+      gap: 6px;  /* Уменьшенный отступ между кнопками */
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <!-- Экран загрузки -->
+    <div id="loading-screen">
+      <div style="color: white; font-size: 18px;">Loading...</div>
+    </div>
+    
+    <!-- Кнопки разовых анимаций для пиньят (создаются динамически из JSON) -->
+    <div id="pinatas-controls" style="display: none;">
+      <!-- UI будет создан динамически через JavaScript -->
+    </div>
+    
+    <!-- Дебаг панель будет создана через JavaScript -->
+  </div>
+
+  <!-- Подключаем библиотеки -->
+  <script src="../../assets/libs/pixi.min.js"></script>
+  <script src="../../assets/libs/spine-pixi.js"></script>
+  <script src="../../assets/libs/particle-emitter.min.js"></script>
+  
+  <script type="module">
+    import { createDebugEditor } from './DebugEditor.js';
+    import { PinataManager } from './PinataManager.js';
+    import { createPinatasUI, setupLevelInfoUpdaters, setupAnimationButtons, showControlsContainer } from './PinatasUI.js';
+
+    (async function() {
+      const log = (msg) => console.log(`[pinata-test] ${msg}`);
+
+      // Базовое разрешение
+      const config = {
+        width: 720,
+        height: 1280
+      };
+
+      // Получаем элементы для управления загрузкой
+      const loadingScreen = document.getElementById('loading-screen');
+      const container = document.getElementById('game-container');
+
+      // Создаем PixiJS приложение
+      const app = new PIXI.Application();
+      await app.init({
+        width: config.width,
+        height: config.height,
+        backgroundColor: 0x1a1a1a,
+        resolution: window.devicePixelRatio || 1,
+        autoDensity: true,
+        antialias: true,
+      });
+      
+      container.appendChild(app.canvas);
+      
+      // Функция для масштабирования контейнера под размер окна
+      const updateScale = () => {
+        const gameWidth = config.width;
+        const gameHeight = config.height;
+        
+        const windowWidth = Math.min(window.innerWidth, document.documentElement.clientWidth);
+        const windowHeight = Math.min(window.innerHeight, document.documentElement.clientHeight);
+        
+        const scaleX = windowWidth / gameWidth;
+        const scaleY = windowHeight / gameHeight;
+        let scale = Math.min(scaleX, scaleY);
+        
+        scale = Math.max(0.1, Math.min(scale, 1.5));
+        
+        container.style.width = `${gameWidth}px`;
+        container.style.height = `${gameHeight}px`;
+        container.style.transform = `translate(-50%, -50%) scale(${scale})`;
+      };
+      
+      updateScale();
+      window.addEventListener('resize', updateScale);
+      window.addEventListener('orientationchange', () => {
+        setTimeout(updateScale, 150);
+      });
+      
+      // Включаем сортировку по zIndex
+      app.stage.sortableChildren = true;
+      
+      // Настройка интерактивности для drag & drop
+      app.stage.eventMode = "static";
+      app.stage.hitArea = app.screen;
+      
+      // Загружаем конфигурацию UI
+      log('Loading UI configuration...');
+      const uiConfigResponse = await fetch('./pinatas-config.json');
+      const uiConfig = await uiConfigResponse.json();
+      
+      // Загружаем ресурсы на основе конфигурации
+      log('Loading resources...');
+      const resourcesToLoad = [
+        { alias: "bgTexture", src: "./bg/bg.png" },
+        { alias: "topTexture", src: "./bg/top.png" }
+      ];
+      
+      // Добавляем skeleton и atlas для каждой пиньяты из конфигурации
+      uiConfig.pinatas.forEach(pinata => {
+        resourcesToLoad.push(
+          { alias: pinata.skeletonAlias, src: "./spine/pinatas/skeleton.json" },
+          { alias: pinata.atlasAlias, src: "./spine/pinatas/skeleton.atlas" }
+        );
+      });
+      
+      // Обратная совместимость для существующего кода
+      resourcesToLoad.push(
+        { alias: "pinataSkeleton", src: "./spine/pinatas/skeleton.json" },
+        { alias: "pinataAtlas", src: "./spine/pinatas/skeleton.atlas" }
+      );
+      
+      await PIXI.Assets.load(resourcesToLoad);
+      
+      log('Resources loaded');
+      
+      // Объявляем переменные заранее
+      let bgSprite = null;
+      let topSprite = null;
+      
+      // Создаем фон
+      const bgTexture = PIXI.Assets.get("bgTexture");
+      if (bgTexture) {
+        bgSprite = new PIXI.Sprite(bgTexture);
+        bgSprite.zIndex = 0;
+        
+        // Масштабируем фон под размер экрана (cover mode)
+        const scaleX = config.width / bgTexture.width;
+        const scaleY = config.height / bgTexture.height;
+        const scale = Math.max(scaleX, scaleY);
+        bgSprite.scale.set(scale);
+        
+        // Центрируем фон
+        bgSprite.x = (config.width - bgTexture.width * scale) / 2;
+        bgSprite.y = (config.height - bgTexture.height * scale) / 2;
+        
+        app.stage.addChild(bgSprite);
+        log('Background added');
+      }
+      
+      // Создаем top спрайт и выравниваем по нижнему краю
+      const topTexture = PIXI.Assets.get("topTexture");
+      if (topTexture) {
+        topSprite = new PIXI.Sprite(topTexture);
+        topSprite.zIndex = 2; // Поверх пиньяты (pinata zIndex = 1)
+        
+        // Выравниваем по нижнему краю сцены
+        topSprite.x = (config.width - topTexture.width) / 2; // Центрируем по горизонтали
+        topSprite.y = config.height - topTexture.height; // Выравниваем по нижнему краю
+        
+        app.stage.addChild(topSprite);
+        log('Top sprite added and aligned to bottom');
+      }
+      
+      // Создаем пиньяты на основе конфигурации
+      const pinataManagers = [];
+      const pinatas = [];
+      const pinatasForDebug = {};
+      
+      for (const pinataConfig of uiConfig.pinatas) {
+        const manager = new PinataManager(app, config);
+        const pinata = await manager.init(pinataConfig.skeletonAlias, pinataConfig.atlasAlias, {
+          skin: pinataConfig.skin,
+          animation: pinataConfig.initialAnimation,
+          loop: false, // Не зацикливаем, чтобы слушатель сработал
+          x: config.width / 2 + pinataConfig.xOffset,
+          y: config.height / 2 + pinataConfig.yOffset,
+          zIndex: pinataConfig.zIndex,
+          scale: pinataConfig.scale
+        });
+        
+        // Включаем переключение между idle анимациями
+        manager.enableIdleSwitch({
+          animationA: "00_idle_a_1",
+          animationB: "01_idle_b_1",
+          trackIndex: 0
+        });
+        
+        pinataManagers.push(manager);
+        pinatas.push(pinata);
+        pinatasForDebug[`pinata${pinataConfig.id + 1}`] = pinata;
+      }
+      
+      // Сохраняем ссылки для удобства (для обратной совместимости)
+      const pinataManager = pinataManagers[0]; // Для существующего кода
+      const pinata = pinatas[0]; // Для существующего кода
+      
+      // Создаем UI на основе конфигурации (используем модуль PinatasUI)
+      const controlsContainer = document.getElementById('pinatas-controls');
+      createPinatasUI(uiConfig, controlsContainer);
+      
+      // Индикаторы уровня убраны для компактности, поэтому обновление не нужно
+      // setupLevelInfoUpdaters(pinataManagers);
+      
+      // Настраиваем обработчики событий для кнопок
+      setupAnimationButtons(pinataManagers, uiConfig);
+      
+      // Показываем контейнер с контролами
+      showControlsContainer(controlsContainer);
+      
+      // Создаем дебаггер позиций (добавляем все пиньяты)
+      const debugEditor = createDebugEditor(app, { 
+        ...pinatasForDebug,
+        bgSprite, 
+        topSprite 
+      }, config);
+      
+      // Ждем завершения всех операций
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // Показываем игру и скрываем экран загрузки
+      const canvas = container.querySelector('canvas');
+      if (canvas) {
+        canvas.classList.add('visible');
+      }
+      
+      setTimeout(() => {
+        loadingScreen.classList.add('hidden');
+        setTimeout(() => {
+          loadingScreen.remove();
+        }, 500);
+      }, 100);
+      
+      log('Pinata test initialized');
+    })().catch((err) => {
+      console.error('Error:', err);
+      document.body.innerHTML =
+        '<div style="color:#fff;font-family:monospace;padding:24px;">Ошибка: ' +
+        err.message +
+        "</div>";
+    });
+  </script>
+</body>
+</html>
+

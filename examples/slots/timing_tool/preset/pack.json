@@ -1,0 +1,518 @@
+{
+  "regNorm": {
+    "tangentLength": 0.28,
+    "step": 156,
+    "tapeLength": 12,
+    "extraLength": 3,
+    "playfieldCols": 5,
+    "playfieldRows": 4,
+    "reelStartDelayMs": 70,
+    "reelCellWidthPx": 156,
+    "previewMode": "standard",
+    "previewSymbolStyle": "textures",
+    "previewX": 651.0179443359375,
+    "previewY": 80.58184814453125,
+    "containers": {
+      "start": {
+        "x": 1525.6001586914062,
+        "y": 40.74659729003906,
+        "durationMs": 426.3998718261719,
+        "rangePx": 266.25340270996094
+      },
+      "linear": {
+        "x": 1636.0804443359375,
+        "y": 376.1599426269531,
+        "durationMs": 84.71975708007812,
+        "distancePx": 156
+      },
+      "end": {
+        "x": 1629.7601318359375,
+        "y": 578.6133422851562,
+        "durationMs": 257.4398498535156,
+        "rangePx": 121.68490600585938
+      }
+    },
+    "startCurve": [
+      {
+        "t": 0,
+        "value": 0,
+        "in": {
+          "dx": 0,
+          "dy": 0
+        },
+        "out": {
+          "dx": 0.4802998023728569,
+          "dy": 3.5267105102539062
+        }
+      },
+      {
+        "t": 1,
+        "value": 0,
+        "in": {
+          "dx": -0.28,
+          "dy": -219.84419034349307
+        },
+        "out": {
+          "dx": 0,
+          "dy": 0
+        }
+      }
+    ],
+    "endCurve": [
+      {
+        "t": 0,
+        "value": 0,
+        "in": {
+          "dx": 0,
+          "dy": 0
+        },
+        "out": {
+          "dx": 0.23,
+          "dy": 87.75212399278557
+        }
+      },
+      {
+        "t": 1,
+        "value": 0,
+        "in": {
+          "dx": -0.6640929006594269,
+          "dy": -4.599952697753906
+        },
+        "out": {
+          "dx": 0,
+          "dy": 0
+        }
+      }
+    ]
+  },
+  "regFast": {
+    "tangentLength": 0.28,
+    "step": 156,
+    "tapeLength": 5,
+    "extraLength": 1,
+    "playfieldCols": 5,
+    "playfieldRows": 4,
+    "reelStartDelayMs": 0,
+    "reelCellWidthPx": 156,
+    "previewMode": "standard",
+    "previewSymbolStyle": "textures",
+    "previewX": 649.4180908203125,
+    "previewY": 79.78182983398438,
+    "containers": {
+      "start": {
+        "x": 1633.6001586914062,
+        "y": 39.94659423828125,
+        "durationMs": 178.03622436523438,
+        "rangePx": 137.4425048828125
+      },
+      "linear": {
+        "x": 1647.2803955078125,
+        "y": 267.3599853515625,
+        "durationMs": 71.11952209472656,
+        "distancePx": 156
+      },
+      "end": {
+        "x": 1644.960205078125,
+        "y": 409.01336669921875,
+        "durationMs": 207.2000732421875,
+        "rangePx": 121.68490600585938
+      }
+    },
+    "startCurve": [
+      {
+        "t": 0,
+        "value": 0,
+        "in": {
+          "dx": 0,
+          "dy": 0
+        },
+        "out": {
+          "dx": 0,
+          "dy": 0
+        }
+      },
+      {
+        "t": 1,
+        "value": 0,
+        "in": {
+          "dx": -0.28,
+          "dy": -109.34581745242164
+        },
+        "out": {
+          "dx": 0,
+          "dy": 0
+        }
+      }
+    ],
+    "endCurve": [
+      {
+        "t": 0,
+        "value": 0,
+        "in": {
+          "dx": 0,
+          "dy": 0
+        },
+        "out": {
+          "dx": 0.28,
+          "dy": 127.25759302999921
+        }
+      },
+      {
+        "t": 1,
+        "value": 0,
+        "in": {
+          "dx": -0.6640929006594269,
+          "dy": -4.599952697753906
+        },
+        "out": {
+          "dx": 0,
+          "dy": 0
+        }
+      }
+    ]
+  },
+  "regFfast": {
+    "tangentLength": 0.28,
+    "step": 156,
+    "tapeLength": 6,
+    "extraLength": 0,
+    "playfieldCols": 5,
+    "playfieldRows": 4,
+    "reelStartDelayMs": 0,
+    "reelCellWidthPx": 156,
+    "previewMode": "standard",
+    "previewSymbolStyle": "textures",
+    "previewX": 650.218017578125,
+    "previewY": 78.98184204101562,
+    "containers": {
+      "start": {
+        "x": 1646.6908569335938,
+        "y": 47.219329833984375,
+        "durationMs": 168.58187866210938,
+        "rangePx": 137.4425048828125
+      },
+      "linear": {
+        "x": 1647.2803955078125,
+        "y": 267.3599853515625,
+        "durationMs": 71.11952209472656,
+        "distancePx": 156
+      },
+      "end": {
+        "x": 1656.960205078125,
+        "y": 463.413330078125,
+        "durationMs": 160.85806274414062,
+        "rangePx": 121.68490600585938
+      }
+    },
+    "startCurve": [
+      {
+        "t": 0,
+        "value": 0,
+        "in": {
+          "dx": 0,
+          "dy": 0
+        },
+        "out": {
+          "dx": 0,
+          "dy": 0
+        }
+      },
+      {
+        "t": 1,
+        "value": 0,
+        "in": {
+          "dx": -0.28,
+          "dy": -66.37126436608982
+        },
+        "out": {
+          "dx": 0,
+          "dy": 0
+        }
+      }
+    ],
+    "endCurve": [
+      {
+        "t": 0,
+        "value": 0,
+        "in": {
+          "dx": 0,
+          "dy": 0
+        },
+        "out": {
+          "dx": 0.28,
+          "dy": 63.330371523544116
+        }
+      },
+      {
+        "t": 1,
+        "value": 0,
+        "in": {
+          "dx": -0.5922085645962049,
+          "dy": -89.31034851074219
+        },
+        "out": {
+          "dx": 0,
+          "dy": 0
+        }
+      }
+    ]
+  },
+  "bonNorm": {
+    "tangentLength": 0.28,
+    "step": 156,
+    "tapeLength": 5,
+    "extraLength": 1,
+    "playfieldCols": 5,
+    "playfieldRows": 4,
+    "reelStartDelayMs": 20,
+    "reelCellWidthPx": 156,
+    "previewMode": "holdAndWin",
+    "previewSymbolStyle": "textures",
+    "previewX": 647.0181884765625,
+    "previewY": 79.78181457519531,
+    "containers": {
+      "start": {
+        "x": 1633.6001586914062,
+        "y": 39.94659423828125,
+        "durationMs": 260.1597442626953,
+        "rangePx": 137.4425048828125
+      },
+      "linear": {
+        "x": 1647.2803955078125,
+        "y": 267.3599853515625,
+        "durationMs": 85.51968383789062,
+        "distancePx": 156
+      },
+      "end": {
+        "x": 1639.360107421875,
+        "y": 469.8133544921875,
+        "durationMs": 207.2000732421875,
+        "rangePx": 121.68490600585938
+      }
+    },
+    "startCurve": [
+      {
+        "t": 0,
+        "value": 0,
+        "in": {
+          "dx": 0,
+          "dy": 0
+        },
+        "out": {
+          "dx": 0,
+          "dy": 0
+        }
+      },
+      {
+        "t": 1,
+        "value": 0,
+        "in": {
+          "dx": -0.28,
+          "dy": -132.87908840887997
+        },
+        "out": {
+          "dx": 0,
+          "dy": 0
+        }
+      }
+    ],
+    "endCurve": [
+      {
+        "t": 0,
+        "value": 0,
+        "in": {
+          "dx": 0,
+          "dy": 0
+        },
+        "out": {
+          "dx": 0.28,
+          "dy": 105.82942771835654
+        }
+      },
+      {
+        "t": 1,
+        "value": 0,
+        "in": {
+          "dx": -0.6640929006594269,
+          "dy": -4.599952697753906
+        },
+        "out": {
+          "dx": 0,
+          "dy": 0
+        }
+      }
+    ]
+  },
+  "bonFast": {
+    "tangentLength": 0.28,
+    "step": 156,
+    "tapeLength": 4,
+    "extraLength": 0,
+    "playfieldCols": 5,
+    "playfieldRows": 4,
+    "reelStartDelayMs": 20,
+    "reelCellWidthPx": 156,
+    "previewMode": "holdAndWin",
+    "previewSymbolStyle": "textures",
+    "previewX": 648.6180419921875,
+    "previewY": 79.78181457519531,
+    "containers": {
+      "start": {
+        "x": 1633.6001586914062,
+        "y": 39.94659423828125,
+        "durationMs": 260.1597442626953,
+        "rangePx": 137.4425048828125
+      },
+      "linear": {
+        "x": 1647.2803955078125,
+        "y": 267.3599853515625,
+        "durationMs": 71.11952209472656,
+        "distancePx": 156
+      },
+      "end": {
+        "x": 1644.960205078125,
+        "y": 409.01336669921875,
+        "durationMs": 207.2000732421875,
+        "rangePx": 121.68490600585938
+      }
+    },
+    "startCurve": [
+      {
+        "t": 0,
+        "value": 0,
+        "in": {
+          "dx": 0,
+          "dy": 0
+        },
+        "out": {
+          "dx": 0,
+          "dy": 0
+        }
+      },
+      {
+        "t": 1,
+        "value": 0,
+        "in": {
+          "dx": -0.28,
+          "dy": -77.06091091205991
+        },
+        "out": {
+          "dx": 0,
+          "dy": 0
+        }
+      }
+    ],
+    "endCurve": [
+      {
+        "t": 0,
+        "value": 0,
+        "in": {
+          "dx": 0,
+          "dy": 0
+        },
+        "out": {
+          "dx": 0.28,
+          "dy": 81.57538014743541
+        }
+      },
+      {
+        "t": 1,
+        "value": 0,
+        "in": {
+          "dx": -0.6640929006594269,
+          "dy": -4.599952697753906
+        },
+        "out": {
+          "dx": 0,
+          "dy": 0
+        }
+      }
+    ]
+  },
+  "bonFfast": {
+    "tangentLength": 0.28,
+    "step": 156,
+    "tapeLength": 4,
+    "extraLength": 0,
+    "playfieldCols": 5,
+    "playfieldRows": 4,
+    "reelStartDelayMs": 0,
+    "reelCellWidthPx": 156,
+    "previewMode": "holdAndWin",
+    "previewSymbolStyle": "textures",
+    "previewX": 649.418212890625,
+    "previewY": 80.58184814453125,
+    "containers": {
+      "start": {
+        "x": 1633.6001586914062,
+        "y": 39.94659423828125,
+        "durationMs": 260.1597442626953,
+        "rangePx": 137.4425048828125
+      },
+      "linear": {
+        "x": 1647.2803955078125,
+        "y": 267.3599853515625,
+        "durationMs": 71.11952209472656,
+        "distancePx": 156
+      },
+      "end": {
+        "x": 1644.960205078125,
+        "y": 409.01336669921875,
+        "durationMs": 207.2000732421875,
+        "rangePx": 121.68490600585938
+      }
+    },
+    "startCurve": [
+      {
+        "t": 0,
+        "value": 0,
+        "in": {
+          "dx": 0,
+          "dy": 0
+        },
+        "out": {
+          "dx": 0,
+          "dy": 0
+        }
+      },
+      {
+        "t": 1,
+        "value": 0,
+        "in": {
+          "dx": -0.28,
+          "dy": -77.06091091205991
+        },
+        "out": {
+          "dx": 0,
+          "dy": 0
+        }
+      }
+    ],
+    "endCurve": [
+      {
+        "t": 0,
+        "value": 0,
+        "in": {
+          "dx": 0,
+          "dy": 0
+        },
+        "out": {
+          "dx": 0.28,
+          "dy": 81.57538014743541
+        }
+      },
+      {
+        "t": 1,
+        "value": 0,
+        "in": {
+          "dx": -0.6640929006594269,
+          "dy": -4.599952697753906
+        },
+        "out": {
+          "dx": 0,
+          "dy": 0
+        }
+      }
+    ]
+  }
+}

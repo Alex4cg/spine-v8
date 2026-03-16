@@ -1,0 +1,123 @@
+{
+  "aclonicaRegular": {
+    "welcomeScreen": {
+      "winUpTo": "最高可赢取",
+      "continue": "继续"
+    }
+  },
+  "aclonicaRegularSmall": {
+    "welcomeScreen": {
+      "feature1": "奖金游戏 Hold & Win",
+      "feature2": "出色的收集器功能",
+      "feature3": "倍数与大奖功能",
+      "doNotShow": "不再显示"
+    }
+  },
+  "karantina": {
+    "welcomeScreen": {
+      "continue": "继续"
+    }
+  },
+  "karantinaBold": {
+    "field": {
+      "major": "Major",
+      "midi": "Midi",
+      "mini": "Mini",
+      "bet": "投注"
+    },
+    "buyModal": {
+      "buy": "购买",
+      "on": "开",
+      "off": "关"
+    },
+    "welcomScreen": {
+      "continue": "继续"
+    }
+  },
+  "karantinaRegular": {
+    "buyModal": {
+      "title": {
+        "main": "购买功能",
+        "sideBets": "边注",
+        "bonusGame": "奖励游戏"
+      }
+    },
+    "freeSpinsModal": {
+      "title": {
+        "main": "奖励游戏",
+        "total": "总赢利",
+        "max": "赢利上限"
+      }
+    }
+  },
+  "robotoCondensedBold": {
+    "infoLine": {
+      "winUpTo": "最高可赢取",
+      "win": "赢利",
+      "lastWin": "上次赢利"
+    },
+    "winBoard": {
+      "popUp": {
+        "tap": "轻触",
+        "click": "点击",
+        "toContinue": "以继续"
+      }
+    },
+    "buyModal": {
+      "description": {
+        "regular": "常规HOLD&WIN",
+        "jackpot": "JACKPOT HOLD&WIN",
+        "sidebet": "出现硬币\n的几率"
+      }
+    },
+    "welcomeScreen": {
+      "feature1": "出现6+硬币触发奖励游戏",
+      "feature2": "翻倍器、现金奖品奖励游戏触发",
+      "feature3": "HOLD&WIN\n中会出现Jackpot硬币",
+      "doNotShow": "不再显示"
+    },
+    "bonusModal": {
+      "clickToContinue": "点击以继续",
+      "tapToContinue": "轻触以继续",
+      "winUpTo": "最高可赢取"
+    }
+  },
+  "robotoCondensedRegular": {
+    "buyModal": {
+      "description": {
+        "common": "激活边注，提升赢利几率！"
+      }
+    },
+    "bonusModal": {
+      "feature1": "单元格翻倍器",
+      "feature2": "收集器硬币"
+    }
+  },
+  "limelightRegular": {
+    "welcomeScreen": {
+      "winUpTo": "最高可赢取"
+    }
+  },
+  "freeSpinsModal": {
+    "title": {
+      "main": "奖励游戏",
+      "total": "总赢利",
+      "max": "赢利上限"
+    }
+  },
+  "bonusModal": {
+    "feature1": "单元格翻倍器",
+    "feature2": "收集器硬币",
+    "winUpTo": "最高可赢取",
+    "winMultiplier": "x5 000",
+    "clickToContinue": "点击以继续",
+    "tapToContinue": "轻触以继续"
+  },
+  "winBoard": {
+    "popUp": {
+      "tap": "轻触",
+      "click": "点击",
+      "toContinue": "以继续"
+    }
+  }
+}

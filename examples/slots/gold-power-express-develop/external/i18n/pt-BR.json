@@ -1,0 +1,68 @@
+{
+  "about_game_section": {
+    "max_win": {
+      "title": "Ganho máx.",
+      "content": "O valor máximo do ganho é limitado a {maxWinValue}x a aposta do jogo. Se o ganho total de uma rodada atingir {maxWinValue}x, a rodada termina imediatamente, o ganho é concedido até o limite e todos os recursos restantes são perdidos."
+    },
+    "how_to_play": {
+      "title": "Como jogar",
+      "content": "1. Escolha o tamanho da sua aposta a partir das opções disponíveis.\n 2. Para iniciar uma rodada do jogo, pressione o botão \"Spin\".\n 3. Use o botão \"Jogo Automático\" para girar automaticamente."
+    },
+    "how_to_calculate_wins": {
+      "title": "Como calcular os ganhos",
+      "content": [
+        "Os ganhos são determinados por combinações de símbolos em linhas de pagamento ativas.",
+        "Apenas o maior ganho por linha é pago.",
+        "O mau funcionamento anula todos os pagamentos e jogadas."
+      ]
+    },
+    "game_options": {
+      "title": "Opções do Jogo",
+      "content": [
+        "Tabela de Pagamentos - Exibe os valores de pagamento para cada símbolo.",
+        "Configurações - Ajuste o volume e outras preferências.",
+        "Recursos do Jogo - Explicações detalhadas dos recursos.",
+        "Sobre o Jogo - Regras detalhadas. (você está aqui)."
+      ]
+    },
+    "game_panel": {
+      "title": "Painel do Jogo",
+      "content": [
+        "Valor do jogo – Exibe o tamanho do valor do jogo atual aplicado.",
+        "Botão Spin - Inicia o jogo.",
+        "Jogo Automático - Os jogadores podem ativar o Jogo Automático para girar as bobinas automaticamente.",
+        "Saldo – Exibe o saldo atual do jogador.",
+        "Exibição de Ganhos – Exibe o valor do ganho mais recente.",
+        "Progresso da Placa de Jackpot – Exibe o estado atual das placas de jackpot."
+      ]
+    },
+    "rtp_information": {
+      "title": "Informações de Retorno ao Jogador (RTP):",
+      "content": "RTP do jogo: {rtpValue}%"
+    },
+    "additional_information": {
+      "title": "Informações Adicionais",
+      "content": "Em caso de mau funcionamento do hardware ou software de jogo, todas as apostas e pagamentos afetados são anulados e todas as apostas afetadas são reembolsadas."
+    }
+  },
+  "game_features_section": {
+    "feature_1": {
+      "title": "Recurso Coletor (Jogo Base)",
+      "content": "Moedas normais com valores de 1×, 2×, 3×, 5×, 7×, 10× ou 15× podem aparecer na bobina 1 e 3.\nA Moeda coletora (sem valor) pode aparecer apenas na bobina 2.\nSe uma Moeda normal aparecer sem um Coletor, nada acontece.\nSe um Coletor aparecer sem Moedas normais, nada acontece.\n\nRegras de Pagamento do Coletor\nMoedas nas bobinas 1 OU 3 + Coletor na bobina 2 → Pagamento coletor\nMoedas nas bobinas 1 E 3 + Coletor na bobina 2 → Ativam o Jogo Bônus"
+    },
+    "feature_2": {
+      "title": "Jogo Bônus (Hold & Win)",
+      "content": "Começa com 3 Re-Spins.\nConseguir qualquer Moeda normal ou Moeda de Jackpot (Mini, Midi, Major ou Grand) redefine os Re-Spins para 3.\nConseguir uma Moeda coletora não redefine os Re-Spins.\nO Jogo Bônus termina quando não restarem spins.\nEntrar no Jogo Bônus\nTodas as Moedas normais das bobinas 1 e 3 são coletadas.\nTodas as moedas nas bobinas 1 e 3 desaparecem após a coleta.\nTodos os símbolos se transformam em minibobinas.\nComportamento da bobina durante o Jogo Bônus\nBobinas 1 e 3:\nPodem aparecer Moedas normais\nPodem aparecer Moedas de Jackpot (Mini, Midi, Major ou Grand)\nMoedas normais + Jackpot atualizam os Re-Spins\nBobina 2:\nPode aparecer Moedas coletoras adicionais\nAs Moedas coletoras não atualizam os Re-Spins\nVários Coletores\nTodos os Coletores ativos coletam o valor total de cada moeda.\nOs Coletores não coletam uns aos outros."
+    },
+    "feature_3": {
+      "title": "Molduras Multiplicadoras (Jogo Bônus)",
+      "content": "Podem aparecer Molduras Coletoras nas bobinas 1 e 3.\nUma moldura permanece até que uma moeda apareça em sua posição.\nQuando uma moeda aparece em uma célula emoldurada:\nO multiplicador se aplica ao valor da moeda.\nAplica-se até mesmo a Moedas de Jackpot.\nA moldura desaparece após a ativação.\nAs molduras desaparecem se não forem usadas até o final do Jogo Bônus.\n\nFim do Jogo Bônus\nQuando os Re-spins atingirem zero, o Jogo Bônus termina.\nTodos os valores de moedas coletados são somados e pagos.\nPreencher todas as 9 posições concede o Grand Jackpot (1.000×)."
+    }
+  },
+  "paytable_section": {
+    "high_symbols": "Símbolos elevados",
+    "low_symbols": "Símbolos baixos",
+    "special_symbols": "Símbolos especiais",
+    "lines": "Linhas"
+  }
+}

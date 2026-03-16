@@ -1,0 +1,21 @@
+{
+  "extends": "@clawbuster/facade/tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": "./",
+    "paths": {
+      "@/*": [
+        "./source/*"
+      ],
+      "@facade/*": [
+        "node_modules/@clawbuster/facade/source/*"
+      ]
+    }
+  },
+  "include": [
+    "./external/**/*",
+    "./source/**/*",
+    "node_modules/@clawbuster/facade/types/**/*",
+    "node_modules/@clawbuster/factory/types/**/*",
+    "node_modules/@clawbuster/factory/index.js",
+  ]
+}

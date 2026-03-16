@@ -1,0 +1,26 @@
+{
+  "description": "CoinEmitter config reference (actual values are hardcoded in coin-emitter.ts)",
+  "config": {
+    "startSpeed": 420,
+    "gravity": 900,
+    "spreadDeg": {
+      "normal": 30,
+      "burst": 60
+    },
+    "lifetime": {
+      "min": 0.9,
+      "max": 1.1
+    },
+    "scale": {
+      "start": 0.5,
+      "end": 0.3
+    },
+    "animationSpeed": 30,
+    "maxParticles": 300,
+    "emissionRates": {
+      "level1": 0.1,
+      "level2": 0.07,
+      "level3": 0.04
+    }
+  }
+}

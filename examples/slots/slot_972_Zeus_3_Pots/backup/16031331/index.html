@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Zeus 3 Pots</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: auto;
+      background: #000;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    }
+
+    .game-wrapper {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .game-stage {
+      position: relative;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+    }
+
+    /* Контейнер под canvas / Pixi приложение */
+    #game-root {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: auto;
+    }
+
+    .debug-label {
+      position: absolute;
+      left: 16px;
+      bottom: 16px;
+      padding: 6px 10px;
+      background: rgba(0, 0, 0, 0.6);
+      color: #fff;
+      font-size: 12px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="game-wrapper">
+    <div class="game-stage">
+      <div id="game-root"></div>
+      <div class="debug-label">Zeus 3 Pots · 1920×1080 background</div>
+    </div>
+  </div>
+
+  <!-- Локальные библиотеки PIXI и Spine (как в других слотах) -->
+  <script src="../../assets/libs/pixi.min.js"></script>
+  <script src="../../assets/libs/spine-pixi.js"></script>
+  <!-- Основная логика слота Zeus (ES-модуль) -->
+  <script type="module" src="./zeusMain.js"></script>
+</body>
+</html>
+

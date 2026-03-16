@@ -1,0 +1,68 @@
+{
+  "about_game_section": {
+    "max_win": {
+      "title": "Gain max",
+      "content": "Le montant maximum du gain est limité à {maxWinValue}x le montant du jeu. Si le gain total d'un tour atteint {maxWinValue}x, le tour se termine immédiatement, le gain est attribué jusqu’au plafond et toutes les fonctions restantes sont perdues."
+    },
+    "how_to_play": {
+      "title": "Comment jouer",
+      "content": "1. Choisissez la taille du montant de jeu parmi les options suivantes.\n 2. Pour commencer un tour de jeu, appuyez sur le bouton « Spin ».\n 3. Utilisez le bouton « Jeu automatique » pour faire tourner automatiquement."
+    },
+    "how_to_calculate_wins": {
+      "title": "Comment calculer les gains",
+      "content": [
+        "Les gains sont déterminés par des combinaisons de symboles sur les lignes de paiement actives.",
+        "Seul le gain le plus élevé par ligne est payé.",
+        "Un mauvais fonctionnement annule tous les paiements et les jeux."
+      ]
+    },
+    "game_options": {
+      "title": "Options du jeu",
+      "content": [
+        "Tableau de gains – Affiche les valeurs de paiement pour chaque symbole.",
+        "Paramètres – Réglez le volume et les autres préférences.",
+        "Fonctions du jeu – Explications détaillées des fonctions.",
+        "À propos du jeu – Règles détaillées. (vous êtes ici)."
+      ]
+    },
+    "game_panel": {
+      "title": "Panneau du jeu",
+      "content": [
+        "Montant du jeu – Affiche la taille du montant du jeu actuel appliqué.",
+        "Bouton Spin – Commence le jeu.",
+        "Jeu automatique – Les joueurs peuvent activer le Jeu automatique pour tourner les rouleaux automatiquement.",
+        "Solde – Affiche le solde actuel du joueur.",
+        "Écran des gains – Affiche le montant de gain le plus récent.",
+        "Progression des plaques de jackpot - Affiche l'état actuel des plaques de jackpot."
+      ]
+    },
+    "rtp_information": {
+      "title": "Renseignements sur le Taux de Retour au Joueur (RTP) :",
+      "content": "RTP du jeu : {rtpValue} %"
+    },
+    "additional_information": {
+      "title": "Renseignements supplémentaires",
+      "content": "En cas d’un mauvais fonctionnement de l’équipement ou du logiciel de jeu, toutes les mises et tous les paiements affectés sont annulés. Toutes les mises affectées sont remboursées."
+    }
+  },
+  "game_features_section": {
+    "feature_1": {
+      "title": "Fonction Collecter (Jeu de base)",
+      "content": "Les pièces régulières avec des valeurs de 1×, 2 ×, 3 ×, 5×, 7×, 10×, 15× peuvent atterrir sur les rouleaux 1 et 3.\nLa Pièce de Collecte (aucune valeur) ne peut atterrir que sur le Rouleau 2.\nSi une Pièce régulière atterrit sans un symbole Collecter, rien ne se passe.\nSi un symbole Collecter atterrit sans Pièces régulières, rien ne se passe.\n\nRègles de paiement du symbole Collecter\nPièces sur le rouleau 1 OU 3 + symbole Collecter sur le rouleau 2 → Paiement du symbole Collecter\nPièces sur les rouleaux 1 ET 3 + symbole Collecter sur le rouleau 2 → Déclenché le Jeu Bonus"
+    },
+    "feature_2": {
+      "title": "Jeu bonus (Hold & Win)",
+      "content": "Commence avec 3 Re-Spins.\nAtterrir n'importe quelle Pièce régulière ou pièce Jackpot (Mini, Midi, Major, Grand) réinitialise les Re-Spins à 3.\nAtterrir une Pièce de Collecte ne réinitialise pas les Re-Spins.\nLe Jeu Bonus se termine lorsqu'il ne reste plus de spins.\nEntrer dans le Jeu Bonus\nToutes les Pièces régulières des rouleaux 1 et 3 sont collectées.\nToutes les pièces sur les rouleaux 1 et 3 disparaissent après la collecte.\nTous les symboles se transforment en mini-rouleaux.\nComportement du rouleau pendant le Jeu Bonus\nRouleaux 1 & 3 :\nPeuvent obtenir des Pièces régulières\nPeuvent obtenir des pièces Jackpot (Mini, Midi, Major, Grand)\nLes Pièces régulière ou Jackpot actualisent les Re-Spins\nRouleau 2 :\nPeut obtenir des Pièces de Collecte supplémentaires\nLes Pièces de Collecte n'actualisent pas les Re-Spins\nSymboles Collecter multiples\nTous les symboles Collecter actifs collectent la valeur totale de chaque pièce.\nLes symboles Collecter ne se collectent pas les uns les autres."
+    },
+    "feature_3": {
+      "title": "Cadres multiplicateurs (Jeu bonus)",
+      "content": "Les rouleaux 1 et 3 peuvent atterrir des Cadres multiplicateurs.\nUn cadre reste jusqu'à ce qu'une pièce atterrisse dans sa position.\nLorsqu'une pièce atterrit sur une cellule encadrée :\nLe multiplicateur s'applique à la valeur de la pièce.\nS'applique même aux pièces Jackpot.\nLe cadre disparaît après l'activation.\nLes cadres disparaissent s'ils ne sont pas utilisés à la fin du Jeu Bonus.\n\nFin du Jeu Bonus\nLorsque les Re-Spins atteignent zéro, le Jeu Bonus se termine.\nToutes les valeurs de pièces collectées sont additionnées et payées.\nRemplir les 9 positions attribue le Grand Jackpot (1000×)."
+    }
+  },
+  "paytable_section": {
+    "high_symbols": "Symboles élevés",
+    "low_symbols": "Symboles bas",
+    "special_symbols": "Symboles spéciaux",
+    "lines": "Lignes"
+  }
+}

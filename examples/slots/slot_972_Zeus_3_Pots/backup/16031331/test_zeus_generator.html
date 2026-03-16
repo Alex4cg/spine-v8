@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zeus 3 Pots — Test Scenario Generator</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      padding: 20px;
+      margin: 0;
+      background: #111827;
+      color: #e5e7eb;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: 24px;
+      margin-bottom: 10px;
+    }
+    p.description {
+      margin: 0 0 16px;
+      color: #9ca3af;
+      font-size: 14px;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    label {
+      font-size: 14px;
+      color: #d1d5db;
+    }
+    input[type="number"] {
+      width: 80px;
+      padding: 6px 8px;
+      border-radius: 4px;
+      border: 1px solid #374151;
+      background: #111827;
+      color: #e5e7eb;
+    }
+    button {
+      padding: 8px 16px;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      background: #4f46e5;
+      color: #e5e7eb;
+      transition: background 0.15s ease;
+    }
+    button:hover {
+      background: #6366f1;
+    }
+    button.secondary {
+      background: #374151;
+    }
+    button.secondary:hover {
+      background: #4b5563;
+    }
+    .status {
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+    .status.ok {
+      color: #6ee7b7;
+    }
+    .status.error {
+      color: #fca5a5;
+    }
+    textarea {
+      width: 100%;
+      min-height: 320px;
+      resize: vertical;
+      padding: 10px;
+      border-radius: 4px;
+      border: 1px solid #374151;
+      background: #020617;
+      color: #e5e7eb;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 12px;
+      line-height: 1.4;
+      white-space: pre;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Zeus 3 Pots — генератор стартового сценария</h1>
+    <p class="description">
+      Нажми «Сгенерировать», чтобы получить массив шагов в формате
+      <code>[{ "matrix": number[3][3] }, ...]</code>. Потом скопируй JSON в файл
+      вроде <code>matrix/scenario_v1.json</code>.
+    </p>
+
+    <div class="controls">
+      <label>
+        Кол-во спинов:
+        <input id="spinCount" type="number" min="1" max="1000" value="10">
+      </label>
+      <label>
+        <input id="noBonus" type="checkbox">
+        Не провоцировать бонуску (без pot / JP / мистерий)
+      </label>
+      <button id="generateBtn" type="button">Сгенерировать сценарий</button>
+      <button id="copyBtn" type="button" class="secondary">Скопировать в буфер</button>
+      <button id="saveBtn" type="button" class="secondary">Сохранить в файл</button>
+    </div>
+
+    <div id="status" class="status"></div>
+    <textarea id="output" spellcheck="false" placeholder="Здесь появится JSON сценария..."></textarea>
+  </div>
+
+  <script type="module">
+    import { generateInitialScenario } from './basicScenarioGenerator.js';
+
+    const spinCountInput = document.getElementById('spinCount');
+    const noBonusCheckbox = document.getElementById('noBonus');
+    const generateBtn = document.getElementById('generateBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const saveBtn = document.getElementById('saveBtn');
+    const output = document.getElementById('output');
+    const statusEl = document.getElementById('status');
+
+    function setStatus(message, isError = false) {
+      statusEl.textContent = message || '';
+      statusEl.className = 'status' + (message ? (isError ? ' error' : ' ok') : '');
+    }
+
+    function buildScenarioText(data) {
+      const lines = ['['];
+      for (let i = 0; i < data.length; i += 1) {
+        const step = data[i];
+        const json = JSON.stringify(step);
+        const suffix = i < data.length - 1 ? ',' : '';
+        lines.push(`  ${json}${suffix}`);
+      }
+      lines.push(']');
+      return lines.join('\n');
+    }
+
+    function getSpinCountOrShowError() {
+      const count = Number(spinCountInput.value) || 0;
+      if (!Number.isFinite(count) || count <= 0) {
+        setStatus('Введите корректное число спинов (> 0).', true);
+        return null;
+      }
+      return count;
+    }
+
+    generateBtn.addEventListener('click', () => {
+      const count = getSpinCountOrShowError();
+      if (count == null) return;
+
+      try {
+        const data = generateInitialScenario(count, { noBonus: !!noBonusCheckbox.checked });
+        const text = buildScenarioText(data);
+        output.value = text;
+        setStatus(`Сгенерирован сценарий на ${count} спинов (построчный формат).`);
+      } catch (e) {
+        console.error(e);
+        setStatus('Ошибка генерации сценария: ' + (e && e.message ? e.message : String(e)), true);
+      }
+    });
+
+    copyBtn.addEventListener('click', async () => {
+      const text = output.value.trim();
+      if (!text) {
+        setStatus('Нечего копировать: сначала сгенерируй сценарий.', true);
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(text);
+        setStatus('JSON скопирован в буфер обмена.');
+      } catch (e) {
+        console.error(e);
+        setStatus('Не удалось скопировать в буфер. Выдели текст вручную (Ctrl+A, Ctrl+C).', true);
+      }
+    });
+
+    saveBtn.addEventListener('click', () => {
+      const text = output.value.trim();
+      if (!text) {
+        setStatus('Нечего сохранять: сначала сгенерируй сценарий.', true);
+        return;
+      }
+
+      try {
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+        const filename = `scenario_zeus_${timestamp}.json`;
+        const blob = new Blob([text + '\n'], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+        setStatus(`Файл сохранён как ${filename}. Положи его в папку scenario/ слота Zeus.`);
+      } catch (e) {
+        console.error(e);
+        setStatus('Не удалось сохранить файл. Попробуй скопировать текст и сохранить вручную.', true);
+      }
+    });
+  </script>
+</body>
+</html>
+

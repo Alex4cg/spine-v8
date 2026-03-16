@@ -1,0 +1,110 @@
+{
+  "aclonicaRegular": {
+    "welcomeScreen": {
+      "winUpTo": "Win up to",
+      "continue": "CONTINUE"
+    }
+  },
+  "aclonicaRegularSmall": {
+    "welcomeScreen": {
+      "feature1": "Hold & Win Bonus Game",
+      "feature2": "Outstanding collector feature",
+      "feature3": "Multiplier and jackpot feature",
+      "doNotShow": "DO NOT SHOW AGAIN"
+    }
+  },
+  "karantina": {
+    "welcomeScreen": {
+      "continue": "CONTINUE"
+    }
+  },
+  "karantinaBold": {
+    "buyModal": {
+      "buy": "BUY"
+    },
+    "welcomScreen": {
+      "continue": "CONTINUE"
+    },
+    "field": {
+      "major": "MAJOR",
+      "midi": "MIDI",
+      "mini": "MINI",
+      "bet": "BET"
+    }
+  },
+  "karantinaRegular": {
+    "buyModal": {
+      "title": {
+        "main": "BUY FEATURE",
+        "sideBets": "Sidebets",
+        "bonusGame": "Bonus Game"
+      }
+    },
+    "freeSpinsModal": {
+      "title": {
+        "main": "BONUS GAME",
+        "total": "TOTAL WIN",
+        "max": "MAX WIN"
+      }
+    }
+  },
+  "robotoCondensedBold": {
+    "buyModal": {
+      "description": {
+        "regular": "REGULAR H&W",
+        "jackpot": "SUPER H&W",
+        "sidebet": "CHANCE OF\nLANDING COINS"
+      }
+    },
+    "infoLine": {
+      "winUpTo": "WIN UP TO",
+      "win": "WIN",
+      "lastWin": "LAST WIN"
+    },
+    "bonusModal": {
+      "clickToContinue": "CLICK TO CONTINUE",
+      "tapToContinue": "TAP TO CONTINUE",
+      "winUpTo": "WIN UP TO"
+    },
+    "winBoard": {
+      "popUp": {
+        "tap": "TAP",
+        "click": "CLICK",
+        "toContinue": "TO CONTINUE"
+      }
+    }
+  },
+  "robotoCondensedRegular": {
+    "buyModal": {
+      "description": {
+        "common": "Activate sidebets to increase your chances to win!"
+      }
+    },
+    "bonusModal": {
+      "feature1": "Cell multiplier feature",
+      "feature2": "Collector coin feature"
+    }
+  },
+  "freeSpinsModal": {
+    "title": {
+      "main": "BONUS GAME",
+      "total": "TOTAL WIN",
+      "max": "MAX WIN"
+    }
+  },
+  "bonusModal": {
+    "feature1": "Cell multiplier feature",
+    "feature2": "Collector coin feature",
+    "winUpTo": "WIN UP TO",
+    "winMultiplier": "x5 000",
+    "clickToContinue": "CLICK TO CONTINUE",
+    "tapToContinue": "TAP TO CONTINUE"
+  },
+  "winBoard": {
+    "popUp": {
+      "tap": "TAP",
+      "click": "CLICK",
+      "toContinue": "TO CONTINUE"
+    }
+  }
+}

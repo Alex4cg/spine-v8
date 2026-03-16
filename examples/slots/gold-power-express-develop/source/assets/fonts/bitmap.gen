@@ -1,0 +1,62 @@
+{
+  "aclonicaRegular": {
+    "file": "./Aclonica-Regular.ttf",
+    "size": 120,
+    "symbols": "0123456789& ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz,.!?&"
+  },
+  "aclonicaRegularSmall": {
+    "file": "./Aclonica-Regular.ttf",
+    "size": 60,
+    "symbols": "0123456789& ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz,.!?&"
+  },
+  "aclonicaRegularMedium": {
+    "file": "./Aclonica-Regular.ttf",
+    "size": 24,
+    "symbols": "0123456789& ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz,.!?&"
+  },
+  "montserrat": {
+    "file": "./Montserrat-Bold.ttf",
+    "size": 70,
+    "symbols": "0123456789.,?x ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+  },
+  "montserratExtraBold": {
+    "file": "./Montserrat-ExtraBold.ttf",
+    "size": 96,
+    "symbols": "0123456789.,?x ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+  },
+  "robotoBold": {
+    "file": "./RobotoCondensed-Bold.ttf",
+    "size": 70,
+    "symbols": "0123456789& ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz,.!?&"
+  },
+  "roboto": {
+    "file": "./Roboto-Bold.ttf",
+    "size": 40,
+    "symbols": "0123456789& ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz,.!?&"
+  },
+  "karantina": {
+    "file": "./Karantina-Bold.ttf",
+    "size": 80,
+    "symbols": "CONTINUE"
+  },
+  "karantinaBold": {
+    "file": "./Karantina-Bold.ttf",
+    "size": 100,
+    "symbols": "0123456789& ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz,.!?&"
+  },
+  "karantinaRegular": {
+    "file": "./Karantina-Regular.ttf",
+    "size": 150,
+    "symbols": "0123456789& ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz,.!?&"
+  },
+  "robotoCondensedBold": {
+    "file": "./RobotoCondensed-Bold.ttf",
+    "size": 72,
+    "symbols": "0123456789& ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz,.!?&"
+  },
+  "robotoCondensedRegular": {
+    "file": "./RobotoCondensed-Regular.ttf",
+    "size": 24,
+    "symbols": "0123456789& ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz,.!?&"
+  }
+}

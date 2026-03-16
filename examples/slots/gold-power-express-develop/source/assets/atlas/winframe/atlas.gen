@@ -1,0 +1,9 @@
+{
+ "winframe": {
+    "format": "webp",
+    "compression": 90,
+    "alphaCompression": 90,
+    "trim": false,
+    "rules": ["/winframe_.*\\.png/"]
+  }
+}

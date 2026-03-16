@@ -1,0 +1,33 @@
+{
+  "$extends": "../../assets/fonts/bitmap.gen",
+  "aclonicaRegular": {
+    "file": "../../assets/fonts/Aclonica-Regular.ttf"
+  },
+  "aclonicaRegularSmall": {
+    "file": "../../assets/fonts/Aclonica-Regular.ttf"
+  },
+  "aclonicaRegularMedium": {
+    "file": "../../assets/fonts/Aclonica-Regular.ttf"
+  },
+  "montserrat": {
+    "file": "../../assets/fonts/Montserrat-Bold.ttf"
+  },
+  "robotoBold": {
+    "file": "../../assets/fonts/RobotoCondensed-Bold.ttf"
+  },
+  "roboto": {
+    "file": "../../assets/fonts/Roboto-Bold.ttf"
+  },
+  "karantina": {
+    "file": "../../assets/fonts/Karantina-Bold.ttf"
+  },
+  "karantinaBold": {
+    "symbols": "0123456789.xBETONFCTIEBUYPLAJMRD"
+  },
+  "robotoCondensedBold": {
+    "symbols": "+0123456789.xWIN:&, -!?HoldABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'',:!&?- U+2A-2F\\,"
+  },
+  "karantinaRegular": {
+    "symbols": "TOAL WINBUSGMEYFRPXabcdefghijklmnopqrstuvwxyz "
+  }
+}

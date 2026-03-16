@@ -1,0 +1,15 @@
+{
+  "round": "43103199-d574-4a1a-88f2-709dd8fad710",
+  "step": "3bc82534-171c-40b9-a398-6dee0e8c5f16",
+  "balance": 4995400,
+  "resp": {
+    "game_type": "GOLD_POWER_EXPRESS",
+    "actions": [
+      "FINISH_ROUND"
+    ],
+    "data": "eJzNUTFuwzAM/AtnDbKbpRoLFEWATl0yGB6UWDGIKpQgyUgNw38vmbqB06FjEHAhRd5Bd9dMEIZyCCcHZoJcXMxgmgk+kTowgIQFrQcFfUJ+aHiVx9M+eF6+1zCr9fz0Z97A3Ko7IFoFlgoeMNqCgUSJBnO0PjsF1bWrl24WhkWgjdGPH+5sU5dZZVo6scAjuS117guMVhBDRiGXnVZc7e81mI3WQrkCVLeASnH9C6hvAbXiWgEqBvBYQrF+h6zw+YdhUbHHXl75YIwcJLxs38RIOCMRUs+MfM3p2nKJOYWBuldBljS4h8/2mJzLEcUYDuLy+d1VmBgxt9+eLOSM",
+    "win_amount": 900,
+    "base_bet": 100
+  },
+  "final": false
+}

@@ -1,0 +1,68 @@
+{
+  "about_game_section": {
+    "max_win": {
+      "title": "Max win",
+      "content": "The Maximum win amount is limited to {maxWinValue}x play amount. If the total win of a round reaches {maxWinValue}x, the round immediately ends, win is awarded up to the cap and all remaining features are forfeited."
+    },
+    "how_to_play": {
+      "title": "How to play",
+      "content": "1. Choose your play amount size from the available options.\n 2. To start a game round, press the 'Spin' button.\n 3. Use the 'Autoplay' button to spin automatically."
+    },
+    "how_to_calculate_wins": {
+      "title": "How to calculate wins",
+      "content": [
+        "Wins are determined by symbol combinations on active lines.",
+        "Only the highest win per line is awarded.",
+        "Malfunction voids all wins and plays."
+      ]
+    },
+    "game_options": {
+      "title": "Game Options",
+      "content": [
+        "Win table – Displays win amount values for each symbol.",
+        "Settings – Adjust the volume, and other preferences.",
+        "Game features – Detailed explanations of features.",
+        "About game - Detailed rules. (you are here)."
+      ]
+    },
+    "game_panel": {
+      "title": "Game panel",
+      "content": [
+        "Play amount – Displays the current play amount size applied.",
+        "Spin Button – Starts the game.",
+        "Autoplay – Players can enable Autoplay to spin the reels automatically.",
+        "Balance – Displays the player's current balance.",
+        "Win Display – Shows the most recent win amount.",
+        "Jackpot Plate Progress – Displays the current state of jackpot plates."
+      ]
+    },
+    "rtp_information": {
+      "title": "Return to Player (RTP) Information:",
+      "content": "Game RTP: {rtpValue}%"
+    },
+    "additional_information": {
+      "title": "Additional Information",
+      "content": "In the event of a malfunction of the gaming hardware or software, all affected play and win amounts are rendered void, and all affected play amounts are added back to the balance."
+    }
+  },
+  "game_features_section": {
+    "feature_1": {
+      "title": "Collector Feature (Base Game)",
+      "content": "Regular Coins with values 1×, 2×, 3×, 5×, 7×, 10×, 15× can land on Reel 1 and Reel 3.\nCollector Coin (no value) can land only on Reel 2.\nIf a Regular Coin lands without a Collector, nothing happens.\nIf a Collector lands without Regular Coins, nothing happens.\n\nCollector Win Amount Rules\nCoins on reel 1 OR 3 + Collector on reel 2 → Collect Win Amount\nCoins on both reel 1 AND 3 + Collector on reel 2 → Trigger Bonus Game"
+    },
+    "feature_2": {
+      "title": "Bonus Game (Hold & Win)",
+      "content": "Starts with 3 Re-Spins.\nLanding any Regular Coin or Jackpot Coin (Mini, Midi, Major, Grand) resets Re-Spins to 3.\nLanding a Collector Coin does not reset Re-Spins.\nThe Bonus Game ends when no spins remain. \nEntering Bonus Game\nAll Regular Coins from reels 1 & 3 are collected.\nAll coins on reels 1 & 3 disappear after collection.\nAll symbols transform into mini-reels.\nReel Behavior During Bonus Game\nReels 1 & 3:\nCan land Regular Coins\nCan land Jackpot Coins (Mini, Midi, Major, Grand).\nRegular + Jackpot Coins refresh Re-Spins. \nReel 2:\nCan land additional Collector Coins.\n Collector Coins do not refresh Re-Spins. \nMultiple Collectors\nAll active Collectors collect the full value from every coin.\nCollectors do not collect each other."
+    },
+    "feature_3": {
+      "title": "Multiplier Frames (Bonus Game)",
+      "content": "Reels 1 and 3 may land Multiplier Frames.\nA frame stays until a coin lands in its position.\nWhen a coin lands on a framed cell:\nThe multiplier applies to the coin value.\nApplies even to Jackpot Coins.\nThe frame disappears after activation.\nFrames vanish if unused by the end of the Bonus Game.\n\nBonus Game End\nWhen Re-Spins reach zero, the Bonus Game ends.\nAll collected coin values are summed and awarded.\nFilling all 9 positions awards the Grand Jackpot (1000×)."
+    }
+  },
+  "paytable_section": {
+    "high_symbols": "High symbols",
+    "low_symbols": "Low symbols",
+    "special_symbols": "Special symbols",
+    "lines": "Lines"
+  }
+}

@@ -45,6 +45,15 @@
           <button id="skinC_Red" style="padding:8px 15px;background:#ff3333;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;">Red</button>
         </div>
       </div>
+      
+      <div style="display:flex;align-items:center;gap:8px;margin-top:10px;">
+        <input type="checkbox" id="togglePinatas" checked style="width:18px;height:18px;cursor:pointer;" />
+        <label for="togglePinatas" style="color:white;font-size:12px;cursor:pointer;user-select:none;">Показать пиньятто</label>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <input type="checkbox" id="toggleMarkers" style="width:18px;height:18px;cursor:pointer;" />
+        <label for="toggleMarkers" style="color:white;font-size:12px;cursor:pointer;user-select:none;">Скрыть маркеры перелета</label>
+      </div>
     </div>
     <script>
       (async () => {
@@ -122,18 +131,24 @@
           { alias: "collectEffectSkeleton", src: "./spine/collect_effect/skeleton.json" },
           { alias: "collectEffectAtlas", src: "./spine/collect_effect/skeleton.atlas" },
           { alias: "collectEffectEmitter", src: "./spine/collect_effect/particles/emitter.json" },
-          { alias: "particleStar", src: "./particles/star.png" },
+          { alias: "particleStarBlue", src: "./particles/star_blue.png" },
+          { alias: "particleStarGreen", src: "./particles/star_green.png" },
+          { alias: "particleStarRed", src: "./particles/star_red.png" },
+          { alias: "particleStar", src: "./particles/star.png" }, // Fallback для других скинов
           { alias: "clawSkeleton", src: "./spine/pinatas/skeleton.json" },
           { alias: "clawAtlas", src: "./spine/pinatas/skeleton.atlas" },
         ]);
 
         const rawEmitterConfig = PIXI.Assets.get("collectEffectEmitter");
-        const starTexture = PIXI.Assets.get("particleStar");
-        // Используем одну белую звездочку для всех скинов
+        // Используем цветные звездочки для персонализации эмиттеров по скинам
         const particleTextures = {
-          blue: starTexture,
-          green: starTexture,
-          red: starTexture,
+          blue: PIXI.Assets.get("particleStarBlue"),
+          green: PIXI.Assets.get("particleStarGreen"),
+          red: PIXI.Assets.get("particleStarRed"),
+          // Fallback для других скинов (gold, violet, default)
+          gold: PIXI.Assets.get("particleStar"),
+          violet: PIXI.Assets.get("particleStar"),
+          default: PIXI.Assets.get("particleStar"),
         };
 
         // Создаём фоновое изображение (размер сцены уже соответствует размеру фона)
@@ -482,8 +497,22 @@
               }
             }
 
+            // Явно обновляем world трансформации после установки сохраненных позиций
+            if (this.spine.skeleton.physics && this.spine.skeleton.physics.update) {
+              this.spine.skeleton.updateWorldTransform(this.spine.skeleton.physics.update);
+            } else {
+              this.spine.skeleton.updateWorldTransform();
+            }
+
             // Ждем один кадр, чтобы Spine обновил world трансформации после установки позиций костей
             await this.waitNextFrame();
+            
+            // Дополнительное обновление для гарантии правильных world координат
+            if (this.spine.skeleton.physics && this.spine.skeleton.physics.update) {
+              this.spine.skeleton.updateWorldTransform(this.spine.skeleton.physics.update);
+            } else {
+              this.spine.skeleton.updateWorldTransform();
+            }
 
             // Теперь создаем handles с правильными world позициями
             for (const name of this.controlBoneNames) {
@@ -514,6 +543,25 @@
 
               this.stage.addChild(handle);
               this.controlBones.push({ bone, handle, name });
+            }
+            
+            // Если были загружены сохраненные позиции, синхронизируем handles еще раз после их создания
+            // Это особенно важно для системы A, которая создается первой
+            if (savedPositions.size > 0) {
+              await this.waitNextFrame();
+              // Обновляем world трансформации еще раз
+              if (this.spine.skeleton.physics && this.spine.skeleton.physics.update) {
+                this.spine.skeleton.updateWorldTransform(this.spine.skeleton.physics.update);
+              } else {
+                this.spine.skeleton.updateWorldTransform();
+              }
+              // Синхронизируем handles с обновленными world координатами костей
+              for (const { bone, handle } of this.controlBones) {
+                const world = { x: bone.worldX, y: bone.worldY };
+                this.spine.skeletonToPixiWorldCoordinates(world);
+                handle.x = world.x;
+                handle.y = world.y;
+              }
             }
 
             const convertPoint = { x: 0, y: 0 };
@@ -704,7 +752,11 @@
             requestAnimationFrame(() => {
               this.spine.skeleton.setSkin(skin);
               this.spine.skeleton.setSlotsToSetupPose();
-              this.spine.skeleton.updateWorldTransform(spine.Physics.update);
+              if (this.spine.skeleton.physics && this.spine.skeleton.physics.update) {
+                this.spine.skeleton.updateWorldTransform(this.spine.skeleton.physics.update);
+              } else {
+                this.spine.skeleton.updateWorldTransform();
+              }
               this.currentSkin = skinName;
               this.updateEmitterTexture(skinName);
             });
@@ -760,7 +812,11 @@
 
           update() {
             if (this.spine && this.spine.skeleton && this.spine.skeleton.physics) {
-              this.spine.skeleton.updateWorldTransform(spine.Physics.update);
+              if (this.spine.skeleton.physics.update) {
+                this.spine.skeleton.updateWorldTransform(this.spine.skeleton.physics.update);
+              } else {
+                this.spine.skeleton.updateWorldTransform();
+              }
             }
 
             if (!this.targetBone || !this.emitter) return;
@@ -830,6 +886,15 @@
               
               // Останавливаем текущую анимацию (idle) и очищаем трек
               claw.state.clearTrack(0);
+              
+              // Сброс скелета в setup pose перед hit-анимацией
+              claw.skeleton.setToSetupPose();
+              claw.skeleton.setSlotsToSetupPose();
+              if (claw.skeleton.physics && claw.skeleton.physics.update) {
+                claw.skeleton.updateWorldTransform(claw.skeleton.physics.update);
+              } else {
+                claw.skeleton.updateWorldTransform();
+              }
               
               // Выбираем тип анимации на основе уровня
               const animType = chooseHitAnimation(clawLevel);
@@ -979,6 +1044,34 @@
         document.getElementById("skinC_Blue").onclick = () => getSystemById("c")?.setSkin("blue");
         document.getElementById("skinC_Green").onclick = () => getSystemById("c")?.setSkin("green");
         document.getElementById("skinC_Red").onclick = () => getSystemById("c")?.setSkin("red");
+
+        // Тогглер для скрытия/показа пиньятто
+        const togglePinatasCheckbox = document.getElementById("togglePinatas");
+        const togglePinatas = () => {
+          const isVisible = togglePinatasCheckbox.checked;
+          if (claw) claw.visible = isVisible;
+          if (clawLeft) clawLeft.visible = isVisible;
+          if (clawRight) clawRight.visible = isVisible;
+        };
+        togglePinatasCheckbox.addEventListener("change", togglePinatas);
+        
+        // Инициализируем видимость при загрузке
+        togglePinatas();
+
+        // Тогглер для скрытия/показа маркеров перелета
+        const toggleMarkersCheckbox = document.getElementById("toggleMarkers");
+        const toggleMarkers = () => {
+          const hide = toggleMarkersCheckbox.checked;
+          systems.forEach((system) => {
+            if (system.controlBones) {
+              system.controlBones.forEach(({ handle }) => {
+                if (handle) handle.visible = !hide;
+              });
+            }
+          });
+        };
+        toggleMarkersCheckbox.addEventListener("change", toggleMarkers);
+        toggleMarkers();
 
         // Не вызываем setSkinAll при инициализации, так как эмиттеры уже созданы с правильной текстурой
         // setSkinAll(initialSkin);

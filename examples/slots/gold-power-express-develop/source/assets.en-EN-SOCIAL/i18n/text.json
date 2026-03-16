@@ -1,0 +1,123 @@
+{
+  "aclonicaRegular": {
+    "welcomeScreen": {
+      "winUpTo": "Win up to",
+      "continue": "CONTINUE"
+    }
+  },
+  "aclonicaRegularSmall": {
+    "welcomeScreen": {
+      "feature1": "Hold & Win Bonus Game",
+      "feature2": "Outstanding collector feature",
+      "feature3": "Multiplier and jackpot feature",
+      "doNotShow": "DO NOT SHOW AGAIN"
+    }
+  },
+  "karantina": {
+    "welcomeScreen": {
+      "continue": "CONTINUE"
+    }
+  },
+  "karantinaBold": {
+    "field": {
+      "major": "MAJOR",
+      "midi": "MIDI",
+      "mini": "MINI",
+      "bet": "PLAY"
+    },
+    "buyModal": {
+      "buy": "PLAY",
+      "on": "ON",
+      "off": "OFF"
+    },
+    "welcomScreen": {
+      "continue": "CONTINUE"
+    }
+  },
+  "karantinaRegular": {
+    "buyModal": {
+      "title": {
+        "main": "PLAY FEATURE",
+        "sideBets": "Sideplays",
+        "bonusGame": "Bonus Game"
+      }
+    },
+    "freeSpinsModal": {
+      "title": {
+        "main": "BONUS GAME",
+        "total": "TOTAL WIN",
+        "max": "MAX WIN"
+      }
+    }
+  },
+  "robotoCondensedBold": {
+    "infoLine": {
+      "winUpTo": "WIN UP TO",
+      "win": "WIN",
+      "lastWin": "LAST WIN"
+    },
+    "winBoard": {
+      "popUp": {
+        "tap": "TAP",
+        "click": "CLICK",
+        "toContinue": "TO CONTINUE"
+      }
+    },
+    "buyModal": {
+      "description": {
+        "regular": "REGULAR H&W",
+        "jackpot": "JACKPOT H&W",
+        "sidebet": "CHANCE OF\nLANDING COINS"
+      }
+    },
+    "welcomeScreen": {
+      "feature1": "Landing 6+ coins trigger the\nbonus game",
+      "feature2": "Multipliers, coin prizes and\nbonus game triggers",
+      "feature3": "In HOLD&WIN you can land\njackpot coins",
+      "doNotShow": "DO NOT SHOW AGAIN"
+    },
+    "bonusModal": {
+      "clickToContinue": "CLICK TO CONTINUE",
+      "tapToContinue": "TAP TO CONTINUE",
+      "winUpTo": "WIN UP TO"
+    }
+  },
+  "robotoCondensedRegular": {
+    "buyModal": {
+      "description": {
+        "common": "Activate sideplays to increase your chances to win!"
+      }
+    },
+    "bonusModal": {
+      "feature1": "Cell multiplier feature",
+      "feature2": "Collector coin feature"
+    }
+  },
+  "limelightRegular": {
+    "welcomeScreen": {
+      "winUpTo": "WIN UP TO"
+    }
+  },
+  "freeSpinsModal": {
+    "title": {
+      "main": "BONUS GAME",
+      "total": "TOTAL WIN",
+      "max": "MAX WIN"
+    }
+  },
+  "bonusModal": {
+    "feature1": "Cell multiplier feature",
+    "feature2": "Collector coin feature",
+    "winUpTo": "WIN UP TO",
+    "winMultiplier": "x5 000",
+    "clickToContinue": "CLICK TO CONTINUE",
+    "tapToContinue": "TAP TO CONTINUE"
+  },
+  "winBoard": {
+    "popUp": {
+      "tap": "TAP",
+      "click": "CLICK",
+      "toContinue": "TO CONTINUE"
+    }
+  }
+}

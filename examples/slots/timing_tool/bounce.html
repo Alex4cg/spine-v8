@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Timing Tool — падение с баунсом (Старт / Лайн / Энд)</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+      padding: 24px;
+      background: radial-gradient(circle at top, #222 0, #0c1016 55%, #050609 100%);
+      color: #f5f7fb;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    .app {
+      display: grid;
+      grid-template-columns: minmax(520px, 1fr) 300px;
+      gap: 20px;
+      max-width: 1320px;
+      width: 100%;
+      background: rgba(7, 11, 18, 0.96);
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      box-shadow: 0 28px 80px rgba(0, 0, 0, 0.8);
+      overflow: hidden;
+    }
+    .left {
+      padding: 18px 18px 22px 22px;
+      border-right: 1px solid rgba(255, 255, 255, 0.04);
+      display: flex;
+      flex-direction: column;
+    }
+    .right {
+      padding: 18px 22px 22px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      background: radial-gradient(circle at top right, rgba(76, 201, 240, 0.12), transparent 55%);
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .title-block h1 { font-size: 18px; font-weight: 600; letter-spacing: 0.03em; }
+    .title-block .subtitle { font-size: 12px; opacity: 0.86; }
+    .canvas-wrapper {
+      position: relative;
+      flex: 1;
+      min-height: 280px;
+      border-radius: 12px;
+      overflow: visible;
+      background: radial-gradient(circle at 10% 0, rgba(65, 105, 225, 0.22), rgba(7, 11, 18, 0.96));
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02), 0 24px 60px rgba(0, 0, 0, 0.9);
+    }
+    #curveCanvas { width: 100%; height: 100%; display: block; }
+    .section-title { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.86; }
+    .section { display: flex; flex-direction: column; gap: 8px; }
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+    .tabs button {
+      padding: 6px 12px;
+      font-size: 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(12, 20, 33, 0.9);
+      color: #f5f7fb;
+      cursor: pointer;
+    }
+    .tabs button.active {
+      background: rgba(56, 189, 248, 0.3);
+      border-color: rgba(56, 189, 248, 0.6);
+    }
+    .tabs button:hover:not(.active) { background: rgba(30, 50, 80, 0.9); }
+    label { display: flex; flex-direction: column; gap: 2px; font-size: 11px; opacity: 0.9; }
+    input[type="number"] {
+      background: rgba(0, 0, 0, 0.5);
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      color: #f5f7fb;
+      font-size: 12px;
+      padding: 4px 6px;
+      width: 100%;
+    }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .keyframe-list {
+      max-height: 140px;
+      overflow-y: auto;
+      background: rgba(3, 7, 13, 0.8);
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 4px;
+    }
+    .keyframe-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 6px;
+      font-size: 11px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .keyframe-item:hover { background: rgba(56, 189, 248, 0.15); }
+    .keyframe-item.selected { background: rgba(56, 189, 248, 0.25); }
+    .keyframe-item .t { font-family: monospace; min-width: 48px; }
+    .keyframe-item .v { font-family: monospace; min-width: 48px; }
+    .keyframe-item .del {
+      margin-left: auto;
+      padding: 2px 6px;
+      font-size: 10px;
+      border: none;
+      border-radius: 4px;
+      background: rgba(220, 80, 80, 0.4);
+      color: #fff;
+      cursor: pointer;
+    }
+    .keyframe-item .del:hover { background: rgba(220, 80, 80, 0.7); }
+    .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    button.primary {
+      padding: 5px 11px;
+      font-size: 11px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(56, 189, 248, 0.25);
+      color: #f5f7fb;
+      cursor: pointer;
+    }
+    button.primary:hover { background: rgba(56, 189, 248, 0.4); }
+    .code-block {
+      background: rgba(3, 7, 13, 0.9);
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 6px 8px;
+      font-family: ui-monospace, monospace;
+      font-size: 10px;
+      line-height: 1.4;
+      word-break: break-all;
+    }
+    .code-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.7; margin-bottom: 4px; }
+    .demo-area {
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      background: rgba(15, 23, 42, 0.6);
+    }
+    .demo-track {
+      position: relative;
+      height: 80px;
+      border-radius: 8px;
+      background: linear-gradient(180deg, rgba(30, 64, 175, 0.4), rgba(15, 23, 42, 0.9));
+      overflow: hidden;
+    }
+    .demo-box {
+      position: absolute;
+      left: 50%;
+      width: 24px;
+      height: 24px;
+      margin-left: -12px;
+      border-radius: 8px;
+      background: radial-gradient(circle at 30% 30%, #facc15, #f97316);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      transition: none;
+    }
+    .demo-caption { font-size: 11px; opacity: 0.85; margin-top: 6px; }
+    .hint { font-size: 11px; opacity: 0.8; margin-top: 8px; }
+    .link-back {
+      display: inline-block;
+      margin-bottom: 10px;
+      font-size: 12px;
+      color: #7dd3fc;
+      text-decoration: none;
+    }
+    .link-back:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="left">
+      <a href="index.html" class="link-back">← Простая кривая (cubic-bezier)</a>
+      <a href="bounce_canvas.html" class="link-back">Холст 2048×2048 (контейнеры) →</a>
+      <header>
+        <div class="title-block">
+          <h1>Падение с баунсом</h1>
+          <div class="subtitle">Старт → Лайн → Энд. Ключевые кадры + линейная середина.</div>
+        </div>
+      </header>
+      <div class="canvas-wrapper">
+        <canvas id="curveCanvas" width="900" height="360"></canvas>
+      </div>
+      <div class="hint">ЛКМ: перетаскивать ключи и штанги Безье (Старт и Энд). Кривая следует штангам. Границы t1, t2 задают конец Старта и конец Лайна.</div>
+    </div>
+    <div class="right">
+      <div class="section">
+        <div class="section-title">Границы фаз</div>
+        <div class="form-row">
+          <label>t1 (конец Старта)<input id="inputT1" type="number" step="0.01" min="0.05" max="0.95" value="0.2"></label>
+          <label>t2 (конец Лайна)<input id="inputT2" type="number" step="0.01" min="0.05" max="0.95" value="0.7"></label>
+        </div>
+      </div>
+      <div class="tabs">
+        <button type="button" id="tabStart" class="active">Старт</button>
+        <button type="button" id="tabLine">Лайн</button>
+        <button type="button" id="tabEnd">Энд</button>
+      </div>
+      <div id="panelStart" class="section">
+        <div class="section-title">Ключи Старт (t ∈ [0, t1])</div>
+        <div class="keyframe-list" id="listStart"></div>
+        <div class="btn-row">
+          <button type="button" id="addStart" class="primary">Добавить ключ</button>
+        </div>
+      </div>
+      <div id="panelLine" class="section" style="display:none">
+        <div class="section-title">Лайн (линейно)</div>
+        <div class="form-row">
+          <label>value в t1 (y1)<input id="inputY1" type="number" step="0.01" value="0.85"></label>
+          <label>value в t2 (y2)<input id="inputY2" type="number" step="0.01" value="0.2"></label>
+        </div>
+        <div class="code-label">Длительность Лайна: <span id="lineDuration">0.50</span></div>
+        <div class="code-label">Уклон (скорость): <span id="lineSlope">—</span></div>
+      </div>
+      <div id="panelEnd" class="section" style="display:none">
+        <div class="section-title">Ключи Энд (t ∈ [t2, 1])</div>
+        <div class="keyframe-list" id="listEnd"></div>
+        <div class="btn-row">
+          <button type="button" id="addEnd" class="primary">Добавить ключ</button>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">Экспорт</div>
+        <div class="code-block">
+          <div class="code-label">JSON</div>
+          <pre id="exportJson"></pre>
+          <div class="btn-row"><button type="button" id="copyJson" class="primary">Скопировать JSON</button></div>
+        </div>
+        <div class="code-block" style="margin-top:8px">
+          <div class="code-label">JS getValue(t) — сэмплы</div>
+          <pre id="exportJs"></pre>
+          <div class="btn-row"><button type="button" id="copyJs" class="primary">Скопировать JS</button></div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">Превью</div>
+        <div class="demo-area">
+          <div class="demo-track"><div id="demoBox" class="demo-box"></div></div>
+          <div class="demo-caption">t = <span id="demoT">0.00</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+(function() {
+    const canvas = document.getElementById('curveCanvas');
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+    const padding = 46;
+    const handleRadius = 8;
+    const hitRadius = handleRadius + 14;
+    const handleHitRadius = 10;
+
+    let t1 = 0.2, t2 = 0.7, y1 = 0.85, y2 = 0.2;
+    let startKeyframes = [];
+    let endKeyframes = [];
+    let selectedPhase = 'start';
+    let selectedKeyIndex = -1;
+    let dragging = null;
+
+    function ensureStartKeyHandles(keys) {
+      keys.forEach((k, i) => {
+        if (!k.inHandle) k.inHandle = { dx: 0, dy: 0 };
+        if (!k.outHandle) k.outHandle = { dx: 0, dy: 0 };
+      });
+    }
+    function makeStartKey(t, value) {
+      return { t, value, inHandle: { dx: 0, dy: 0 }, outHandle: { dx: 0, dy: 0 } };
+    }
+    function ensureEndKeyHandles(keys) {
+      keys.forEach((k, i) => {
+        if (!k.inHandle) k.inHandle = { dx: 0, dy: 0 };
+        if (!k.outHandle) k.outHandle = { dx: 0, dy: 0 };
+      });
+    }
+    function makeEndKey(t, value) {
+      return { t, value, inHandle: { dx: 0, dy: 0 }, outHandle: { dx: 0, dy: 0 } };
+    }
+
+    const inputT1 = document.getElementById('inputT1');
+    const inputT2 = document.getElementById('inputT2');
+    const inputY1 = document.getElementById('inputY1');
+    const inputY2 = document.getElementById('inputY2');
+    const listStart = document.getElementById('listStart');
+    const listEnd = document.getElementById('listEnd');
+    const panelStart = document.getElementById('panelStart');
+    const panelLine = document.getElementById('panelLine');
+    const panelEnd = document.getElementById('panelEnd');
+    const tabStart = document.getElementById('tabStart');
+    const tabLine = document.getElementById('tabLine');
+    const tabEnd = document.getElementById('tabEnd');
+    const addStartBtn = document.getElementById('addStart');
+    const addEndBtn = document.getElementById('addEnd');
+    const lineDurationEl = document.getElementById('lineDuration');
+    const lineSlopeEl = document.getElementById('lineSlope');
+    const exportJsonEl = document.getElementById('exportJson');
+    const exportJsEl = document.getElementById('exportJs');
+    const copyJsonBtn = document.getElementById('copyJson');
+    const copyJsBtn = document.getElementById('copyJs');
+    const demoBox = document.getElementById('demoBox');
+    const demoTLabel = document.getElementById('demoT');
+
+    function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
+    function dataToCanvas(t, v) {
+      const x = padding + t * (width - padding * 2);
+      const y = height - padding - v * (height - padding * 2);
+      return { x, y };
+    }
+    function canvasToData(x, y) {
+      const t = clamp01((x - padding) / (width - padding * 2));
+      const v = (height - padding - y) / (height - padding * 2);
+      return { t, v };
+    }
+    function eventToCanvasCoords(evt) {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: (evt.clientX - rect.left) * (width / rect.width),
+        y: (evt.clientY - rect.top) * (height / rect.height)
+      };
+    }
+
+    function sortStart() {
+      startKeyframes.sort((a, b) => a.t - b.t);
+      if (startKeyframes.length) {
+        startKeyframes[0].t = 0;
+        startKeyframes[startKeyframes.length - 1].t = t1;
+        startKeyframes[startKeyframes.length - 1].value = y1;
+      }
+      ensureStartKeyHandles(startKeyframes);
+    }
+    function sortEnd() {
+      endKeyframes.sort((a, b) => a.t - b.t);
+      if (endKeyframes.length) {
+        endKeyframes[0].t = t2;
+        endKeyframes[0].value = y2;
+        endKeyframes[endKeyframes.length - 1].t = 1;
+      }
+      ensureEndKeyHandles(endKeyframes);
+    }
+
+    function interpolateCatmullRom(keys, t) {
+      if (!keys.length) return 0;
+      if (keys.length === 1) return keys[0].value;
+      if (t <= keys[0].t) return keys[0].value;
+      if (t >= keys[keys.length - 1].t) return keys[keys.length - 1].value;
+      let i = 0;
+      while (i < keys.length - 1 && keys[i + 1].t < t) i++;
+      const p0 = keys[Math.max(0, i - 1)];
+      const p1 = keys[i];
+      const p2 = keys[i + 1];
+      const p3 = keys[Math.min(keys.length - 1, i + 2)];
+      const dt = p2.t - p1.t;
+      if (dt <= 0) return p1.value;
+      const u = (t - p1.t) / dt;
+      const v0 = p0.value, v1 = p1.value, v2 = p2.value, v3 = p3.value;
+      const u2 = u * u, u3 = u2 * u;
+      const v = 0.5 * ((2 * v1) + (-v0 + v2) * u + (2 * v0 - 5 * v1 + 4 * v2 - v3) * u2 + (-v0 + 3 * v1 - 3 * v2 + v3) * u3);
+      return v;
+    }
+
+    function cubicBezier1D(u, p0, p1, p2, p3) {
+      const u2 = u * u, u3 = u2 * u;
+      const v = 1 - u, v2 = v * v, v3 = v2 * v;
+      return v3 * p0 + 3 * v2 * u * p1 + 3 * v * u2 * p2 + u3 * p3;
+    }
+    function evaluateStartBezier(t) {
+      const keys = startKeyframes;
+      if (!keys.length) return 1;
+      if (keys.length === 1) return keys[0].value;
+      if (t <= keys[0].t) return keys[0].value;
+      if (t >= keys[keys.length - 1].t) return keys[keys.length - 1].value;
+      let i = 0;
+      while (i < keys.length - 1 && keys[i + 1].t <= t) i++;
+      const a = keys[i];
+      const b = keys[i + 1];
+      const dt = b.t - a.t;
+      if (dt <= 0) return a.value;
+      const t0 = a.t, v0 = a.value;
+      const t1 = b.t, v1 = b.value;
+      const c1t = t0 + (a.outHandle.dx || 0), c1v = v0 + (a.outHandle.dy || 0);
+      const c2t = t1 + (b.inHandle.dx || 0), c2v = v1 + (b.inHandle.dy || 0);
+      let lo = 0, hi = 1;
+      for (let iter = 0; iter < 24; iter++) {
+        const u = (lo + hi) / 2;
+        const tt = cubicBezier1D(u, t0, c1t, c2t, t1);
+        if (tt < t) lo = u; else hi = u;
+      }
+      const u = (lo + hi) / 2;
+      return cubicBezier1D(u, v0, c1v, c2v, v1);
+    }
+    function evaluateEndBezier(t) {
+      const keys = endKeyframes;
+      if (!keys.length) return 0;
+      if (keys.length === 1) return keys[0].value;
+      if (t <= keys[0].t) return keys[0].value;
+      if (t >= keys[keys.length - 1].t) return keys[keys.length - 1].value;
+      let i = 0;
+      while (i < keys.length - 1 && keys[i + 1].t <= t) i++;
+      const a = keys[i];
+      const b = keys[i + 1];
+      const dt = b.t - a.t;
+      if (dt <= 0) return a.value;
+      const t0 = a.t, v0 = a.value;
+      const t1seg = b.t, v1seg = b.value;
+      const c1t = t0 + (a.outHandle.dx || 0), c1v = v0 + (a.outHandle.dy || 0);
+      const c2t = t1seg + (b.inHandle.dx || 0), c2v = v1seg + (b.inHandle.dy || 0);
+      let lo = 0, hi = 1;
+      for (let iter = 0; iter < 24; iter++) {
+        const u = (lo + hi) / 2;
+        const tt = cubicBezier1D(u, t0, c1t, c2t, t1seg);
+        if (tt < t) lo = u; else hi = u;
+      }
+      const u = (lo + hi) / 2;
+      return cubicBezier1D(u, v0, c1v, c2v, v1seg);
+    }
+
+    function getValue(t) {
+      if (t <= 0) return startKeyframes[0] ? startKeyframes[0].value : 1;
+      if (t >= 1) return endKeyframes.length ? endKeyframes[endKeyframes.length - 1].value : 0;
+      if (t <= t1) return evaluateStartBezier(t);
+      if (t <= t2) return y1 + (y2 - y1) * (t - t1) / (t2 - t1);
+      return evaluateEndBezier(t);
+    }
+
+    function syncFromInputs() {
+      t1 = clamp01(parseFloat(inputT1.value) || 0.2);
+      t2 = clamp01(parseFloat(inputT2.value) || 0.7);
+      if (t1 >= t2) t2 = t1 + 0.01;
+      if (t2 > 1) t2 = 1;
+      y1 = parseFloat(inputY1.value);
+      if (Number.isNaN(y1)) y1 = 0.85;
+      y2 = parseFloat(inputY2.value);
+      if (Number.isNaN(y2)) y2 = 0.2;
+      const lastStart = startKeyframes[startKeyframes.length - 1];
+      if (lastStart) { lastStart.t = t1; lastStart.value = y1; }
+      const firstEnd = endKeyframes[0];
+      if (firstEnd) { firstEnd.t = t2; firstEnd.value = y2; }
+      inputT1.value = t1.toFixed(2);
+      inputT2.value = t2.toFixed(2);
+      inputY1.value = y1.toFixed(2);
+      inputY2.value = y2.toFixed(2);
+      lineDurationEl.textContent = (t2 - t1).toFixed(2);
+      const lineDt = t2 - t1;
+      const lineSlope = lineDt > 1e-6 ? (y2 - y1) / lineDt : 0;
+      lineSlopeEl.textContent = lineSlope.toFixed(3);
+    }
+
+    function findStartHandleAtPosition(canvasX, canvasY) {
+      const data = canvasToData(canvasX, canvasY);
+      if (data.t > t1) return null;
+      for (let i = 0; i < startKeyframes.length; i++) {
+        const k = startKeyframes[i];
+        const ac = dataToCanvas(k.t, k.value);
+        if (i < startKeyframes.length - 1) {
+          const oc = dataToCanvas(k.t + (k.outHandle.dx || 0), k.value + (k.outHandle.dy || 0));
+          const dx = canvasX - oc.x, dy = canvasY - oc.y;
+          if (dx * dx + dy * dy <= handleHitRadius * handleHitRadius)
+            return { phase: 'start', index: i, key: k, handle: 'out' };
+        }
+        if (i > 0) {
+          const ic = dataToCanvas(k.t + (k.inHandle.dx || 0), k.value + (k.inHandle.dy || 0));
+          const dx = canvasX - ic.x, dy = canvasY - ic.y;
+          if (dx * dx + dy * dy <= handleHitRadius * handleHitRadius)
+            return { phase: 'start', index: i, key: k, handle: 'in' };
+        }
+      }
+      return null;
+    }
+    function findEndHandleAtPosition(canvasX, canvasY) {
+      const data = canvasToData(canvasX, canvasY);
+      if (data.t < t2) return null;
+      for (let i = 0; i < endKeyframes.length; i++) {
+        const k = endKeyframes[i];
+        const ac = dataToCanvas(k.t, k.value);
+        if (i < endKeyframes.length - 1) {
+          const oc = dataToCanvas(k.t + (k.outHandle.dx || 0), k.value + (k.outHandle.dy || 0));
+          const dx = canvasX - oc.x, dy = canvasY - oc.y;
+          if (dx * dx + dy * dy <= handleHitRadius * handleHitRadius)
+            return { phase: 'end', index: i, key: k, handle: 'out' };
+        }
+        if (i > 0) {
+          const ic = dataToCanvas(k.t + (k.inHandle.dx || 0), k.value + (k.inHandle.dy || 0));
+          const dx = canvasX - ic.x, dy = canvasY - ic.y;
+          if (dx * dx + dy * dy <= handleHitRadius * handleHitRadius)
+            return { phase: 'end', index: i, key: k, handle: 'in' };
+        }
+      }
+      return null;
+    }
+    function findKeyAtPosition(canvasX, canvasY) {
+      const handleHit = findStartHandleAtPosition(canvasX, canvasY);
+      if (handleHit) return handleHit;
+      const endHandleHit = findEndHandleAtPosition(canvasX, canvasY);
+      if (endHandleHit) return endHandleHit;
+      const data = canvasToData(canvasX, canvasY);
+      const keys = data.t < t1 ? startKeyframes : (data.t > t2 ? endKeyframes : null);
+      if (!keys) return null;
+      for (let i = 0; i < keys.length; i++) {
+        const k = keys[i];
+        const c = dataToCanvas(k.t, k.value);
+        const dx = canvasX - c.x, dy = canvasY - c.y;
+        if (dx * dx + dy * dy <= hitRadius * hitRadius)
+          return { phase: data.t < t1 ? 'start' : 'end', index: i, key: k };
+      }
+      return null;
+    }
+
+    function renderKeyframeLists() {
+      listStart.innerHTML = '';
+      startKeyframes.forEach((k, i) => {
+        const div = document.createElement('div');
+        div.className = 'keyframe-item' + (selectedPhase === 'start' && selectedKeyIndex === i ? ' selected' : '');
+        const canDel = startKeyframes.length > 2 && i > 0 && i < startKeyframes.length - 1;
+        div.innerHTML = '<span class="t">t=' + k.t.toFixed(2) + '</span><span class="v">v=' + k.value.toFixed(2) + '</span>' + (canDel ? '<button type="button" class="del">×</button>' : '');
+        div.dataset.index = i;
+        const delBtn = div.querySelector('.del');
+        if (delBtn) delBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          startKeyframes.splice(i, 1);
+          sortStart();
+          renderKeyframeLists();
+          draw();
+          updateExport();
+        });
+        div.addEventListener('click', () => { selectedPhase = 'start'; selectedKeyIndex = i; renderKeyframeLists(); });
+        listStart.appendChild(div);
+      });
+      listEnd.innerHTML = '';
+      endKeyframes.forEach((k, i) => {
+        const div = document.createElement('div');
+        div.className = 'keyframe-item' + (selectedPhase === 'end' && selectedKeyIndex === i ? ' selected' : '');
+        const canDel = endKeyframes.length > 2 && i > 0 && i < endKeyframes.length - 1;
+        div.innerHTML = '<span class="t">t=' + k.t.toFixed(2) + '</span><span class="v">v=' + k.value.toFixed(2) + '</span>' + (canDel ? '<button type="button" class="del">×</button>' : '');
+        div.dataset.index = i;
+        const delBtn = div.querySelector('.del');
+        if (delBtn) delBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          endKeyframes.splice(i, 1);
+          sortEnd();
+          renderKeyframeLists();
+          draw();
+          updateExport();
+        });
+        div.addEventListener('click', () => { selectedPhase = 'end'; selectedKeyIndex = i; renderKeyframeLists(); });
+        listEnd.appendChild(div);
+      });
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, width, height);
+      const grad = ctx.createLinearGradient(0, 0, 0, height);
+      grad.addColorStop(0, '#0b1724');
+      grad.addColorStop(1, '#020617');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, width, height);
+      const left = padding, right = width - padding, top = padding, bottom = height - padding;
+      ctx.save();
+      ctx.translate(0.5, 0.5);
+      ctx.strokeStyle = 'rgba(148, 163, 184, 0.25)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      for (let i = 0; i <= 10; i++) {
+        const x = left + (right - left) * (i / 10);
+        ctx.moveTo(x, top); ctx.lineTo(x, bottom);
+      }
+      for (let i = 0; i <= 10; i++) {
+        const y = top + (bottom - top) * (i / 10);
+        ctx.moveTo(left, y); ctx.lineTo(right, y);
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.strokeStyle = 'rgba(148, 163, 184, 0.7)';
+      ctx.lineWidth = 1.2;
+      ctx.strokeRect(left, top, right - left, bottom - top);
+
+      const x1 = padding + t1 * (width - padding * 2);
+      const x2 = padding + t2 * (width - padding * 2);
+      ctx.fillStyle = 'rgba(76, 201, 240, 0.08)';
+      ctx.fillRect(left, top, x1 - left, bottom - top);
+      ctx.fillStyle = 'rgba(120, 220, 120, 0.06)';
+      ctx.fillRect(x1, top, x2 - x1, bottom - top);
+      ctx.fillStyle = 'rgba(240, 160, 80, 0.08)';
+      ctx.fillRect(x2, top, right - x2, bottom - top);
+      ctx.strokeStyle = 'rgba(76, 201, 240, 0.6)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(x1, top);
+      ctx.lineTo(x1, bottom);
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(240, 160, 80, 0.6)';
+      ctx.beginPath();
+      ctx.moveTo(x2, top);
+      ctx.lineTo(x2, bottom);
+      ctx.stroke();
+
+      const steps = 400;
+      ctx.strokeStyle = '#4cc9f0';
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      for (let i = 0; i <= steps; i++) {
+        const t = i / steps;
+        const v = getValue(t);
+        const c = dataToCanvas(t, v);
+        if (i === 0) ctx.moveTo(c.x, c.y);
+        else ctx.lineTo(c.x, c.y);
+      }
+      ctx.stroke();
+
+      if (t2 > t1 + 1e-6) {
+        const p1 = dataToCanvas(t1, y1);
+        const p2 = dataToCanvas(t2, y2);
+        const midX = (p1.x + p2.x) / 2;
+        const midY = (p1.y + p2.y) / 2;
+        const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
+        const size = 10;
+        const tipX = midX + Math.cos(angle) * size;
+        const tipY = midY + Math.sin(angle) * size;
+        const backX = midX - Math.cos(angle) * size;
+        const backY = midY - Math.sin(angle) * size;
+        const perp = 5;
+        const lx = backX + Math.cos(angle + Math.PI / 2) * perp;
+        const ly = backY + Math.sin(angle + Math.PI / 2) * perp;
+        const rx = backX + Math.cos(angle - Math.PI / 2) * perp;
+        const ry = backY + Math.sin(angle - Math.PI / 2) * perp;
+        ctx.fillStyle = 'rgba(120, 220, 120, 0.9)';
+        ctx.strokeStyle = 'rgba(80, 160, 80, 1)';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(tipX, tipY);
+        ctx.lineTo(lx, ly);
+        ctx.lineTo(rx, ry);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      }
+
+      function drawKey(key, color, fill) {
+        const c = dataToCanvas(key.t, key.value);
+        ctx.beginPath();
+        ctx.arc(c.x, c.y, handleRadius, 0, Math.PI * 2);
+        ctx.fillStyle = fill || 'rgba(8, 47, 73, 0.9)';
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.4;
+        ctx.fill();
+        ctx.stroke();
+      }
+      startKeyframes.forEach((k, i) => {
+        const ac = dataToCanvas(k.t, k.value);
+        if (i < startKeyframes.length - 1 && k.outHandle) {
+          const oc = dataToCanvas(k.t + k.outHandle.dx, k.value + k.outHandle.dy);
+          ctx.strokeStyle = 'rgba(56, 189, 248, 0.6)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(ac.x, ac.y);
+          ctx.lineTo(oc.x, oc.y);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(oc.x, oc.y, 5, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(56, 189, 248, 0.5)';
+          ctx.strokeStyle = 'rgba(56, 189, 248, 0.9)';
+          ctx.fill();
+          ctx.stroke();
+        }
+        if (i > 0 && k.inHandle) {
+          const ic = dataToCanvas(k.t + k.inHandle.dx, k.value + k.inHandle.dy);
+          ctx.strokeStyle = 'rgba(56, 189, 248, 0.6)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(ac.x, ac.y);
+          ctx.lineTo(ic.x, ic.y);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(ic.x, ic.y, 5, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(56, 189, 248, 0.5)';
+          ctx.strokeStyle = 'rgba(56, 189, 248, 0.9)';
+          ctx.fill();
+          ctx.stroke();
+        }
+        drawKey(k, 'rgba(56, 189, 248, 1)');
+      });
+      endKeyframes.forEach((k, i) => {
+        const ac = dataToCanvas(k.t, k.value);
+        if (i < endKeyframes.length - 1 && k.outHandle) {
+          const oc = dataToCanvas(k.t + k.outHandle.dx, k.value + k.outHandle.dy);
+          ctx.strokeStyle = 'rgba(251, 146, 60, 0.6)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(ac.x, ac.y);
+          ctx.lineTo(oc.x, oc.y);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(oc.x, oc.y, 5, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(251, 146, 60, 0.5)';
+          ctx.strokeStyle = 'rgba(251, 146, 60, 0.9)';
+          ctx.fill();
+          ctx.stroke();
+        }
+        if (i > 0 && k.inHandle) {
+          const ic = dataToCanvas(k.t + k.inHandle.dx, k.value + k.inHandle.dy);
+          ctx.strokeStyle = 'rgba(251, 146, 60, 0.6)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(ac.x, ac.y);
+          ctx.lineTo(ic.x, ic.y);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(ic.x, ic.y, 5, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(251, 146, 60, 0.5)';
+          ctx.strokeStyle = 'rgba(251, 146, 60, 0.9)';
+          ctx.fill();
+          ctx.stroke();
+        }
+        drawKey(k, 'rgba(251, 146, 60, 1)', 'rgba(80, 40, 10, 0.9)');
+      });
+      const y1c = dataToCanvas(t1, y1);
+      const y2c = dataToCanvas(t2, y2);
+      ctx.fillStyle = 'rgba(148, 163, 184, 0.9)';
+      ctx.strokeStyle = 'rgba(148, 163, 184, 0.9)';
+      ctx.beginPath();
+      ctx.arc(y1c.x, y1c.y, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(y2c.x, y2c.y, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    const SAMPLES = 64;
+    function updateExport() {
+      const data = {
+        t1, t2, y1, y2,
+        start: startKeyframes.map(k => ({
+          t: k.t,
+          value: k.value,
+          in: k.inHandle ? { dx: k.inHandle.dx, dy: k.inHandle.dy } : { dx: 0, dy: 0 },
+          out: k.outHandle ? { dx: k.outHandle.dx, dy: k.outHandle.dy } : { dx: 0, dy: 0 }
+        })),
+        end: endKeyframes.map(k => ({
+          t: k.t,
+          value: k.value,
+          in: k.inHandle ? { dx: k.inHandle.dx, dy: k.inHandle.dy } : { dx: 0, dy: 0 },
+          out: k.outHandle ? { dx: k.outHandle.dx, dy: k.outHandle.dy } : { dx: 0, dy: 0 }
+        }))
+      };
+      exportJsonEl.textContent = JSON.stringify(data, null, 2);
+      const samples = [];
+      for (let i = 0; i <= SAMPLES; i++) samples.push(getValue(i / SAMPLES));
+      exportJsEl.textContent =
+        'const bounceSamples = ' + JSON.stringify(samples) + ';\n' +
+        'function getBounceValue(t) {\n' +
+        '  t = Math.max(0, Math.min(1, t));\n' +
+        '  const i = t * ' + SAMPLES + ';\n' +
+        '  const i0 = Math.floor(i);\n' +
+        '  const i1 = Math.min(i0 + 1, ' + SAMPLES + ');\n' +
+        '  const u = i - i0;\n' +
+        '  return bounceSamples[i0] * (1 - u) + bounceSamples[i1] * u;\n' +
+        '}';
+    }
+
+    canvas.addEventListener('pointerdown', (evt) => {
+      const { x, y } = eventToCanvasCoords(evt);
+      const hit = findKeyAtPosition(x, y);
+      if (hit) {
+        evt.preventDefault();
+        dragging = hit;
+        canvas.setPointerCapture(evt.pointerId);
+      }
+    });
+    canvas.addEventListener('pointermove', (evt) => {
+      if (!dragging) return;
+      const { x, y } = eventToCanvasCoords(evt);
+      const { t, v } = canvasToData(x, y);
+      if (dragging.handle === 'out') {
+        const k = dragging.phase === 'start' ? startKeyframes[dragging.index] : endKeyframes[dragging.index];
+        k.outHandle.dx = t - k.t;
+        k.outHandle.dy = v - k.value;
+      } else if (dragging.handle === 'in') {
+        const k = dragging.phase === 'start' ? startKeyframes[dragging.index] : endKeyframes[dragging.index];
+        k.inHandle.dx = t - k.t;
+        k.inHandle.dy = v - k.value;
+      } else {
+        const keys = dragging.phase === 'start' ? startKeyframes : endKeyframes;
+        const k = keys[dragging.index];
+        if (dragging.phase === 'start') {
+          if (dragging.index === 0) { k.t = 0; k.value = v; }
+          else if (dragging.index === keys.length - 1) { k.t = t1; k.value = v; y1 = k.value; inputY1.value = y1.toFixed(2); }
+          else { k.t = clamp01(t); if (k.t > t1) k.t = t1; k.value = v; }
+          sortStart();
+        } else {
+          if (dragging.index === 0) { k.t = t2; k.value = v; y2 = k.value; inputY2.value = y2.toFixed(2); }
+          else if (dragging.index === keys.length - 1) { k.t = 1; k.value = v; }
+          else { k.t = clamp01(t); if (k.t < t2) k.t = t2; k.value = v; }
+          sortEnd();
+        }
+      }
+      renderKeyframeLists();
+      draw();
+      updateExport();
+    });
+    canvas.addEventListener('pointerup', (evt) => {
+      if (dragging) canvas.releasePointerCapture(evt.pointerId);
+      dragging = null;
+    });
+    canvas.addEventListener('pointerleave', () => {
+      if (dragging) canvas.releasePointerCapture(dragging.pointerId);
+      dragging = null;
+    });
+
+    inputT1.addEventListener('change', () => { syncFromInputs(); sortStart(); sortEnd(); renderKeyframeLists(); draw(); updateExport(); });
+    inputT2.addEventListener('change', () => { syncFromInputs(); sortStart(); sortEnd(); renderKeyframeLists(); draw(); updateExport(); });
+    inputY1.addEventListener('change', () => { syncFromInputs(); if (startKeyframes.length) startKeyframes[startKeyframes.length - 1].value = y1; draw(); updateExport(); });
+    inputY2.addEventListener('change', () => { syncFromInputs(); if (endKeyframes.length) endKeyframes[0].value = y2; draw(); updateExport(); });
+
+    tabStart.addEventListener('click', () => { selectedPhase = 'start'; tabStart.classList.add('active'); tabLine.classList.remove('active'); tabEnd.classList.remove('active'); panelStart.style.display = 'flex'; panelLine.style.display = 'none'; panelEnd.style.display = 'none'; });
+    tabLine.addEventListener('click', () => { tabLine.classList.add('active'); tabStart.classList.remove('active'); tabEnd.classList.remove('active'); panelLine.style.display = 'flex'; panelStart.style.display = 'none'; panelEnd.style.display = 'none'; });
+    tabEnd.addEventListener('click', () => { selectedPhase = 'end'; tabEnd.classList.add('active'); tabStart.classList.remove('active'); tabLine.classList.remove('active'); panelEnd.style.display = 'flex'; panelStart.style.display = 'none'; panelLine.style.display = 'none'; });
+
+    addStartBtn.addEventListener('click', () => {
+      const mid = startKeyframes.length >= 2 ? (startKeyframes[0].t + startKeyframes[1].t) / 2 : t1 * 0.5;
+      const vMid = getValue(mid);
+      startKeyframes.push(makeStartKey(mid, vMid));
+      sortStart();
+      renderKeyframeLists();
+      draw();
+      updateExport();
+    });
+    addEndBtn.addEventListener('click', () => {
+      const mid = endKeyframes.length >= 2 ? (endKeyframes[endKeyframes.length - 2].t + endKeyframes[endKeyframes.length - 1].t) / 2 : (t2 + 1) / 2;
+      const vMid = getValue(mid);
+      endKeyframes.push(makeEndKey(mid, vMid));
+      sortEnd();
+      renderKeyframeLists();
+      draw();
+      updateExport();
+    });
+
+    copyJsonBtn.addEventListener('click', () => {
+      const text = exportJsonEl.textContent;
+      if (text) navigator.clipboard.writeText(text).catch(() => {});
+    });
+    copyJsBtn.addEventListener('click', () => {
+      const text = exportJsEl.textContent;
+      if (text) navigator.clipboard.writeText(text).catch(() => {});
+    });
+
+    let animTime = 0;
+    const duration = 2000;
+    function tick(now) {
+      animTime = (animTime + (now - (tick.last || now))) % duration;
+      tick.last = now;
+      const t = animTime / duration;
+      const v = getValue(t);
+      const trackH = demoBox.parentElement.clientHeight || 80;
+      const maxY = trackH - 24 - 8;
+      const posY = 4 + (1 - v) * maxY;
+      demoBox.style.top = posY + 'px';
+      demoTLabel.textContent = t.toFixed(2);
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+
+    syncFromInputs();
+    if (startKeyframes.length === 0) {
+      startKeyframes = [
+        makeStartKey(0, 1),
+        makeStartKey(t1, y1)
+      ];
+    }
+    if (endKeyframes.length === 0) {
+      endKeyframes = [
+        makeEndKey(t2, y2),
+        makeEndKey(1, 0)
+      ];
+    }
+    sortStart();
+    sortEnd();
+    renderKeyframeLists();
+    draw();
+    updateExport();
+})();
+  </script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+{
+  "$extends": "../../assets/fonts/bitmap.gen",
+  "aclonicaRegular": {
+    "file": "../../assets/fonts/RobotoCondensed-Bold.ttf",
+    "symbols": "0123456789& ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz,.!?&АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЬЫЪЭЮЯабвгдеёжзийклмнопрстуфхцчшщьыъэюя"
+  },
+  "aclonicaRegularSmall": {
+    "file": "../../assets/fonts/RobotoCondensed-Bold.ttf",
+    "symbols": "0123456789& ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz,.!?&АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЬЫЪЭЮЯабвгдеёжзийклмнопрстуфхцчшщьыъэюя"
+  },
+  "aclonicaRegularMedium": {
+    "file": "../../assets/fonts/RobotoCondensed-Bold.ttf",
+    "symbols": "0123456789& ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz,.!?&АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЬЫЪЭЮЯабвгдеёжзийклмнопрстуфхцчшщьыъэюя"
+  },
+  "montserrat": {
+    "file": "../../assets/fonts/Montserrat-Bold.ttf",
+    "symbols": "0123456789.,?x ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЬЫЪЭЮЯабвгдеёжзийклмнопрстуфхцчшщьыъэюя"
+  },
+  "montserratExtraBold": {
+    "file": "../../assets/fonts/Montserrat-ExtraBold.ttf",
+    "symbols": "0123456789.,?x ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЬЫЪЭЮЯабвгдеёжзийклмнопрстуфхцчшщьыъэюя"
+  },
+  "robotoBold": {
+    "file": "../../assets/fonts/RobotoCondensed-Bold.ttf",
+    "symbols": "0123456789& ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz,.!?&АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЬЫЪЭЮЯабвгдеёжзийклмнопрстуфхцчшщьыъэюя"
+  },
+  "roboto": {
+    "file": "../../assets/fonts/Roboto-Bold.ttf",
+    "symbols": "0123456789& ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz,.!?&АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЬЫЪЭЮЯабвгдеёжзийклмнопрстуфхцчшщьыъэюя"
+  },
+  "karantina": {
+    "file": "../../assets/fonts/RobotoCondensed-Bold.ttf",
+    "symbols": "0123456789.xСТАВКУПИЬЛЫРОДЖAJMNIRDOАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЬЫЪЭЮЯабвгдеёжзийклмнопрстуфхцчшщьыъэюя"
+  },
+  "karantinaBold": {
+    "file": "../../assets/fonts/RobotoCondensed-Bold.ttf",
+    "symbols": "0123456789.xСТАВКУПИЬЛЫРОДЖAJMNIRDOАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЬЫЪЭЮЯабвгдеёжзийклмнопрстуфхцчшщьыъэюя"
+  },
+  "robotoCondensedBold": {
+    "symbols": "0123456789.xWIN:&, -!?HoldАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЬЫЪЭЮЯабвгдеёжзийклмнопрстуфхцчшщьыъэюя+ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz U+2A-2F"
+  },
+  "karantinaRegular": {
+    "file": "../../assets/fonts/RobotoCondensed-Bold.ttf",
+    "size": 52,
+    "symbols": "0123456789& ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz,.!?&АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЬЫЪЭЮЯабвгдеёжзийклмнопрстуфхцчшщьыъэюя"
+  },
+  "robotoCondensedRegular": {
+    "symbols": "0123456789& ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz,.!?&АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЬЫЪЭЮЯабвгдеёжзийклмнопрстуфхцчшщьыъэюя-"
+  },
+  "limelightRegular": {
+    "file": "../../assets/fonts/RobotoCondensed-Bold.ttf",
+    "symbols": "ВЫИГРАЙТЕ ДО 0123456789. ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЬЫЪЭЮЯабвгдеёжзийклмнопрстуфхцчшщьыъэюя"
+  }
+}

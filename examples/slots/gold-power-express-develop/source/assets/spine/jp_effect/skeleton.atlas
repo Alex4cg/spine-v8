@@ -1,0 +1,11 @@
+skeleton.png
+size:1024,1024
+filter:Linear,Linear
+Frame_light_JP_00
+bounds:428,2,424,366
+Frame_light_JP_01
+bounds:2,2,424,366
+Frame_light_JP_02
+bounds:428,370,424,366
+Frame_light_JP_03
+bounds:2,370,424,366

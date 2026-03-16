@@ -1,0 +1,48 @@
+{
+  "$extends": "../../assets/fonts/bitmap.gen",
+  "aclonicaRegular": {
+    "file": "./NotoSansSC-Black.ttf",
+    "symbols": "0123456789& ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz,.!?&最高可赢取继续"
+  },
+  "aclonicaRegularSmall": {
+    "file": "./NotoSansSC-Black.ttf",
+    "symbols": "0123456789& ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz,.!?&奖金游戏出色的收集器功能与倍数大奖不再显示"
+  },
+  "aclonicaRegularMedium": {
+    "file": "../../assets/fonts/Aclonica-Regular.ttf"
+  },
+  "montserrat": {
+    "file": "./NotoSansSC-Black.ttf",
+    "symbols": "0123456789.,?x ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz& 最高可赢取"
+  },
+  "robotoBold": {
+    "file": "../../assets/fonts/RobotoCondensed-Bold.ttf"
+  },
+  "roboto": {
+    "file": "../../assets/fonts/Roboto-Bold.ttf"
+  },
+  "karantina": {
+    "file": "./NotoSansSC-Black.ttf",
+    "symbols": "继续"
+  },
+  "karantinaBold": {
+    "file": "./NotoSansSC-Black.ttf",
+    "symbols": "0123456789.x MajorMidiMini投注购买开关继续"
+  },
+  "robotoCondensedBold": {
+    "file": "./NotoSansSC-Black.ttf",
+    "symbols": "+0123456789.xWIN:&, -!?HoldABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz常规出现硬币几率奖励游戏翻倍器现金奖品不再显示以继续轻触点击中会触发最高可赢取上次赢利与大奖功能色的收集、 U+2A-2F"
+  },
+  "karantinaRegular": {
+    "file": "./NotoSansSC-Black.ttf",
+    "symbols": "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ投注购买功能边注奖励游戏奖励游戏总赢利赢利上限"
+  },
+  "robotoCondensedRegular": {
+    "file": "./NotoSansSC-Black.ttf",
+    "symbols": "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz投注购买激活边提升赢利几率单元格翻倍器收集硬币，！"
+  },
+  "limelightRegular": {
+    "file": "./NotoSansSC-Black.ttf",
+    "symbols": "最高可赢取 0123456789. ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+  }
+}

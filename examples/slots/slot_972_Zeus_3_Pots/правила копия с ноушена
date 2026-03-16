@@ -1,0 +1,1300 @@
+# 🦋 **GAME IDEA**
+
+https://www.figma.com/design/ICwPGMuYEY3rbBixLKfako/Untitled?node-id=0-1&t=eOWQtiC1lST9YQ8o-1
+
+### **Game Name**
+
+Zeus 3 Pots: Hold&Win
+
+Working theme: Zeus
+
+---
+
+## **Hypothesis**
+
+Игра является вариацией Zeus Claws / 9 Coins, но переосмысленной через:
+
+- использование **трендовой механики 3 Pots**, популярной в 2024–2025 году
+- создание уникального сетапа бонусной игры с **глобальными множителями**, **расширением поля**, и **динамическими мультирамками**
+- добавление стилистики **cartoon rubber-hose**, дающей сильный визуальный дифференциатор
+
+Основная цель игры:
+
+- развить core-механику 9 Coins
+- добавить глубину через 3 Pots
+- увеличить удержание за счёт persistent элементов (sticky coins, pot charging)
+- дать игроку более «взрывные» бонусные сценарии
+
+---
+
+## **Pain Points оригинальной механики 9 Coins, которые мы улучшаем**
+
+1. Низкая вариативность бонуса → решаем через 3 Pots
+2. Ограниченная зона роста выигрыша → Eternal pot + Global Multiplier
+3. Предсказуемость поля → Expand + Multi pots
+4. Простота визуального ядра → cartoon-style увеличивает эмоциональную реакцию
+
+---
+
+## **CasinoBr Data (основание выбора)**
+
+Аналитика показывает:
+
+- 9 Coins / Zeus Claws варианты стабильно держатся в топе
+- Hold & Win игры с jackpot-монетами — самые просматриваемые категории Tier1/Tier3
+- Игры с **persistent elements** (sticky, pots, collectors) → выше session length
+- Cartoon-стилистика растёт благодаря Cuphead-like популярности
+
+---
+
+# **GAME FEATURES — SUMMARY**
+
+### **Field**
+
+- 3 reels × 3 rows (9 independent spinning cells)
+
+### **Base Game**
+
+- Only empty cells & coin symbols
+- No line wins
+- Goal: trigger bonus
+- Sticky coins persist until bonus
+- Pots charge when pot-coins appear
+
+### **Bonus Game: Hold & Win**
+
+- Start with 3 respins
+- Landing any coin resets counter
+- Full screen ends cycle
+- Collector, Mystery, Sticky, Jackpot coins
+
+### **3 Pots Mechanics**
+
+1. **Expand Pot** → adds +2 rows (new field = 3×5), row multipliers
+2. **Multi Pot** → adds multiplier frames; stacks multiplicatively
+3. **Eternal Pot** → allows infinite cycles of full-screen collection with global multiplier
+
+### **Jackpots**
+
+- Mini x15
+- Midi x50
+- Major x100
+- Grand x1000
+
+### **Max Win**
+
+x10 000
+
+---
+
+# 💰 **PAYTABLE / COIN TYPES**
+
+В игре нет классических символов. Есть только монеты.
+
+## **Типы монет:**
+
+### **1. Regular Coins**
+
+- 1x to 9x
+- there are 2 types of regular coins
+    - basic regular coins (has a value and common golden color)
+    - pot regular coins (has a value and pot related color)
+
+### **2. Sticky Coins**
+
+- x3–x12
+- В базовой игре остаются на поле до старта бонуски
+- Привязаны к ставке
+- При смене ставки:
+    - sticky исчезают
+    - сохраняются под этой ставкой
+    - возвращаются при возврате к ставке
+
+### **3. Jackpot Coins**
+
+- Mini: x15
+- Midi: x50
+- Major: x100
+- Grand: x1000 (только в бонуске / mystery)
+
+### **4. Mystery Coin**
+
+- Может стать: Regular / Sticky / Jackpot (кроме Collector)
+
+### **5. Mystery Jackpot Coin**
+
+- Становится Mini / Midi / Major / Grand
+
+### **6. Collector Coin**
+
+- Появляется ТОЛЬКО в бонуске
+- Собирает ВСЕ монеты на поле
+- Остаётся
+- Остальные монеты тоже остаются
+
+### **7. Pot coins (scatter)**
+
+- This is a special coin that
+
+![image.png](attachment:e2361161-13f8-4354-b4c1-9c1acad03803:image.png)
+
+### Top and bottom rows
+
+- we can land
+    - basic regular coin
+    - sticky
+    - jp
+    - mystery, mystery jp
+    - collector
+- We can’t land
+    - pot regular coin
+
+### Middle row
+
+- we can land
+    - pot regular coin
+    - sticky
+    - jp
+    - mystery, mystery jp
+    - collector
+- We can’t land
+    - basic regular coin
+
+### Bonus trigger
+
+- from the pot (and pot can be triggered if you
+- when 3 coins has landed in the middle reel.
+
+### Edge cases
+
+1. 2 sticky coins on the middle row is maximum!
+2. Sticky coins are NOT pot related coins
+3. when 3 coins are landed in the middle row, at least on of 3 coins must be pot regular coin
+4. in case we land 1-2 pot coins in the middle row and pot is triggered, we should fill up the rest of the row by other coins (collector, mystery, same pot regular coins with different values)
+
+---
+
+# 🎰 **BASE GAME FLOW**
+
+1. Игрок делает спин
+2. На поле выпадают пустые ячейки / монеты
+3. Sticky остаются
+4. Pot-coins заряжают соответствующий Pot
+5. Бонуска триггерится двумя способами:
+    - **Стандарт:** 3 монеты в среднем ряду
+    - **Pot-trigger:** FULL pot запускает бонуску, сбрасывая монеты на поле
+
+---
+
+# 🔥 **BONUS GAME: HOLD & WIN**
+
+- Игрок получает 3 respins
+- Любая монета сбрасывает счётчик
+- Монеты фиксируются
+- Поле прокручивается только на пустых местах
+
+### **Full Screen Logic**
+
+- Если нет Expand → 9 монет = full screen
+- Если Expand активен → 15 монет = full screen
+
+Full screen приводит к:
+
+1. Сбору всех монет → добавлению к total win
+2. Если активен Eternal →
+    - увеличивается global multiplier
+    - раунд продолжается
+
+---
+
+# 🏺 **3 POTS MECHANICS — FULL DESCRIPTION**
+
+Игрок может накопить любой pot в базовой игре.
+
+Pot может:
+
+- Модифицировать бонус, если бонуска начата обычным способом
+- Сам инициировать бонуску, если FULL state
+
+Pot-coins появляются с уникальной окраской (визуальная тема).
+
+---
+
+## **1️⃣ EXPAND POT**
+
+### Что делает:
+
+- Добавляет **1 ряд сверху и 1 снизу** → поле становится 3×5
+- Эти ряды имеют **рядовой множитель** (например x1 при старте)
+- При выпадении монет в этих рядах множитель может увеличиваться
+
+### Как применяется:
+
+1. В момент старта бонуса
+2. Или при пот-триггере
+
+### Полный цикл:
+
+- Full screen = 15 монет
+- Значения монет умножаются на row multiplier
+
+---
+
+## **2️⃣ MULTI POT**
+
+### Что делает:
+
+- Добавляет **3 multiplier frames** случайно на поле
+- В процессе бонуса может добавлять новые
+- Если frame падает на уже существующий → множитель растёт
+
+### Итоговый множитель:
+
+**Coin Value × Row Multiplier (если есть) × Frame Multiplier**
+
+### Пример:
+
+Монета x2
+
+Expand-row multiplier = x3
+
+Multi-frame = x4
+
+→ Итоговая монета: **2 × 3 × 4 = 24**
+
+---
+
+## **3️⃣ ETERNAL POT**
+
+### Что делает:
+
+Позволяет **продолжать бонусную игру после Full Screen**.
+
+### Логика:
+
+- Собираются все значения на поле → total win
+- Повышается **Global Multiplier**
+- Начинается **новый цикл**
+- Максимально — до maxwin
+
+### Threshold:
+
+- Если Expand НЕ активен → full = 9
+- Если Expand активен → full = 15
+
+---
+
+# 🧮 **MATH PROFILE**
+
+### **Max Win**
+
+x10 000
+
+### **RTP**
+
+TBD
+
+### **Volatility**
+
+High
+
+### **Bonus Hit Rate**
+
+TBD (влияет pot-trigger)
+
+### **Mystery / Sticky Frequency**
+
+TBD (math team)
+
+### **Pots Activation Frequency**
+
+TBD (как random trigger + coin distribution)
+
+### Math Implementation
+
+# Game Flow Specification (Story Format)
+
+## Game Overview
+
+The game is a 3**×3 grid slot game (3 reels, 3 rows),** expandable to 5x3 grid (3 reels, 5 rows) in bonus game if specific pot is activated.
+
+Each cell is an independent mini-reel.
+
+- The **middle row (row index = 2)** is the bonus trigger row.
+- The game consists of:
+    - Base Game
+    - Triple pots : with pot coins landing only in the middle row in base game
+    - Hold & Win Bonus Game with pot features
+
+The game has a counter that should be saved from spin to spin for each combination of game mode and bet level. The counter is called  **feature_trigger_counter**. When player starts new session or changes the bet or game mode, feature_trigger_counter set up as 0. Achieved progress should be stored for each bet/mode combination for next 30 days. The idea of this counter is that some of the weights are dependent from it’s value.
+
+---
+
+# BASE GAME
+
+## 1. Spin Start
+
+At the beginning of a base game spin:
+
+- All **Coins** and **Collectors** are removed
+- All **Sticky Coins** remains with:
+    - initial value
+
+---
+
+## 2. Placeholder Preparation
+
+### 2.1 Forced Bonus Preparation
+
+Chance per spin depending on the bonus_trigger_counter:
+
+| Event | **feature_trigger_counter = 0** | **feature_trigger_counter = 1** | **feature_trigger_counter = 2** | **feature_trigger_counter = 3** | **feature_trigger_counter = 4** | **feature_trigger_counter =5** |
+| --- | --- | --- | --- | --- | --- | --- |
+| Force Bonus weight | 1 | 2 | 50 | 1 | 10 | 10 |
+| Total Weight | 1000 | 1000 | 1000 | 1000 | 1000 | 1000 |
+
+If forced:
+
+- Follow **Section 3.2** algorithms
+
+If not forced:
+
+- Exactly **one random middle-row position** is blocked and must stay blank
+
+### 2.2 Forced Bonus Implementation
+
+If forced bonus is applicable: 
+
+- We will select the active_pot_combination, we have 7 available **Pot_Combination**
+
+| **Pot_Combination**  | Pot Details |
+| --- | --- |
+| 0 | No pot activated |
+| 1 | Expand |
+| 2 | Multi |
+| 3 | Eternal |
+| 4 | Expand & Multi |
+| 5 | Expand & Eternal |
+| 6 | Multi & Eternal |
+| 7 | Expand, Multi, Eternal  |
+- Below Table is for when empty cells on middle row = 1
+
+| **Pot_Combination** | Weight **feature_trigger_counter = 0**  | Weight **feature_trigger_counter = 1**  | Weight **feature_trigger_counter  = 2** | Weight **feature_trigger_counter = 3** | Weight **feature_trigger_counter = 4** | Weight **feature_trigger_counter = 5** |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | 15 | 15 | 15 | 15 | 15 | 15 |
+| 2 | 15 | 15 | 15 | 15 | 15 | 15 |
+| 3 | 12 | 12 | 12 | 12 | 12 | 12 |
+| 4 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 5 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 6 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 7 | 0 | 0 | 0 | 0 | 0 | 0 |
+
+- Below Table is for when empty cells on middle row = 2
+
+| **Pot_Combination** | Weight **feature_trigger_counter = 0**  | Weight **feature_trigger_counter = 1**  | Weight **feature_trigger_counter  = 2** | Weight **feature_trigger_counter = 3** | Weight **feature_trigger_counter = 4** | Weight **feature_trigger_counter = 5** |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | 15 | 15 | 15 | 15 | 15 | 15 |
+| 2 | 15 | 15 | 15 | 15 | 15 | 15 |
+| 3 | 12 | 12 | 12 | 12 | 12 | 12 |
+| 4 | 15 | 15 | 15 | 15 | 15 | 15 |
+| 5 | 15 | 15 | 15 | 15 | 15 | 15 |
+| 6 | 15 | 15 | 15 | 15 | 15 | 15 |
+| 7 | 0 | 0 | 0 | 0 | 0 | 0 |
+- Below Table is for when empty cells on middle row = 3
+
+| **Pot_Combination** | Weight **feature_trigger_counter = 0**  | Weight **feature_trigger_counter = 1**  | Weight **feature_trigger_counter  = 2** | Weight **feature_trigger_counter = 3** | Weight **feature_trigger_counter = 4** | Weight **feature_trigger_counter = 5** |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | 15 | 15 | 15 | 15 | 15 | 15 |
+| 2 | 15 | 15 | 15 | 15 | 15 | 15 |
+| 3 | 12 | 12 | 12 | 12 | 12 | 12 |
+| 4 | 15 | 15 | 15 | 15 | 15 | 15 |
+| 5 | 15 | 15 | 15 | 15 | 15 | 15 |
+| 6 | 15 | 15 | 15 | 15 | 15 | 15 |
+| 7 | 15 | 15 | 15 | 15 | 15 | 15 |
+- All blank positions in the middle row become placeholders
+- We will fill the middle row with regular coins equal to the number of activated pots and assign them their respective pots such that each pot should appear at least once
+- The coin value of the regular coin will be selected from Regular Coin Value Weights, **section 4.2**
+
+---
+
+## 3. Placeholder Landing
+
+### 3.1 Count Free Positions
+
+All blank positions are collected, excluding the blocked middle-row cell.
+
+---
+
+### 3.2 Number of Placeholders to Land
+
+Possible placeholder counts:
+
+`[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]`
+
+Weights depend on available free positions:
+
+| Free Positions | Weights for [0–10]  |
+| --- | --- |
+| 0 | [100,0,0,0,0,0,0,0,0,0,0] |
+| 1 | [0,100,0,0,0,0,0,0,0,0,0] |
+| 2 | [0,100,200,0,0,0,0,0,0,0,0] |
+| 3 | [0,100,200,80,0,0,0,0,0,0,0] |
+| 4 | [0,100,200,80,40,0,0,0,0,0,0] |
+| 5 | [0,100,200,80,40,20,0,0,0,0,0] |
+| 6 | [0,100,200,80,40,20,10,0,0,0,0] |
+| 7 | [0,100,200,80,40,20,10,5,0,0,0] |
+| 8 | [0,100,200,80,40,20,10,5,2,0,0] |
+| 9 | [0,10,20,50,30,20,10,5,5,2,0] |
+| 10 | [0,10,20,50,30,20,10,5,5,2,0] |
+| 11–13 | same as 10 |
+| 14–15 | [0,10,20,30,40,50,20,15,5,2,1] |
+
+---
+
+## 4. Placeholder Type Conversion
+
+Each placeholder becomes one of the following:
+
+### 4.1 Placeholder Type Weights (Base Game)
+
+NOTE : If a coin lands on the middle row(which is not selected as mystery), we will assign it a random pot in case bonus is not triggering and one of the active_pots randomly in case of bonus trigger. 
+
+| Type | Weight |
+| --- | --- |
+| Regular Coin | 90 |
+| Sticky Coin | 2 |
+| Collector | 8 |
+
+---
+
+### 4.2 Regular Coin Value Weights
+
+**4.2.1: Coin Values when bonus is not triggered**  We will use the below coin weights when bonus is not triggered. 
+
+| Value | Weight |
+| --- | --- |
+| 1 | 100,000 |
+| 2 | 60,000 |
+| 3 | 30,000 |
+| 4 | 15,000 |
+| 5 | 10,000 |
+| 6 | 5,000 |
+| 7 | 4,000 |
+| 8 | 3,000 |
+| 9 | 2,000 |
+| Mini Jackpot | 10,000 |
+| Midi Jackpot | 4,000 |
+| Major Jackpot | 1,000 |
+
+**4.2.2: Coin Values when bonus is triggered**  We will use the below coin weights when bonus is not triggered. 
+
+| Value | Weight |
+| --- | --- |
+| 1 | 100,000 |
+| 2 | 60,000 |
+| 3 | 30,000 |
+| 4 | 15,000 |
+| 5 | 10,000 |
+| 6 | 5,000 |
+| 7 | 4,000 |
+| 8 | 3,000 |
+| 9 | 2,000 |
+| Mini Jackpot | 10,000 |
+| Midi Jackpot | 4,000 |
+| Major Jackpot | 1,000 |
+
+---
+
+### 4.3 Sticky Coin Value Weights
+
+| Value | Weight |
+| --- | --- |
+| 1 | 100 |
+| 2 | 200 |
+| 3 | 300 |
+| 4 | 200 |
+| 5 | 100 |
+| 6 | 50 |
+| 7 | 25 |
+| 8 | 10 |
+| 9 | 5 |
+
+---
+
+### 4.4 Mystery Appearance Chance (Base Game)
+
+Each coin (beside collector & regular coins which were assigned due to pot activation in Section 2.2) may be shown as Mystery Coin. Check chances below to define it.
+
+(Max = 100)
+
+| Value | Chance | Mystery Type |
+| --- | --- | --- |
+| 1 | 0 |  |
+| 2 | 10 | Mystery Coin |
+| 3 | 20 | Mystery Coin |
+| 4 | 30 | Mystery Coin |
+| 5 | 40 | Mystery Coin |
+| 6 | 50 | Mystery Coin |
+| 7 | 50 | Mystery Coin |
+| 8 | 50 | Mystery Coin |
+| 9 | 50 | Mystery Coin |
+| Mini JP | 30 | Mystery Coin or Mystery Jackpot Coin (50/50 chance) |
+| Midi JP | 90 | Mystery Coin or Mystery Jackpot Coin (50/50 chance) |
+| Major JP | 95 | Mystery Jackpot Coin |
+
+---
+
+## 5. Bonus Trigger Condition
+
+Bonus starts if:
+
+- All three middle-row positions are **non-blank**
+
+---
+
+# HOLD & WIN BONUS
+
+## 6. Bonus Initialization
+
+- Respins = 3
+- If there is any collector on the screen then go collector by collector and collect all the coins and previous collectors on the screen.
+    - In case 2 collectors are on the screen and 3 coins with values 2x, 4x and 10x then first collector collects and shows 16x value and second collector collects and shows 16x+2x+4x+10x = 32x value.
+
+### 6.1 Pot Features on Initialisation of bonus game
+
+    **6.1.1 Expand Pot** 
+
+- One row is added above the screen and one row is added below the screen resulting in a new 5 rows, 3 reels screen.
+- The newly expanded rows will have row multipliers starting from 1x. The below table has weights to increase the multiplier by +1x applying separately to the top & bottom row.
+
+| **Pot_Combination** | Top Row Weights | Bottom Row Weights |
+| --- | --- | --- |
+| 1 | 10 | 10 |
+| 2 | 0 | 0 |
+| 3 | 0 | 0 |
+| 4 | 10 | 10 |
+| 5 | 10 | 10 |
+| 6 | 0 | 0 |
+| 7 | 10 | 10 |
+
+**6.1.2 Multiplier Pot** 
+
+- Count Existing Multiplier Cells : The game counts how many cells with multipliers are currently on the field.
+- Possible numbers of new frames:`[0, 1, 2, 3]`
+- Weights depend on current multiplier cells count:
+
+### Multiplier Cells Already on Screen → Weights
+
+**Pot Combination = 2**
+
+| Existing Multiplier Cell | 0 New | 1 New | 2 New | 3 New |
+| --- | --- | --- | --- | --- |
+| 0 | 950 | 40 | 9 | 1 |
+| 1 | 900 | 95 | 4 | 1 |
+| 2 | 970 | 27 | 2 | 1 |
+| 3 | 980 | 19 | 1 | 0 |
+| 4 | 990 | 10 | 0 | 0 |
+| 5+ | 100 | 0 | 0 | 0 |
+
+**Pot Combination = 4**
+
+| Existing Multiplier Cell | 0 New | 1 New | 2 New | 3 New |
+| --- | --- | --- | --- | --- |
+| 0 | 950 | 40 | 9 | 1 |
+| 1 | 900 | 95 | 4 | 1 |
+| 2 | 970 | 27 | 2 | 1 |
+| 3 | 980 | 19 | 1 | 0 |
+| 4 | 990 | 10 | 0 | 0 |
+| 5+ | 100 | 0 | 0 | 0 |
+
+**Pot Combination = 6**
+
+| Existing Multiplier Cell | 0 New | 1 New | 2 New | 3 New |
+| --- | --- | --- | --- | --- |
+| 0 | 950 | 40 | 9 | 1 |
+| 1 | 900 | 95 | 4 | 1 |
+| 2 | 970 | 27 | 2 | 1 |
+| 3 | 980 | 19 | 1 | 0 |
+| 4 | 990 | 10 | 0 | 0 |
+| 5+ | 100 | 0 | 0 | 0 |
+
+**Pot Combination = 7**
+
+| Existing Multiplier Cell | 0 New | 1 New | 2 New | 3 New |
+| --- | --- | --- | --- | --- |
+| 0 | 950 | 40 | 9 | 1 |
+| 1 | 900 | 95 | 4 | 1 |
+| 2 | 970 | 27 | 2 | 1 |
+| 3 | 980 | 19 | 1 | 0 |
+| 4 | 990 | 10 | 0 | 0 |
+| 5+ | 100 | 0 | 0 | 0 |
+
+- Select the Multiplier Values from the below table :
+    
+    
+    | **Pot_Combination** | 2x Weights | 3x Weights | 4x Weights | 5x Weights | 10x Weights |
+    | --- | --- | --- | --- | --- | --- |
+    | 2 | 500 | 300 | 150 | 40 | 10 |
+    | 4 | 500 | 300 | 150 | 40 | 10 |
+    | 6 | 500 | 300 | 150 | 40 | 10 |
+    | 7 | 500 | 300 | 150 | 40 | 10 |
+- Multipliers can land randomly on any cell, even on the same cell more than once. In that case multipliers will add.
+
+   **6.1.3 Eternal Pot** 
+
+- For the initialisation, this pot will add a global multiplier starting from 1x which will increase upon each level increment.
+- Upon new coins landing, if the screens fully fills, then all coins are collected with applicable multipliers( row multipliers, cell multipliers ) and the final amount will be multiplied by the current global multiplier.
+- Level will be incremented by +1 and respins starts from 3 again.
+- All row multipliers will remain intact while the cell multipliers will vanish.
+- All mystery coins reveal it’s values before the collection of coins upon level increment.
+
+---
+
+## 7. Bonus Coin Planning
+
+### 7.1 Total Coins in Bonus on Level 1
+
+Possible total coins: `[0–12]`
+
+Weights depend on amount of free positions on the screen:
+
+**Pot Combination = 1**
+
+|  | 0 coins to land | 1 coins to land | 2 coins to land | 3 coins to land | 4 coins to land | 5 coins to land | 6 coins to land | 7 coins to land | 8 coins to land | 9 coins to land | 10 coins to land | 11 coins to land | 12 coins to land |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| //0 free places left | 100 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //1 free places left | 0 | 100 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //2 free places left | 0 | 10 | 10 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //3 free places left | 0 | 10 | 10 | 10 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //4 free places left | 0 | 10 | 10 | 10 | 10 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //5 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //6 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //7 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 0 | 0 | 0 | 0 | 0 |
+| //8 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 0 | 0 | 0 | 0 |
+| //9 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 0 | 0 | 0 |
+| //10 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 0 | 0 |
+| //11 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 0 |
+| //12 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 |
+
+**Pot Combination = 2**
+
+|  | 0 coins to land | 1 coins to land | 2 coins to land | 3 coins to land | 4 coins to land | 5 coins to land | 6 coins to land | 7 coins to land | 8 coins to land | 9 coins to land | 10 coins to land | 11 coins to land | 12 coins to land |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| //0 free places left | 100 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //1 free places left | 0 | 100 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //2 free places left | 0 | 10 | 10 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //3 free places left | 0 | 10 | 10 | 10 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //4 free places left | 0 | 10 | 10 | 10 | 10 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //5 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //6 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //7 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 0 | 0 | 0 | 0 | 0 |
+| //8 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 0 | 0 | 0 | 0 |
+| //9 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 0 | 0 | 0 |
+| //10 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 0 | 0 |
+| //11 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 0 |
+| //12 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 |
+
+**Pot Combination = 3**
+
+|  | 0 coins to land | 1 coins to land | 2 coins to land | 3 coins to land | 4 coins to land | 5 coins to land | 6 coins to land | 7 coins to land | 8 coins to land | 9 coins to land | 10 coins to land | 11 coins to land | 12 coins to land |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| //0 free places left | 100 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //1 free places left | 0 | 100 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //2 free places left | 0 | 10 | 10 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //3 free places left | 0 | 10 | 10 | 10 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //4 free places left | 0 | 10 | 10 | 10 | 10 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //5 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //6 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //7 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 0 | 0 | 0 | 0 | 0 |
+| //8 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 0 | 0 | 0 | 0 |
+| //9 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 0 | 0 | 0 |
+| //10 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 0 | 0 |
+| //11 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 0 |
+| //12 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 |
+
+**Pot Combination = 4**
+
+|  | 0 coins to land | 1 coins to land | 2 coins to land | 3 coins to land | 4 coins to land | 5 coins to land | 6 coins to land | 7 coins to land | 8 coins to land | 9 coins to land | 10 coins to land | 11 coins to land | 12 coins to land |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| //0 free places left | 100 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //1 free places left | 0 | 100 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //2 free places left | 0 | 10 | 10 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //3 free places left | 0 | 10 | 10 | 10 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //4 free places left | 0 | 10 | 10 | 10 | 10 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //5 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //6 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //7 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 0 | 0 | 0 | 0 | 0 |
+| //8 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 0 | 0 | 0 | 0 |
+| //9 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 0 | 0 | 0 |
+| //10 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 0 | 0 |
+| //11 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 0 |
+| //12 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 |
+
+**Pot Combination = 5**
+
+|  | 0 coins to land | 1 coins to land | 2 coins to land | 3 coins to land | 4 coins to land | 5 coins to land | 6 coins to land | 7 coins to land | 8 coins to land | 9 coins to land | 10 coins to land | 11 coins to land | 12 coins to land |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| //0 free places left | 100 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //1 free places left | 0 | 100 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //2 free places left | 0 | 10 | 10 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //3 free places left | 0 | 10 | 10 | 10 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //4 free places left | 0 | 10 | 10 | 10 | 10 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //5 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //6 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //7 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 0 | 0 | 0 | 0 | 0 |
+| //8 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 0 | 0 | 0 | 0 |
+| //9 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 0 | 0 | 0 |
+| //10 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 0 | 0 |
+| //11 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 0 |
+| //12 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 |
+
+**Pot Combination = 6**
+
+|  | 0 coins to land | 1 coins to land | 2 coins to land | 3 coins to land | 4 coins to land | 5 coins to land | 6 coins to land | 7 coins to land | 8 coins to land | 9 coins to land | 10 coins to land | 11 coins to land | 12 coins to land |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| //0 free places left | 100 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //1 free places left | 0 | 100 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //2 free places left | 0 | 10 | 10 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //3 free places left | 0 | 10 | 10 | 10 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //4 free places left | 0 | 10 | 10 | 10 | 10 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //5 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //6 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //7 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 0 | 0 | 0 | 0 | 0 |
+| //8 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 0 | 0 | 0 | 0 |
+| //9 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 0 | 0 | 0 |
+| //10 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 0 | 0 |
+| //11 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 0 |
+| //12 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 |
+
+**Pot Combination = 7**
+
+|  | 0 coins to land | 1 coins to land | 2 coins to land | 3 coins to land | 4 coins to land | 5 coins to land | 6 coins to land | 7 coins to land | 8 coins to land | 9 coins to land | 10 coins to land | 11 coins to land | 12 coins to land |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| //0 free places left | 100 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //1 free places left | 0 | 100 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //2 free places left | 0 | 10 | 10 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //3 free places left | 0 | 10 | 10 | 10 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //4 free places left | 0 | 10 | 10 | 10 | 10 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //5 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //6 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 0 | 0 | 0 | 0 | 0 | 0 |
+| //7 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 0 | 0 | 0 | 0 | 0 |
+| //8 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 0 | 0 | 0 | 0 |
+| //9 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 0 | 0 | 0 |
+| //10 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 0 | 0 |
+| //11 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 0 |
+| //12 free places left | 0 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 |
+
+### 7.2 Total Coins in Bonus on Level 2 & onwards
+
+Possible total coins: `[0–9]` or `[0–15` depending on the screen size irrespective of pot_combination
+
+NOTE : For Eternal Pot the max Level we can go is Level 5.  
+
+Weights depend on amount of free positions on the screen:
+
+**Cells on Screen = 9** 
+
+| Level  | 0 coins to land | 1 coins to land | 2 coins to land | 3 coins to land | 4 coins to land | 5 coins to land | 6 coins to land | 7 coins to land | 8 coins to land | 9 coins to land |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Level 2 | 100 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| Level 3 | 0 | 100 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| Level 4 | 0 | 10 | 10 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| Level 5 | 0 | 10 | 10 | 10 | 0 | 0 | 0 | 0 | 0 | 0 |
+
+**Cells on Screen = 15**
+
+| Level | 0 coins to land | 1 coins to land | 2 coins to land | 3 coins to land | 4 coins to land | 5 coins to land | 6 coins to land | 7 coins to land | 8 coins to land | 9 coins to land | 10 coins to land | 11 coins to land | 12 coins to land | 13 coins to land | 14 coins to land | 15 coins to land |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Level 2 | 100 | 100 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| Level 3 | 0 | 100 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| Level 4 | 0 | 10 | 10 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| Level 5 | 0 | 10 | 10 | 10 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+
+---
+
+## 8. Coin Drop Scenarios
+
+- Scenario IDs depends in total coins to land.
+- All scenarios have equal weight.
+- Each scenario is a sequence of how many coins to be landed during single respin.
+- Coins should be landed on a random empty positions on the screen.
+- Upon a new level increment in case of Eternal Pot, a new scenario will be chosen again from from the new coins to land.
+
+How to read a scenario:
+
+For example, in current bonus 6 coins to be landed. For 6 coins to land we have 6 different scenarios, and one random is selected. For example {0,2,0,0,1,1,0,0,1,0,0,1,0,0,0}. Each number in scenario means how many placeholders should be landed during one respin. First respin we land 0 coins, next respin - 2 coins, next respin - 0, next respin - 0, next respin - 1, next respin - 1, and so on.
+
+Scenarios:
+
+for 0 coins to land in total:
+{0,0,0,0},
+{0,0,0,0},
+{0,0,0,0},
+
+for 1 coins to land in total:
+{1,0,0,0},
+{0,1,0,0,0},
+{0,0,1,0,0,0}
+
+for 2 coins to land in total:
+{1,0,0,1,0,0,0},
+{0,0,1,0,0,1,0,0,0},
+{0,1,0,0,1,0,0,0}
+
+for 3 coins to land in total:
+{2,0,0,1,0,0,0},
+{1,0,0,1,0,0,1,0,0,0},
+{0,1,0,1,0,0,1,0,0,0},
+{0,1,0,0,1,0,0,1,0,0,0},
+{0,0,2,0,0,1,0,0,0},
+{0,0,1,0,0,1,0,0,1,0,0,0}
+
+for 4 coins to land in total:
+{0,0,2,1,0,0,1,0,0,0},
+{1,0,0,1,1,0,0,1,0,0,0},
+{0,1,0,1,0,0,1,0,0,1,0,0,0},
+{1,0,0,1,0,0,1,0,0,1,0,0,0},
+{0,0,1,1,0,1,0,0,1,0,0,0},
+{0,1,0,0,1,0,0,1,1,0,0,0}
+
+for 5 coins to land in total:
+{0,2,0,1,0,1,0,0,1,0,0,0},
+{0,2,0,0,1,1,0,0,1,0,0,0},
+{1,1,0,0,1,0,1,0,0,1,0,0,0},
+{1,0,1,0,0,1,0,0,1,0,0,1,0,0,0},
+{0,0,2,0,0,1,0,1,0,0,1,0,0,0},
+{0,0,1,1,1,0,0,1,0,0,1,0,0,0}
+
+for 6 coins to land in total:
+{0,2,0,1,0,1,0,0,1,0,0,1,0,0,0},
+{0,2,0,0,1,1,0,0,1,0,0,1,0,0,0},
+{1,1,0,0,1,0,1,0,0,2,0,0,0},
+{1,0,1,0,0,1,0,0,1,0,0,2,0,0,0},
+{0,0,2,0,0,1,0,1,0,0,1,0,0,1,0,0,0},
+{0,0,1,1,0,1,0,0,2,0,0,1,0,0,0}
+
+for 7 coins to land in total:
+{1,0,2,0,0,1,0,0,1,0,1,0,0,1,0,0,0},
+{0,2,0,1,0,0,1,0,1,1,0,0,1,0,0,0},
+{0,0,1,0,0,1,1,0,1,0,0,2,0,0,1,0,0,0},
+{1,0,1,0,0,1,0,0,1,0,0,2,1,0,0,0},
+{0,0,1,0,0,2,0,0,1,0,1,0,0,1,0,0,1,0,0,0},
+{0,1,0,0,1,1,0,1,0,0,2,0,0,1,0,0,0}
+
+for 8 coins to land in total:
+{1,0,2,0,0,1,0,0,1,0,1,0,0,1,0,0,1,0,0,0},
+{0,2,0,1,0,0,1,0,1,1,0,0,1,0,0,1,0,0,0},
+{0,0,1,0,0,1,1,0,1,0,0,2,0,1,0,1,0,0,0},
+{1,0,1,0,0,1,0,0,1,0,0,2,1,0,1,0,0,0},
+{0,0,1,0,1,0,2,0,0,1,0,1,0,0,1,0,0,1,0,0,0},
+{0,1,0,1,0,0,1,1,0,1,0,0,2,0,0,1,0,0,0}
+
+for 9 coins to land in total:
+{1,0,2,0,0,1,0,0,1,0,1,0,0,1,0,0,2,0,0,0,0,0},
+{0,2,0,1,0,0,1,0,1,1,0,0,1,0,0,1,0,0,1,0,0,0},
+{0,0,1,0,0,1,1,0,1,0,0,2,0,1,0,1,0,0,1,0,0,0},
+{1,0,1,0,0,1,0,0,1,0,0,2,1,0,1,0,0,1,0,0,0},
+{0,0,1,0,1,0,2,0,0,1,0,1,0,0,1,0,0,1,0,0,1,0,0,0},
+{0,1,0,1,0,0,1,1,0,1,0,0,2,0,0,1,0,0,1,0,0,0}
+
+for 10 coins to land in total:
+{1,0,2,0,0,1,0,0,1,0,1,0,0,1,1,0,2,0,0,0,0,0},
+{0,2,0,1,0,0,1,0,1,1,0,0,1,0,1,1,0,0,1,0,0,0},
+{0,0,1,0,0,1,1,0,1,0,0,2,0,1,1,1,0,0,1,0,0,0},
+{1,0,1,0,0,1,0,0,1,0,0,2,1,1,1,0,0,1,0,0,0},
+{0,0,1,0,1,0,2,0,0,1,0,1,0,1,1,0,0,1,0,0,1,0,0,0},
+{0,1,0,1,0,0,1,1,0,1,0,0,2,1,0,1,0,0,1,0,0,0}
+
+for 11 coins to land in total:
+{1,0,2,0,0,1,0,0,1,0,1,0,0,1,1,0,2,1,0,0,0,0},
+{0,2,0,1,0,0,1,0,1,1,0,0,1,0,1,1,0,1,0,1,0,0,0},
+{0,0,1,0,0,1,1,0,1,0,0,2,0,1,1,1,0,0,1,1,0,0,0},
+{1,0,1,0,0,1,0,0,1,0,0,2,1,1,1,0,0,1,1,0,0,0},
+{0,0,1,0,1,0,2,0,0,1,0,1,0,1,1,0,0,1,0,1,0,1,0,0,0},
+{0,1,0,1,0,0,1,1,0,1,0,0,2,1,0,1,1,0,0,1,0,0,0}
+
+for 12 coins to land in total:
+{1,0,2,0,0,1,0,0,1,0,1,0,0,1,1,0,2,1,1,0,0,0,0},
+{0,2,0,1,0,0,1,0,1,1,0,0,1,0,1,1,0,1,1,1,0,0,0},
+{0,0,1,0,0,1,1,0,1,0,0,2,0,1,1,1,0,0,1,1,1,0,0,0},
+{1,0,1,0,0,1,0,0,1,0,0,2,1,1,1,0,0,1,1,1,0,0,0},
+{0,0,1,0,1,0,2,0,0,1,0,1,0,1,1,0,0,1,0,1,1,0,1,0,0,0},
+{0,1,0,1,0,0,1,1,0,1,0,0,2,1,0,1,1,0,0,1,1,0,0,0}
+
+for 13 coins to land in total:
+
+{1,0,2,0,0,1,0,0,1,0,1,0,0,1,1,0,2,1,1,0,0,1,0,0,0},
+{0,2,0,1,0,0,1,0,1,1,0,0,1,0,1,1,0,1,1,1,0,1,0,0,0},
+{0,0,1,0,0,1,1,0,1,0,0,2,0,1,1,1,0,0,1,1,1,0,0,1,0,0,0},
+{1,0,1,0,0,1,0,0,1,0,0,2,1,1,1,0,0,1,1,1,0,1,0,0,0},
+{0,0,1,0,1,0,2,0,0,1,0,1,0,1,1,0,0,1,0,1,1,0,1,1,0,0,0},
+{0,1,0,1,0,0,1,1,0,1,0,0,2,1,0,1,1,0,0,1,1,1,0,0,0}
+
+for 14 coins to land in total:
+
+{1,0,2,0,0,1,0,0,1,0,1,0,0,1,1,0,2,1,1,0,0,1,1,0,0,0},
+{0,2,0,1,0,0,1,0,1,1,0,0,1,0,1,1,0,1,1,1,0,0,2,0,0,0},
+{0,0,1,0,0,1,1,0,1,0,0,2,0,1,1,1,0,0,1,1,1,0,1,0,0,1,0,0,0},
+{1,0,1,0,0,1,0,0,1,0,0,2,1,1,1,0,0,1,1,1,0,2,0,0,0},
+{0,0,1,0,1,0,2,0,0,1,0,1,0,1,1,0,0,1,0,1,1,0,1,0,0,1,1,0,0,0},
+{0,1,0,1,0,0,1,1,0,1,0,0,2,1,0,1,1,0,0,1,1,0,1,0,0,1,0,0,0}
+
+for 15 coins to land in total:
+
+{1,0,2,0,0,1,0,0,1,0,1,0,0,1,1,0,2,1,1,0,0,2,1,0,0},
+{0,2,0,1,0,0,1,0,1,1,0,0,1,0,1,1,0,1,1,1,0,1,1,0,1,0,0,0},
+{0,0,1,0,0,1,1,0,1,0,0,2,0,1,1,1,0,0,1,1,1,0,0,1,2,0,0,0},
+{1,0,1,0,0,1,0,0,1,0,0,2,1,1,1,0,0,1,1,1,0,2,0,1,0,0,0},
+{0,0,1,0,1,0,2,0,0,1,0,1,0,1,1,0,0,1,0,1,1,0,1,0,1,0,1,0,1,0,0,0},
+{0,1,0,1,0,0,1,1,0,1,0,0,2,1,0,1,1,0,0,1,1,0,0,1,1,1,0,0,0}
+
+---
+
+## 9. Bonus Coin Landing
+
+Whenever coins are landed - define it’s type.
+
+### 9.1 Placeholder Type Weights (Bonus)
+
+Depends on collectors already on screen:
+
+| Collectors | Coin | Collector |
+| --- | --- | --- |
+| 0 | 80 | 20 |
+| 1 | 90 | 10 |
+| 2 | 92 | 8 |
+| 3 | 95 | 5 |
+| 4 | 96 | 4 |
+| 5 | 97 | 3 |
+| 6 | 98 | 2 |
+| 7 | 99 | 1 |
+| 8 | 90 | 0 |
+
+Whenever collector is landed, it immediately collects all the non mystery coins and previous collectors values.
+
+---
+
+### 9.2 Bonus Coin Value Weights
+
+Same as base game coin values:
+
+| Value | Weight |
+| --- | --- |
+| 1–9 | same as base |
+| Mini JP | 10,000 |
+| Midi JP | 4,000 |
+| Major JP | 1,000 |
+| Grand JP | 10 |
+
+---
+
+### 9.3 Mystery Chance (Bonus)
+
+(Max = 100)
+
+| Value | Chance | Mystery Type |
+| --- | --- | --- |
+| 1 | 0 |  |
+| 2 | 10 | Mystery Coin |
+| 3 | 20 | Mystery Coin |
+| 4 | 30 | Mystery Coin |
+| 5 | 40 | Mystery Coin |
+| 6–9 | 50 | Mystery Coin |
+| Mini JP | 30 | Mystery Coin or Mystery Jackpot Coin (50/50 chance) |
+| Midi JP | 90 | Mystery Coin or Mystery Jackpot Coin (50/50 chance) |
+| Major JP | 95 | Mystery Jackpot Coin |
+
+---
+
+## 10. Bonus End
+
+- **feature_trigger_counter** should be increased by 1
+- All mystery coins reveal it’s values at the end of the bonus.
+- Mystery cannot be revealed or collected during the bonus game, only at the final stage when total win is calculated unless there is level increment in case of Eternal Pot.
+- All coin values on the screen summed and multiplied with the applicable multiplier.
+- Example, if the row 0 has multiplier 3x and cell index (0,1) has cell multiplier 5x with coin_value = 2x &  global multiplier is 4x (due to eternal pot). Then the cell (0,1) value will be : 2 x 3 x 5 x 4 =120
+- Result × bet
+- If **no free positions remain**:
+    - Bonus game end if Eternal Pot is inactive
+    - All coins with will be collected (with applicable multipliers) & screen will be cleared. Level increments and coin drops starts again.
+
+---
+
+## Total Bet
+
+- Fixed bet = **10**
+
+---
+
+## Final Note
+
+This document contains **100% of the game logic, weights, and ordering**.
+
+Any deviation from these values **breaks mathematical equivalence**.
+
+---
+
+# 🎨 **ART & ANIMATIONS**
+
+(High-level, без уточнений как просили)
+
+- Rubber-hose style 1930–40s
+- Strong outlines, jitter loops, film grain
+- Pots анимируются как живые объекты (cuphead style)
+- Монеты "танцуют", "вибрируют" при фиксации
+- Большие джекпоты имеют unique cartoon explosion FX
+
+---
+
+## 😈 ART & Animations 😈
+
+### Setting and Theme
+
+TBD
+
+### Overall look & Feel
+
+TBD
+
+### Symbols
+
+TBD
+
+### Animations
+
+Check List включаем ли мы в игру эти компоненты:
+
+✅✅✅ - YES, берём в работу
+❌❌❌ - NO, отказываемся
+
+1. Symbols Animation (Coins + Collector из предыдущих игр, его выгрузить по-новому) ✅✅✅
+2. Collect Effect (перелёт) ✅✅✅
+3. Анимация клешни (клешня вшита в анимацию монет, не надо будет париться с расположением) ✅✅✅
+4. Горшки ✅✅✅
+5. Intrigue - подсветка игрового поля с помощью молний ✅✅✅
+6. Coin Fountain - 
+Горшок взрывается монетами перед бонуской как в пиньятах- это круто ✅✅✅
+7. Field Transformation - Анимация раздвижения рамы игрового поля как в яичках ✅✅✅
+8. Multi Feature - Анимация фичи мульти, фиолетовая рамка с мультом в углу ✅✅✅
+9. Eternal frame - Анимация фичи этернал, ячейка символа будет загораться золотом в бонуске (альтернатива коин бара) ✅✅✅
+10. Анимация рила с мультами в бонуске - слабое место механики ✅✅✅
+11. ГЕЙМ ПРЕВЬЮ✅✅✅
+12. Mini Win ❌❌❌
+13. Win Frame❌❌❌
+14. Win Line ❌❌❌
+15. Анимация надписи Grand Jackpot (уточнить сценарий появления) - как в этернале ❌❌❌
+16. У Экспанд фичи не будет анимации мультов сбоку, поле просто скейлится и больше ничего не делает ❌❌❌
+
+### UX/UI scenarios
+
+TBD
+
+### Other comments
+
+TBD
+
+---
+
+## 🍑 Sound 🍑
+
+### Sound Doc
+
+### Sound Pack
+
+## 🍄‍🟫 DEV Specs 🍄‍🟫
+
+### Game ID
+
+TBD
+
+### Other comments
+
+TBD
+
+---
+
+## 🧀 Texts 🧀
+
+### Welcome Screen
+
+1. Hold & Win Bonus
+    1. Land 3 Coins on the middle row to trigger the bonus
+2. 3 Super Pots
+    1. Expand, Multi & Eternal Pots upgrade the bonus game
+3. Jackpot Coins
+    1. Mini, Midi, Major & Grand can appear on Coins
+
+### Game Info + Rules
+
+### **Game Rules**
+
+**Pay Table**
+
+> **Important:** Zeus 3 Pots does **not** use classic line symbols.
+> 
+> 
+> The game uses **Coin symbols only** (plus empty cells), and wins are generated in the **Hold & Win Bonus Game**. 
+> 
+
+| Coin Type | Value / Result |
+| --- | --- |
+| Regular Coin | 1x–9x bet |
+| Sticky Coin | x3–x12 bet |
+| Jackpot Coin (Mini) | x15 bet |
+| Jackpot Coin (Midi) | x50 bet |
+| Jackpot Coin (Major) | x100 bet |
+| Jackpot Coin (Grand) | x1000 bet |
+| Mystery Coin | Hidden value/type |
+| Mystery Jackpot Coin | Hidden jackpot |
+| Collector Coin | Collects visible Coin values |
+| Pot Coin (Scatter Coin) | Charges a Pot |
+
+Bonus is triggered when **all 3 positions in the middle row are filled with Coins** (non-blank).
+
+Coin and Jackpot Coin values are **paid in the Hold & Win Bonus Game**. 
+
+---
+
+### **Game Features**
+
+### 3 Pots
+
+Above the reels, **3 special Pots** can be charged in the Base Game and can upgrade the Hold & Win Bonus:
+
+1. **Expand Pot** – Adds **1 row on top and 1 row on bottom** in the Bonus Game (field expands from **3x3 to 3x5**). The added rows can receive **row multipliers**.
+2. **Multi Pot** – Adds **multiplier frames** to random positions in the Bonus Game. Frames can stack on the same position and increase the multiplier on that cell.
+3. **Eternal Pot** – Enables **multi-level Full Screen cycles** in the Bonus Game. When the screen fills, Coins are collected, a **global multiplier** increases, and the bonus continues with a new level.
+
+Any combination of Pots can be active together. Pots are charged in the Base Game by Pot Coins. A fully charged Pot may also trigger the Bonus Game. 
+
+---
+
+### Bonus Game
+
+### 🪙 Hold & Win Bonus
+
+- Triggered when **3 Coins land on the middle row** (all middle-row cells become non-blank).
+- Starts with **3 Respins**.
+- Each new landed Coin **resets Respins back to 3**.
+- Coins **lock in place**.
+- Only **empty positions** spin during the Bonus Game.
+- Bonus ends when no Respins remain, unless special Pot effects continue the feature.
+
+**Full Screen Logic**
+
+- **9 Coins** = Full Screen on the regular **3x3** field
+- **15 Coins** = Full Screen when **Expand Pot** is active (**3x5** field)
+
+If **Eternal Pot** is active and a Full Screen is achieved:
+
+- all Coins are collected,
+- the **Global Multiplier** increases,
+- and a new Bonus level starts (until the feature ends or Max Win is reached). c12678ce-706c-4385-
+
+---
+
+### 💰 Jackpots (Fixed Jackpot Coins)
+
+- **4 Jackpot Coin types:** Mini, Midi, Major, Grand
+- **Mini:** x15
+- **Midi:** x50
+- **Major:** x100
+- **Grand:** x1000
+
+Jackpot Coins may appear on the field as Coins (or via Mystery Coin / Mystery Jackpot Coin) and are awarded when collected in the Bonus Game. 
+
+---
+
+## Side Bets
+
+1. 4x chance to trigger bonus game
+2. 8x chance to trigger bonus game
+
+---
+
+## Buy Bonus
+
+1. regular bonus game - 50x ( random pots ) 
+2. suepr bonus game - 300x ( all pots )
+
+---
+
+## Lines
+
+This game **does not use paylines**.
+
+- The Base Game is a **3x3 grid** of independent spinning cells.
+- The main objective of the Base Game is to:
+    - land Coins on the **middle row** to trigger the Bonus Game,
+    - and charge the **3 Pots**
+
+---
+
+**How to Play:**
+
+1. Choose your bet size from the available options.
+2. Press the **Spin** button to start a game round.
+3. Use **Autoplay** to spin automatically.
+4. Land **3 Coins on the middle row** to trigger the Hold & Win Bonus.
+5. Charge **Expand / Multi / Eternal Pots** in the Base Game to upgrade the Bonus experience.
+
+---
+
+### **How to Calculate Wins:**
+
+- Zeus 3 Pots has **no line wins**.
+- Wins are awarded from **Coin values collected during the Hold & Win Bonus Game**.
+- Coin values are shown as **multipliers of the total bet**.
+- Final Coin values may be affected by:
+    - **Row Multipliers** (Expand Pot),
+    - **Cell / Frame Multipliers** (Multi Pot),
+    - **Global Multiplier** (Eternal Pot).
+- **Collector Coins** collect visible Coin values during the Bonus Game.
+- Mystery Coins reveal their values according to game logic.
+- Malfunction voids all pays and plays. c12678ce-706c-4385-8a59-fd2c32c…
+
+---
+
+**Max Win**
+
+The Maximum win amount is limited to **10,000x bet**.
+
+If the total win of a round reaches **10,000x**, the round immediately ends, the win is awarded up to the cap, and all remaining feature actions are forfeited. 
+c12678ce-706c-4385-8a59-fd2c32c…
+
+---
+
+### **Return to Player (RTP) Information:**
+
+> The dev doc currently marks RTP as **TBD**. 
+c12678ce-706c-4385-8a59-fd2c32c…
+> 
+
+---
+
+**Game Options**
+
+- **Paytable** – Displays Coin types, jackpot values, and feature information.
+- **Settings** – Adjust volume and other preferences.
+- **Game Features** – Detailed explanations of Pots and Bonus rules.
+- **About Game** – Detailed rules (you are here).
+
+---
+
+**Game Panel**
+
+- **Bet** – Displays the current bet size.
+- **Spin Button** – Starts the game.
+- **Autoplay** – Spins automatically when enabled.
+- **Balance** – Displays the player’s current balance.
+- **Win Display** – Shows the most recent win amount.
+- **Pot Progress** – Displays the charge state of **Expand / Multi / Eternal** Pots.
+
+---
+
+### **Additional Information**
+
+- In the event of a malfunction of the gaming hardware or software, all affected bets and payouts are rendered void, and all affected bets are refunded.
+- Sticky Coin progress is linked to the current game/bet state and may reset or be stored according to game rules when changing bet settings. c12678ce-706c-4385-8a59-fd2c32c…
+
+### Promo Presentation

@@ -1,0 +1,5 @@
+include:
+  - project: 'finplat/frontend/mrpipeliner'
+    ref: main
+    file: '.gitlab-root.yaml'
+

@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Timing Tool — редактор кривой анимации</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+      padding: 24px;
+      background: radial-gradient(circle at top, #222 0, #0c1016 55%, #050609 100%);
+      color: #f5f7fb;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: minmax(520px, 880px) 320px;
+      gap: 20px;
+      max-width: 1280px;
+      width: 100%;
+      background: rgba(7, 11, 18, 0.96);
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      box-shadow:
+        0 28px 80px rgba(0, 0, 0, 0.8),
+        0 0 0 1px rgba(0, 0, 0, 0.7);
+      overflow: hidden;
+    }
+
+    .left {
+      padding: 18px 18px 22px 22px;
+      border-right: 1px solid rgba(255, 255, 255, 0.04);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .right {
+      padding: 18px 22px 22px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      background: radial-gradient(circle at top right, rgba(76, 201, 240, 0.15), transparent 55%);
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .title-block {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    h1 {
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+    }
+
+    .subtitle {
+      font-size: 12px;
+      opacity: 0.86;
+    }
+
+    .badge {
+      font-size: 11px;
+      padding: 4px 9px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: radial-gradient(circle at top left, rgba(76, 201, 240, 0.18), rgba(0, 0, 0, 0.55));
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .badge-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: #4cc9f0;
+      box-shadow: 0 0 10px rgba(76, 201, 240, 0.8);
+    }
+
+    .canvas-wrapper {
+      position: relative;
+      flex: 1;
+      min-height: 260px;
+      border-radius: 12px;
+      overflow: hidden;
+      background: radial-gradient(circle at 10% 0, rgba(65, 105, 225, 0.22), rgba(7, 11, 18, 0.96));
+      box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.02),
+        0 24px 60px rgba(0, 0, 0, 0.9);
+    }
+
+    #curveCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .canvas-overlay-labels {
+      position: absolute;
+      inset: 8px 10px 8px 12px;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      font-size: 10px;
+      opacity: 0.7;
+    }
+
+    .canvas-overlay-labels-top {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .canvas-overlay-labels-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .hint {
+      margin-top: 8px;
+      font-size: 11px;
+      opacity: 0.8;
+    }
+
+    .hint span {
+      font-weight: 600;
+      color: #c3e88d;
+    }
+
+    .section-title {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      opacity: 0.86;
+    }
+
+    .section {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 6px;
+    }
+
+    label {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      font-size: 11px;
+      opacity: 0.9;
+    }
+
+    input[type="number"] {
+      background: rgba(0, 0, 0, 0.5);
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      color: #f5f7fb;
+      font-size: 12px;
+      padding: 5px 7px;
+      outline: none;
+      width: 100%;
+    }
+
+    input[type="number"]:focus {
+      border-color: rgba(76, 201, 240, 0.8);
+      box-shadow: 0 0 0 1px rgba(76, 201, 240, 0.5);
+    }
+
+    .code-block {
+      background: rgba(3, 7, 13, 0.9);
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 8px 10px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 11px;
+      line-height: 1.5;
+      word-break: break-all;
+      position: relative;
+    }
+
+    .code-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      opacity: 0.7;
+      margin-bottom: 4px;
+    }
+
+    .code-value {
+      color: #e1e4f2;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    button {
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      padding: 5px 11px;
+      font-size: 11px;
+      background: radial-gradient(circle at top left, rgba(76, 201, 240, 0.25), rgba(5, 9, 15, 0.9));
+      color: #f5f7fb;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 120ms ease, transform 80ms ease, box-shadow 120ms ease;
+    }
+
+    button.secondary {
+      background: rgba(12, 20, 33, 0.9);
+    }
+
+    button:hover {
+      background: radial-gradient(circle at top left, rgba(129, 230, 217, 0.4), rgba(5, 9, 15, 0.9));
+      box-shadow: 0 0 0 1px rgba(129, 230, 217, 0.35);
+      transform: translateY(-0.5px);
+    }
+
+    button:active {
+      transform: translateY(0.5px) scale(0.99);
+      box-shadow: none;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.9);
+      font-size: 10px;
+      opacity: 0.9;
+    }
+
+    .demo-area {
+      margin-top: 8px;
+      padding: 10px 10px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      background: radial-gradient(circle at top, rgba(56, 189, 248, 0.15), rgba(15, 23, 42, 0.96));
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .demo-track {
+      position: relative;
+      height: 32px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(15, 23, 42, 0.8), rgba(30, 64, 175, 0.9));
+      overflow: hidden;
+    }
+
+    .demo-track::before {
+      content: "";
+      position: absolute;
+      inset: 12px;
+      border-radius: inherit;
+      border: 1px dashed rgba(148, 163, 184, 0.5);
+      opacity: 0.75;
+    }
+
+    .demo-box {
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      width: 24px;
+      height: 24px;
+      border-radius: 8px;
+      background: radial-gradient(circle at 20% 0, #facc15, #f97316);
+      box-shadow:
+        0 8px 18px rgba(15, 23, 42, 0.95),
+        0 0 16px rgba(250, 204, 21, 0.85);
+    }
+
+    .demo-caption {
+      font-size: 11px;
+      opacity: 0.85;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .demo-caption span:last-child {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      opacity: 0.9;
+    }
+
+    .status-line {
+      margin-top: 4px;
+      font-size: 10px;
+      opacity: 0.75;
+    }
+    .link-bounce {
+      display: inline-block;
+      margin-bottom: 10px;
+      font-size: 12px;
+      color: #7dd3fc;
+      text-decoration: none;
+    }
+    .link-bounce:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="left">
+      <a href="bounce.html" class="link-bounce">Режим: падение с баунсом (Старт / Лайн / Энд) →</a>
+      <header>
+        <div class="title-block">
+          <h1>Timing Tool</h1>
+          <div class="subtitle">Редактор кривой для изингов анимации (0–1 → 0–1)</div>
+        </div>
+        <div class="badge">
+          <span class="badge-dot"></span>
+          <span>ЛКМ — перетаскивать точки</span>
+        </div>
+      </header>
+
+      <div class="canvas-wrapper">
+        <canvas id="curveCanvas" width="900" height="360"></canvas>
+        <div class="canvas-overlay-labels">
+          <div class="canvas-overlay-labels-top">
+            <span>value</span>
+            <span>1.0</span>
+          </div>
+          <div class="canvas-overlay-labels-bottom">
+            <span>0.0</span>
+            <span>time (t)</span>
+          </div>
+        </div>
+      </div>
+      <div class="hint">
+        <span>Подсказка:</span> тяните синие точки P1 и P2, чтобы менять форму кривой.
+        Значения автоматически ограничены диапазоном 0–1.
+      </div>
+    </div>
+
+    <div class="right">
+      <div class="section">
+        <div class="section-title">Контрольные точки</div>
+        <div class="form-row">
+          <label>
+            P1.x
+            <input id="p1x" type="number" step="0.01" min="0" max="1">
+          </label>
+          <label>
+            P1.y
+            <input id="p1y" type="number" step="0.01" min="0" max="1">
+          </label>
+          <label>
+            P2.x
+            <input id="p2x" type="number" step="0.01" min="0" max="1">
+          </label>
+          <label>
+            P2.y
+            <input id="p2y" type="number" step="0.01" min="0" max="1">
+          </label>
+        </div>
+        <div class="btn-row">
+          <button id="presetEaseInOut">S‑образная ease-in-out</button>
+          <button id="presetOvershoot" class="secondary">Небольшой оверсут</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Экспорт</div>
+
+        <div class="code-block">
+          <div class="code-label">CSS cubic-bezier</div>
+          <div id="bezierCss" class="code-value"></div>
+          <div class="btn-row">
+            <button id="copyCss">Скопировать CSS</button>
+          </div>
+        </div>
+
+        <div class="code-block">
+          <div class="code-label">JS функция easing(t)</div>
+          <div id="jsSnippet" class="code-value"></div>
+          <div class="btn-row">
+            <button id="copyJs" class="secondary">Скопировать JS</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Превью анимации</div>
+        <div class="demo-area">
+          <div class="demo-track">
+            <div id="demoBox" class="demo-box"></div>
+          </div>
+          <div class="demo-caption">
+            <span>Бокс движется с текущим изингом</span>
+            <span>t = <span id="demoT">0.00</span></span>
+          </div>
+          <div class="status-line">
+            Диапазон: <span class="pill">t ∈ [0, 1] → value ∈ [0, 1]</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('curveCanvas');
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+    const padding = 46;
+
+    // P0 и P3 зафиксированы (0,0) и (1,1).
+    const P0 = { x: 0, y: 0 };
+    const P3 = { x: 1, y: 1 };
+    const P1 = { x: 0.33, y: 0.0 };
+    const P2 = { x: 0.67, y: 1.0 };
+
+    const handles = [P1, P2];
+    const handleRadius = 9;
+    let draggingHandle = null;
+
+    const p1xInput = document.getElementById('p1x');
+    const p1yInput = document.getElementById('p1y');
+    const p2xInput = document.getElementById('p2x');
+    const p2yInput = document.getElementById('p2y');
+    const bezierCssEl = document.getElementById('bezierCss');
+    const jsSnippetEl = document.getElementById('jsSnippet');
+    const copyCssBtn = document.getElementById('copyCss');
+    const copyJsBtn = document.getElementById('copyJs');
+    const presetEaseInOutBtn = document.getElementById('presetEaseInOut');
+    const presetOvershootBtn = document.getElementById('presetOvershoot');
+    const demoBox = document.getElementById('demoBox');
+    const demoTLabel = document.getElementById('demoT');
+
+    function clamp01(v) {
+      return v < 0 ? 0 : v > 1 ? 1 : v;
+    }
+
+    function dataToCanvas(p) {
+      const x = padding + p.x * (width - padding * 2);
+      const y = height - padding - p.y * (height - padding * 2);
+      return { x, y };
+    }
+
+    function canvasToData(x, y) {
+      const nx = clamp01((x - padding) / (width - padding * 2));
+      const ny = clamp01((height - padding - y) / (height - padding * 2));
+      return { x: nx, y: ny };
+    }
+
+    /** Преобразует координаты события в внутренние координаты canvas (учитывает масштаб CSS). */
+    function eventToCanvasCoords(evt) {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = width / rect.width;
+      const scaleY = height / rect.height;
+      return {
+        x: (evt.clientX - rect.left) * scaleX,
+        y: (evt.clientY - rect.top) * scaleY
+      };
+    }
+
+    function cubicBezierPoint(t, p0, p1, p2, p3) {
+      const u = 1 - t;
+      const tt = t * t;
+      const uu = u * u;
+      const uuu = uu * u;
+      const ttt = tt * t;
+      const x = uuu * p0.x + 3 * uu * t * p1.x + 3 * u * tt * p2.x + ttt * p3.x;
+      const y = uuu * p0.y + 3 * uu * t * p1.y + 3 * u * tt * p2.y + ttt * p3.y;
+      return { x, y };
+    }
+
+    function easing(t) {
+      if (t <= 0) return 0;
+      if (t >= 1) return 1;
+      return cubicBezierPoint(t, P0, P1, P2, P3).y;
+    }
+
+    function updateInputsFromState() {
+      p1xInput.value = P1.x.toFixed(2);
+      p1yInput.value = P1.y.toFixed(2);
+      p2xInput.value = P2.x.toFixed(2);
+      p2yInput.value = P2.y.toFixed(2);
+    }
+
+    function updateCodeSnippets() {
+      const x1 = P1.x.toFixed(3);
+      const y1 = P1.y.toFixed(3);
+      const x2 = P2.x.toFixed(3);
+      const y2 = P2.y.toFixed(3);
+
+      bezierCssEl.textContent = `cubic-bezier(${x1}, ${y1}, ${x2}, ${y2})`;
+
+      jsSnippetEl.textContent =
+        `function ease(t) {\n` +
+        `  t = Math.min(Math.max(t, 0), 1);\n` +
+        `  const u = 1 - t;\n` +
+        `  const tt = t * t, uu = u * u;\n` +
+        `  const uuu = uu * u, ttt = tt * t;\n` +
+        `  const p0y = 0, p1y = ${y1}, p2y = ${y2}, p3y = 1;\n` +
+        `  return uuu * p0y + 3 * uu * t * p1y + 3 * u * tt * p2y + ttt * p3y;\n` +
+        `}`;
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, width, height);
+
+      // фон
+      const grad = ctx.createLinearGradient(0, 0, 0, height);
+      grad.addColorStop(0, "#0b1724");
+      grad.addColorStop(1, "#020617");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, width, height);
+
+      // область графика
+      ctx.save();
+      ctx.translate(0.5, 0.5);
+
+      const left = padding;
+      const right = width - padding;
+      const top = padding;
+      const bottom = height - padding;
+
+      // сетка
+      ctx.strokeStyle = "rgba(148, 163, 184, 0.25)";
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      for (let i = 0; i <= 10; i++) {
+        const x = left + (right - left) * (i / 10);
+        ctx.moveTo(x, top);
+        ctx.lineTo(x, bottom);
+      }
+      for (let i = 0; i <= 10; i++) {
+        const y = top + (bottom - top) * (i / 10);
+        ctx.moveTo(left, y);
+        ctx.lineTo(right, y);
+      }
+      ctx.stroke();
+
+      // рамка
+      ctx.setLineDash([]);
+      ctx.strokeStyle = "rgba(148, 163, 184, 0.7)";
+      ctx.lineWidth = 1.2;
+      ctx.strokeRect(left, top, right - left, bottom - top);
+
+      // диагональ (linear)
+      ctx.strokeStyle = "rgba(148, 163, 184, 0.55)";
+      ctx.lineWidth = 1;
+      ctx.setLineDash([6, 6]);
+      const p0c = dataToCanvas(P0);
+      const p3c = dataToCanvas(P3);
+      ctx.beginPath();
+      ctx.moveTo(p0c.x, p0c.y);
+      ctx.lineTo(p3c.x, p3c.y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // направляющие к хэндлам
+      ctx.strokeStyle = "rgba(56, 189, 248, 0.5)";
+      ctx.lineWidth = 1.1;
+      const p1c = dataToCanvas(P1);
+      const p2c = dataToCanvas(P2);
+      ctx.beginPath();
+      ctx.moveTo(p0c.x, p0c.y);
+      ctx.lineTo(p1c.x, p1c.y);
+      ctx.lineTo(p2c.x, p2c.y);
+      ctx.lineTo(p3c.x, p3c.y);
+      ctx.stroke();
+
+      // основная синяя кривая
+      ctx.strokeStyle = "#4cc9f0";
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      for (let i = 0; i <= 240; i++) {
+        const t = i / 240;
+        const p = cubicBezierPoint(t, P0, P1, P2, P3);
+        const pc = dataToCanvas(p);
+        if (i === 0) ctx.moveTo(pc.x, pc.y);
+        else ctx.lineTo(pc.x, pc.y);
+      }
+      ctx.stroke();
+
+      // точки
+      function drawHandle(point, color, fill, radius) {
+        const c = dataToCanvas(point);
+        ctx.beginPath();
+        ctx.arc(c.x, c.y, radius, 0, Math.PI * 2);
+        ctx.fillStyle = fill;
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.4;
+        ctx.fill();
+        ctx.stroke();
+      }
+
+      // P0 и P3 — серые
+      drawHandle(P0, "rgba(148, 163, 184, 0.9)", "rgba(15, 23, 42, 0.95)", 5);
+      drawHandle(P3, "rgba(148, 163, 184, 0.9)", "rgba(15, 23, 42, 0.95)", 5);
+
+      // P1 и P2 — активные синие
+      drawHandle(P1, "rgba(56, 189, 248, 1)", "rgba(8, 47, 73, 0.9)", handleRadius);
+      drawHandle(P2, "rgba(56, 189, 248, 1)", "rgba(8, 47, 73, 0.9)", handleRadius);
+
+      ctx.restore();
+    }
+
+    function findHandleAtPosition(canvasX, canvasY) {
+      for (const h of handles) {
+        const c = dataToCanvas(h);
+        const dx = canvasX - c.x;
+        const dy = canvasY - c.y;
+        const hitRadius = handleRadius + 12;
+        if (dx * dx + dy * dy <= hitRadius * hitRadius) {
+          return h;
+        }
+      }
+      return null;
+    }
+
+    function onPointerDown(evt) {
+      const { x, y } = eventToCanvasCoords(evt);
+      draggingHandle = findHandleAtPosition(x, y);
+      if (draggingHandle) {
+        evt.preventDefault();
+        canvas.setPointerCapture(evt.pointerId);
+      }
+    }
+
+    function onPointerMove(evt) {
+      if (!draggingHandle) return;
+      const { x, y } = eventToCanvasCoords(evt);
+      const p = canvasToData(x, y);
+
+      draggingHandle.x = p.x;
+      draggingHandle.y = p.y;
+
+      // не даем P1 уйти правее P2 и наоборот
+      if (draggingHandle === P1 && P1.x > P2.x) {
+        P1.x = P2.x;
+      }
+      if (draggingHandle === P2 && P2.x < P1.x) {
+        P2.x = P1.x;
+      }
+
+      updateInputsFromState();
+      updateCodeSnippets();
+      draw();
+    }
+
+    function onPointerUp(evt) {
+      if (draggingHandle) {
+        canvas.releasePointerCapture(evt.pointerId);
+      }
+      draggingHandle = null;
+    }
+
+    canvas.addEventListener('pointerdown', onPointerDown);
+    canvas.addEventListener('pointermove', onPointerMove);
+    canvas.addEventListener('pointerup', onPointerUp);
+    canvas.addEventListener('pointerleave', onPointerUp);
+
+    function readInputsToState() {
+      const x1 = clamp01(parseFloat(p1xInput.value.replace(',', '.')) || 0);
+      const y1 = clamp01(parseFloat(p1yInput.value.replace(',', '.')) || 0);
+      const x2 = clamp01(parseFloat(p2xInput.value.replace(',', '.')) || 0);
+      const y2 = clamp01(parseFloat(p2yInput.value.replace(',', '.')) || 0);
+
+      P1.x = x1;
+      P1.y = y1;
+      P2.x = x2;
+      P2.y = y2;
+
+      if (P1.x > P2.x) {
+        const mid = (P1.x + P2.x) / 2;
+        P1.x = mid - 0.001;
+        P2.x = mid + 0.001;
+      }
+
+      updateInputsFromState();
+      updateCodeSnippets();
+      draw();
+    }
+
+    [p1xInput, p1yInput, p2xInput, p2yInput].forEach(input => {
+      input.addEventListener('change', readInputsToState);
+      input.addEventListener('blur', readInputsToState);
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          readInputsToState();
+        }
+      });
+    });
+
+    presetEaseInOutBtn.addEventListener('click', () => {
+      P1.x = 0.42;
+      P1.y = 0.0;
+      P2.x = 0.58;
+      P2.y = 1.0;
+      updateInputsFromState();
+      updateCodeSnippets();
+      draw();
+    });
+
+    presetOvershootBtn.addEventListener('click', () => {
+      P1.x = 0.2;
+      P1.y = 0.0;
+      P2.x = 0.8;
+      P2.y = 1.1;
+      P2.y = clamp01(P2.y);
+      updateInputsFromState();
+      updateCodeSnippets();
+      draw();
+    });
+
+    async function copyText(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch (e) {
+        console.warn('Не удалось скопировать в буфер обмена:', e);
+      }
+    }
+
+    copyCssBtn.addEventListener('click', () => {
+      if (bezierCssEl.textContent) {
+        copyText(bezierCssEl.textContent);
+      }
+    });
+
+    copyJsBtn.addEventListener('click', () => {
+      if (jsSnippetEl.textContent) {
+        copyText(jsSnippetEl.textContent);
+      }
+    });
+
+    // Демонстрация движения бокса с текущим easing
+    let lastTime = performance.now();
+    let animTime = 0;
+    const duration = 1600;
+
+    function tick(now) {
+      const dt = now - lastTime;
+      lastTime = now;
+      animTime += dt;
+      if (animTime > duration) animTime -= duration;
+
+      const t = animTime / duration;
+      const v = easing(t);
+
+      const trackWidth = demoBox.parentElement.clientWidth || 300;
+      const maxX = trackWidth - demoBox.offsetWidth - 8;
+      const posX = 4 + v * maxX;
+      demoBox.style.transform = `translateX(${posX}px)`;
+      demoTLabel.textContent = t.toFixed(2);
+
+      requestAnimationFrame(tick);
+    }
+
+    function init() {
+      updateInputsFromState();
+      updateCodeSnippets();
+      draw();
+      lastTime = performance.now();
+      requestAnimationFrame(tick);
+    }
+
+    init();
+  </script>
+</body>
+</html>
+

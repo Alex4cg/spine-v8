@@ -1,0 +1,347 @@
+{
+  "FAST-MODE-NORMAL": {
+    "barSettings": {
+      "fakeItems": {
+        "field": {
+          "preSpin": {
+            "defaultCount": {
+              "base": 6,
+              "freeSpins": 16,
+              "copyFromDefault": true
+            },
+            "addCount": {
+              "base": 2,
+              "freeSpins": 8,
+              "copyFromDefault": false
+            },
+            "coin": {
+              "baseShow": 15,
+              "freeSpinsHide": 24
+            }
+          }
+        }
+      },
+      "delayPerSpin": {
+        "base": 100,
+        "freeSpins": 150,
+        "copyFromDefault": false
+      },
+      "minSpinDuration": {
+        "base": 400,
+        "freeSpins": 650
+      },
+      "delayPerBar": {
+        "preSpin": {
+          "base": 200,
+          "freeSpins": 199,
+          "copyFromDefault": false
+        },
+        "endSpin": {
+          "base": 150,
+          "freeSpins": 251,
+          "copyFromDefault": false
+        }
+      },
+      "fallDelay": {
+        "default": {
+          "inPreSpin": 63,
+          "inEndSpin": 63
+        },
+        "freeSpins": {
+          "inPreSpin": 98,
+          "inEndSpin": 100
+        },
+        "copyFromDefault": false
+      },
+      "backScroll": {
+        "time": 99,
+        "distance": 49,
+        "copyFromDefault": false
+      },
+      "preSpinBounce": {
+        "enabled": true,
+        "distance": 31,
+        "duration": 0
+      },
+      "miniReelHidedFakeItemsPercent": 0.3,
+      "anticipationDurationMultiplier": 3,
+      "anticipationDelay": {
+        "base": 2500,
+        "turbo": 1200
+      }
+    },
+    "stepDelays": {
+      "afterInitial": 390,
+      "afterApplyRewards": 300,
+      "afterCollector": 300,
+      "afterMiniWin": 0,
+      "afterTrainTrigger": 650,
+      "afterCoinUpgrade": 390,
+      "afterBigWin": 300
+    },
+    "trainAnimations": {
+      "triggerDelay": 650,
+      "hitDuration": 390,
+      "collectDelay": 260
+    },
+    "collectEffects": {
+      "flyDuration": 100,
+      "delayBetweenEffects": 0
+    },
+    "transitionSettings": {
+      "delayBeforeShowBonusGame": 600,
+      "delayBeforeShowTotalWin": 350
+    },
+    "collectorAnimations": {
+      "emptyDelay": 200,
+      "noCoinsDelay": 100,
+      "afterCollectDelay": 200
+    },
+    "coinUpgradeAnimations": {
+      "upgradeDelay": 200
+    },
+    "trainTriggerAnimations": {
+      "symbolAppearDelay": 260,
+      "postTriggerDelay": 650
+    },
+    "miniWinConfig": {
+      "animationDuration": 150,
+      "displayDuration": 850
+    },
+    "bonusTransitionConfig": {
+      "showDuration": 390,
+      "titleScaleDuration": 520,
+      "hideDuration": 390
+    }
+  },
+  "FAST-MODE-FAST": {
+    "barSettings": {
+      "fakeItems": {
+        "field": {
+          "preSpin": {
+            "defaultCount": {
+              "base": 6,
+              "freeSpins": 12,
+              "copyFromDefault": true
+            },
+            "addCount": {
+              "base": 0,
+              "freeSpins": 6,
+              "copyFromDefault": false
+            },
+            "coin": {
+              "baseShow": 45,
+              "freeSpinsHide": 30
+            }
+          }
+        }
+      },
+      "delayPerSpin": {
+        "base": 0,
+        "freeSpins": 150,
+        "copyFromDefault": false
+      },
+      "minSpinDuration": {
+        "base": 100,
+        "freeSpins": 500
+      },
+      "delayPerBar": {
+        "preSpin": {
+          "base": 0,
+          "freeSpins": 0,
+          "copyFromDefault": false
+        },
+        "endSpin": {
+          "base": 0,
+          "freeSpins": 120,
+          "copyFromDefault": false
+        }
+      },
+      "fallDelay": {
+        "default": {
+          "inPreSpin": 45,
+          "inEndSpin": 45
+        },
+        "freeSpins": {
+          "inPreSpin": 100,
+          "inEndSpin": 100
+        },
+        "copyFromDefault": false
+      },
+      "backScroll": {
+        "time": 80,
+        "distance": 20,
+        "copyFromDefault": false
+      },
+      "preSpinBounce": {
+        "enabled": true,
+        "distance": 24,
+        "duration": 180
+      },
+      "miniReelHidedFakeItemsPercent": 0.3,
+      "anticipationDurationMultiplier": 2.5,
+      "anticipationDelay": {
+        "base": 1200,
+        "turbo": 400
+      }
+    },
+    "stepDelays": {
+      "afterInitial": 300,
+      "afterApplyRewards": 200,
+      "afterCollector": 200,
+      "afterMiniWin": 0,
+      "afterTrainTrigger": 400,
+      "afterCoinUpgrade": 300,
+      "afterBigWin": 300
+    },
+    "trainAnimations": {
+      "triggerDelay": 300,
+      "hitDuration": 200,
+      "collectDelay": 200
+    },
+    "collectEffects": {
+      "flyDuration": 70,
+      "delayBetweenEffects": 0
+    },
+    "transitionSettings": {
+      "delayBeforeShowBonusGame": 500,
+      "delayBeforeShowTotalWin": 250
+    },
+    "collectorAnimations": {
+      "emptyDelay": 200,
+      "noCoinsDelay": 100,
+      "afterCollectDelay": 200
+    },
+    "coinUpgradeAnimations": {
+      "upgradeDelay": 150
+    },
+    "trainTriggerAnimations": {
+      "symbolAppearDelay": 200,
+      "postTriggerDelay": 400
+    },
+    "miniWinConfig": {
+      "animationDuration": 100,
+      "displayDuration": 850
+    },
+    "bonusTransitionConfig": {
+      "showDuration": 200,
+      "titleScaleDuration": 350,
+      "hideDuration": 250
+    }
+  },
+  "FAST-MODE-FASTEST": {
+    "barSettings": {
+      "fakeItems": {
+        "field": {
+          "preSpin": {
+            "defaultCount": {
+              "base": 6,
+              "freeSpins": 8,
+              "copyFromDefault": true
+            },
+            "addCount": {
+              "base": 1,
+              "freeSpins": 4,
+              "copyFromDefault": false
+            },
+            "coin": {
+              "baseShow": 15,
+              "freeSpinsHide": 30
+            }
+          }
+        }
+      },
+      "delayPerSpin": {
+        "base": 0,
+        "freeSpins": 188,
+        "copyFromDefault": false
+      },
+      "minSpinDuration": {
+        "base": 0,
+        "freeSpins": 200
+      },
+      "delayPerBar": {
+        "preSpin": {
+          "base": 0,
+          "freeSpins": 30,
+          "copyFromDefault": false
+        },
+        "endSpin": {
+          "base": 0,
+          "freeSpins": 60,
+          "copyFromDefault": false
+        }
+      },
+      "fallDelay": {
+        "default": {
+          "inPreSpin": 49,
+          "inEndSpin": 49
+        },
+        "freeSpins": {
+          "inPreSpin": 51,
+          "inEndSpin": 53
+        },
+        "copyFromDefault": false
+      },
+      "backScroll": {
+        "time": 0,
+        "distance": 0,
+        "copyFromDefault": false
+      },
+      "preSpinBounce": {
+        "enabled": false,
+        "distance": 0,
+        "duration": 0
+      },
+      "miniReelHidedFakeItemsPercent": 0.3,
+      "anticipationDurationMultiplier": 2,
+      "anticipationDelay": {
+        "base": 1200,
+        "turbo": 400
+      }
+    },
+    "stepDelays": {
+      "afterInitial": 150,
+      "afterApplyRewards": 225,
+      "afterCollector": 225,
+      "afterMiniWin": 150,
+      "afterTrainTrigger": 225,
+      "afterCoinUpgrade": 150,
+      "afterBigWin": 263
+    },
+    "trainAnimations": {
+      "triggerDelay": 263,
+      "hitDuration": 150,
+      "collectDelay": 113
+    },
+    "collectEffects": {
+      "flyDuration": 225,
+      "delayBetweenEffects": 23
+    },
+    "transitionSettings": {
+      "delayBeforeShowBonusGame": 525,
+      "delayBeforeShowTotalWin": 263
+    },
+    "collectorAnimations": {
+      "emptyDelay": 225,
+      "noCoinsDelay": 225,
+      "afterCollectDelay": 225
+    },
+    "coinUpgradeAnimations": {
+      "upgradeDelay": 375
+    },
+    "trainTriggerAnimations": {
+      "symbolAppearDelay": 150,
+      "postTriggerDelay": 375
+    },
+    "miniWinConfig": {
+      "animationDuration": 225,
+      "displayDuration": 1125
+    },
+    "bonusTransitionConfig": {
+      "showDuration": 225,
+      "titleScaleDuration": 300,
+      "hideDuration": 225
+    }
+  }
+}
