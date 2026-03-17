@@ -9,28 +9,97 @@ export class FontManager {
   constructor() {
     this.cache = new Map();
     this.styles = {
-      coinValue: {
-        fontFamily: 'GAMERIA',
+      // Обычный (regular) мультипликатор на монетке
+      coinRegular: {
+        fontFamily: 'Rammetto One',
         fontWeight: 400,
         fontSize: 120,
-        color: '#FFD700',
-        borderColor: '#7A3800',
+        color: '#FFFFFF',
+        borderColor: '#471700',
         borderWidth: 12,
         padding: 8,
+        textShadow: {
+          offsetX: 0,
+          offsetY: 24,
+          blur: 0,
+          color: '#471700',
+        },
+      },
+      // Sticky-монетка
+      coinSticky: {
+        fontFamily: 'Rammetto One',
+        fontWeight: 400,
+        fontSize: 120,
+        color: '#FFFFFF',
+        borderColor: '#031267',
+        borderWidth: 12,
+        padding: 8,
+        textShadow: {
+          offsetX: 0,
+          offsetY: 24,
+          blur: 0,
+          color: '#031267',
+        },
+      },
+      // Резерв на будущее: зелёные / фиолетовые / красные regular-монетки
+      coinRegularGreen: {
+        fontFamily: 'Rammetto One',
+        fontWeight: 400,
+        fontSize: 120,
+        color: '#FFFFFF',
+        borderColor: '#012F00',
+        borderWidth: 12,
+        padding: 8,
+        textShadow: {
+          offsetX: 0,
+          offsetY: 24,
+          blur: 0,
+          color: '#012F00',
+        },
+      },
+      coinRegularViolet: {
+        fontFamily: 'Rammetto One',
+        fontWeight: 400,
+        fontSize: 120,
+        color: '#FFFFFF',
+        borderColor: '#2E0033',
+        borderWidth: 12,
+        padding: 8,
+        textShadow: {
+          offsetX: 0,
+          offsetY: 24,
+          blur: 0,
+          color: '#2E0033',
+        },
+      },
+      coinRegularRed: {
+        fontFamily: 'Rammetto One',
+        fontWeight: 400,
+        fontSize: 120,
+        color: '#FFFFFF',
+        borderColor: '#350000',
+        borderWidth: 12,
+        padding: 8,
+        textShadow: {
+          offsetX: 0,
+          offsetY: 24,
+          blur: 0,
+          color: '#350000',
+        },
       },
     };
   }
 
   async loadFonts() {
     this.clearCache();
-    const spec = '400 60px "GAMERIA"';
+    const spec = '400 72px "Rammetto One"';
     try {
       if (document.fonts && document.fonts.load) {
         await document.fonts.load(spec);
         await document.fonts.ready;
         const activator = document.createElement('div');
-        activator.style.fontFamily = '"GAMERIA"';
-        activator.style.fontSize = '60px';
+        activator.style.fontFamily = '"Rammetto One"';
+        activator.style.fontSize = '72px';
         activator.style.position = 'absolute';
         activator.style.visibility = 'hidden';
         activator.style.left = '-9999px';

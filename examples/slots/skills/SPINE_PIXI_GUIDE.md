@@ -323,7 +323,37 @@ coin.state.addListener(listener);
 
 ---
 
-## 6. Чек-лист при добавлении нового Spine в проект
+## 6. Обработка Spine-ивентов (события из анимации)
+
+Spine может генерировать именованные события в середине анимации (например, `shot`, `train_hit`, `collect_effect_hit`). Их правильно слушать через `state.addListener()`.
+
+**Правило:** добавлять listener **после** `state.setAnimation()`, чтобы экземпляр был уже привязан к рендер-пайпу.
+
+```javascript
+coin.state.setAnimation(0, 'hit', false);
+
+const listener = {
+  event: (entry, event) => {
+    if (event?.data?.name === 'shot' && entry.trackIndex === 0) {
+      // Spine-ивент «shot» сработал в нужный момент анимации
+      doSomething();
+    }
+  },
+  complete: (entry) => {
+    if (entry.animation?.name === 'hit') {
+      coin.state.removeListener(listener); // обязательно снимаем
+      coin.state.setAnimation(0, 'idle', true);
+    }
+  }
+};
+coin.state.addListener(listener);
+```
+
+**Не делать:** вешать listener до `setAnimation` или забывать снимать его в `complete` (иначе listener живёт вечно и срабатывает на будущих анимациях).
+
+---
+
+## 7. Чек-лист при добавлении нового Spine в проект
 
 - [ ] Создание: `spine.Spine.from({ skeleton: alias, atlas: alias })`.
 - [ ] Заглушка physics, если нужно: `skeleton.physics = { update: () => {}, updateGlobal: () => {} }`.
@@ -336,7 +366,7 @@ coin.state.addListener(listener);
 
 ---
 
-## 7. Ссылки на реализацию в проекте
+## 8. Ссылки на реализацию в проекте
 
 - Создание и проигрывание transition: `CascadeManager.js` — метод `_playTransitionAnimation()`.
 - Корректное уничтожение Spine: `CascadeManager.js` (listener `complete` у transition), `ScatterFlySystem.js` — `_cleanupSpineInstance` / отложенное уничтожение.

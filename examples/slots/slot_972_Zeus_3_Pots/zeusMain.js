@@ -3,6 +3,7 @@ import { ReelAnimationCurve } from './ReelAnimationCurve.js';
 import { ZeusReel } from './ZeusReel.js';
 import { parseScenarioCode, metaToNumericSymbol } from './SymbolMapping.js';
 import { fontManager } from './FontManager.js';
+import { ZeusCollectEffect } from './ZeusCollectEffect.js';
 
 // Параметры сцены
 const STAGE_WIDTH = 1920;
@@ -52,7 +53,7 @@ async function createApp() {
   return app;
 }
 
-function createSlotManager(app, reelProfile, symbolTexture, frameTexture, plateTexture, coinFactories) {
+function createSlotManager(app, reelProfile, symbolTexture, frameTexture, plateTexture, coinFactories, collectEffect = null) {
 
   // ВЕРСТКА поля 3×3 всегда опирается на физический размер символа,
   // а не на шаг анимации из профиля. Профиль используется только для движения рилов.
@@ -82,6 +83,7 @@ function createSlotManager(app, reelProfile, symbolTexture, frameTexture, plateT
     frameTexture,
     plateTexture,
     coinFactories,
+    collectEffect,
     onSpinComplete: (finalMatrix) => {
       // Для отладки покажем в консоли итоговую матрицу
       // eslint-disable-next-line no-console
@@ -343,7 +345,18 @@ async function main() {
     createScrollCoin:  (slotIdx) => makeSpine(`zeusCoinAtlas_${reelIdx * SLOTS_PER_REEL + 1 + Math.min(slotIdx, 1)}`),
   }));
 
-  const slotManager = createSlotManager(app, reelConfig, coinTexture, frameTexture, plateTexture, coinFactories);
+  // Collect effect: молния из пот-монеты в корзины
+  let collectEffect = null;
+  try {
+    collectEffect = new ZeusCollectEffect(app, app.stage, STAGE_WIDTH, STAGE_HEIGHT);
+    await collectEffect.init();
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.warn('ZeusCollectEffect: не удалось загрузить, эффект перелёта отключён.', e);
+    collectEffect = null;
+  }
+
+  const slotManager = createSlotManager(app, reelConfig, coinTexture, frameTexture, plateTexture, coinFactories, collectEffect);
   setupSpinDemo(app, slotManager);
 }
 

@@ -23,6 +23,8 @@ export class ZeusSlotManager {
    * @param {Array<{createOverlayCoin:function, createScrollCoin:function}>} [options.coinFactories]
    *   Массив фабрик монеток — по одной на каждый рил (row*cols + col).
    *   Каждый элемент: { createOverlayCoin(), createScrollCoin(slotIdx) }.
+   * @param {import('./ZeusCollectEffect.js').ZeusCollectEffect} [options.collectEffect]
+   *   Менеджер эффекта перелёта монет (для пот-монет).
    * @param {function} [options.onSpinComplete] - коллбек по завершении спина всех рилов
    */
   constructor({
@@ -40,6 +42,7 @@ export class ZeusSlotManager {
     frameTexture = null,
     plateTexture = null,
     coinFactories = null,
+    collectEffect = null,
     onSpinComplete
   }) {
     this.rows = rows;
@@ -59,6 +62,7 @@ export class ZeusSlotManager {
     this.symbolTexture = symbolTexture;
     this.plateTexture = plateTexture;
     this.coinFactories = Array.isArray(coinFactories) ? coinFactories : null;
+    this.collectEffect = collectEffect || null;
     this.reels = [];
     this.spinningCount = 0;
     this.spinIndex = 0; // номер шага сценария / спина
@@ -75,6 +79,7 @@ export class ZeusSlotManager {
     }
 
     this._createReels(parent);
+    this._wireCollectEffect();
   }
 
   _createReels(parent) {
@@ -108,6 +113,23 @@ export class ZeusSlotManager {
 
   _index(row, col) {
     return row * this.cols + col;
+  }
+
+  /**
+   * Подключает collect-effect: каждая pot-монета при появлении стреляет
+   * из своей позиции (без Spine-ивента, при запуске анимации hit).
+   * Логика выстрела уже внутри ZeusReel.showOverlayFromCurrent().
+   * @private
+   */
+  _wireCollectEffect() {
+    if (!this.collectEffect) return;
+
+    for (const reel of this.reels) {
+      reel.onShotCallback = (worldPos, potType) => {
+        const endPos = { x: worldPos.x, y: 120 };
+        this.collectEffect.fire(worldPos, endPos, potType);
+      };
+    }
   }
 
   _onReelStop(stoppedReel) {

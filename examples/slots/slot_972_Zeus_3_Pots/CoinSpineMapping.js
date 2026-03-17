@@ -21,11 +21,32 @@ export function attachCoinText(spineCoin, meta) {
   const slot = spineCoin.skeleton?.findSlot?.('text_holder');
   if (!slot) return;
 
-  const text = `${meta.multiplier}X`;
-  const textSprite = fontManager.createText('coinValue', text);
+  // Маленькая буква x, общий текст на 20% меньше базового стиля.
+  const text = `${meta.multiplier}x`;
+
+  let styleName = 'coinRegular';
+  if (meta.type === 'sticky') {
+    styleName = 'coinSticky';
+  } else if (meta.type === 'regular') {
+    // Пот-цветы для регулярных монет: свои стили шрифта.
+    if (meta.pot === 'green') {
+      styleName = 'coinRegularGreen';
+    } else if (meta.pot === 'violet') {
+      styleName = 'coinRegularViolet';
+    } else if (meta.pot === 'red') {
+      styleName = 'coinRegularRed';
+    }
+  }
+
+  const textSprite = fontManager.createText(styleName, text, {
+    // Чуть крупнее (≈ +5% к 96)
+    fontSize: 101,
+  });
   if (!textSprite) return;
 
   textSprite.anchor?.set?.(0.5);
+  // Опустить надпись ещё ниже относительно центра слота.
+  textSprite.y += 160;
   if (typeof spineCoin.addSlotObject === 'function') {
     spineCoin.addSlotObject('text_holder', textSprite);
   }

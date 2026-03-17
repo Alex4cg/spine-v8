@@ -74,6 +74,11 @@ export class ZeusReel {
     this.padding = padding;
     this.coinFactory = coinFactory || null;
 
+    // Callback, вызываемый при ивенте «shot» в анимации «hit» пот-монеты.
+    // Устанавливается снаружи (ZeusSlotManager).
+    // Сигнатура: (worldPos: {x, y}) => void
+    this.onShotCallback = null;
+
     this.frame = new PIXI.Graphics();
 
     // Контейнер символа: Graphics для простых заливок + спрайты монет.
@@ -341,13 +346,23 @@ export class ZeusReel {
     // Добавляем на сцену ДО запуска анимации (как в spine_test.html).
     this.overlayContainer.addChild(coin);
 
-    // start → idle через listener: точный паттерн из spine_test.html.
+    // Пот-монеты играют «hit» (содержит ивент «shot») вместо «start».
+    const isPot = meta.pot != null;
+    const startAnim = isPot ? 'hit' : 'start';
+
     coin.state.clearTracks();
-    coin.state.setAnimation(0, 'start', false);
+    coin.state.setAnimation(0, startAnim, false);
 
     const listener = {
+      event: (trackEntry, event) => {
+        if (isPot && event?.data?.name === 'shot' && trackEntry.trackIndex === 0) {
+          if (this.onShotCallback) {
+            this.onShotCallback(this._getCoinWorldPosition(), meta.pot);
+          }
+        }
+      },
       complete: (trackEntry) => {
-        if (trackEntry.animation?.name === 'start') {
+        if (trackEntry.animation?.name === startAnim) {
           coin.state.removeListener(listener);
           if (!coin.destroyed) {
             coin.state.clearTracks();
@@ -357,6 +372,20 @@ export class ZeusReel {
       }
     };
     coin.state.addListener(listener);
+  }
+
+  /**
+   * Возвращает мировые координаты центра оверлей-монетки.
+   * Использует toGlobal() PIXI для корректного учёта всех трансформаций контейнеров.
+   * @returns {{ x: number, y: number }}
+   */
+  _getCoinWorldPosition() {
+    const padding = this.padding;
+    const w = this.width  - padding * 2;
+    const h = this.step   - padding * 2;
+    const localX = padding + w / 2;
+    const localY = padding + h / 2;
+    return this.overlayContainer.toGlobal({ x: localX, y: localY });
   }
 
   /**
